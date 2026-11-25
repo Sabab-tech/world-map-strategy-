@@ -628,6 +628,9 @@ test('committed command audit records write paths and revisions without copying 
   s.state.economy[s.countryA].largeAuditDomain={concurrent:'external-write'};
   assert.throws(()=>compactConflict.commit(),error=>error?.code==='STATE_TRANSACTION_CONFLICT');
 
+  // Seed the nested target explicitly: the preceding standalone transaction
+  // validates its returned audit payload, not ownership of this live state object.
+  s.state.economy[s.countryA].largeAuditDomain={records:[{id:'AUDIT-DETAIL',value:42}]};
   const nestedCompactConflict=s.sandbox.OmegaMinistryStateTransaction.create(
     'economy',s.countryA,5,'COMPACT-NESTED-TRANSACTION-CONFLICT',s.state,{includeOperationValues:false}
   );
