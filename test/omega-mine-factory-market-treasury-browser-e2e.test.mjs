@@ -178,12 +178,12 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         const foreign = countryEntry(gameState.foreign, code);
         const tradeState = countryEntry(gameState.trade, code);
         return [
-          readPath(foreign, 'foreign.relations'),
-          readPath(tradeState, 'trade.relations'),
+          foreign?.relations,
+          tradeState?.relations,
           countryEntry(gameState.relations, code)
         ].filter(value => value && typeof value === 'object');
       };
-      const treatyMap = code => readPath(countryEntry(gameState.foreign, code), 'foreign.treaties');
+      const treatyMap = code => countryEntry(gameState.foreign, code)?.treaties;
       const activeTreaty = treaty => !!treaty &&
         /SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(treaty.status || treaty.stage || '').toUpperCase());
       const fundedBalanceByCountry = new Map();
