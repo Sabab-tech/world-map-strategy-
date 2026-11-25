@@ -303,7 +303,7 @@
         fieldPath:p||null,
         sourceType:repositoryIdentity?'CANONICAL_REPOSITORY_DATA':'AUTHORITATIVE_RUNTIME_STATE',
         source:repositoryIdentity?'countries.json / canonical country registry':'Game.state / canonical repository authority',
-        sourceRevision:this.getRevision(id,topDomain(p)),
+        sourceRevision:this.getRevision(id,topDomain(p),options),
         simulationTurn:this.simulationTurn(),
         availability:availability.status,
         reason:availability.reason,
