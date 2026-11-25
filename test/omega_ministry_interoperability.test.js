@@ -533,6 +533,14 @@ test('ministry provider describe reads a path once and caches top-domain revisio
   assert.equal(revisionComputations,2,'a new publication computes the resource revision once');
   assert.equal(revisionCacheHits,1,'subsequent facts with the same top-level domain reuse the revision');
   assert.equal(availabilityReads,3,'each requested path is described once');
+  const baselineRevision=provider.getRevision(s.countryA,'resource');
+  s.state.resource[s.countryA].nonPersisted=undefined;
+  assert.equal(provider.getRevision(s.countryA,'resource'),baselineRevision,
+    'content revisions must ignore undefined fields just as the defensive clone did');
+  s.state.resource[s.countryA].nonPersisted=()=>true;
+  assert.equal(provider.getRevision(s.countryA,'resource'),baselineRevision,
+    'content revisions must ignore function fields just as the defensive clone did');
+  delete s.state.resource[s.countryA].nonPersisted;
 });
 
 test('committed command audit records write paths and revisions without copying full before/after domain state',()=>{

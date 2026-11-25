@@ -78,9 +78,9 @@
   function stable(value){
     if(value===null||typeof value!=='object')return JSON.stringify(value);
     if(Array.isArray(value))return '['+value.map(stable).join(',')+']';
-    if(value instanceof Map){const o={};for(const [k,v] of value.entries())o[String(k)]=v;return stable(o);}
+    if(value instanceof Map){const o={};for(const [k,v] of value.entries()){if(v!==undefined&&typeof v!=='function')o[String(k)]=v;}return stable(o);}
     if(value instanceof Set)return '['+[...value].map(stable).sort().join(',')+']';
-    const keys=Object.keys(value).filter(k=>k!=='__proto__'&&k!=='constructor').sort();
+    const keys=Object.keys(value).filter(k=>k!=='__proto__'&&k!=='constructor'&&value[k]!==undefined&&typeof value[k]!=='function').sort();
     return '{'+keys.map(k=>JSON.stringify(k)+':'+stable(value[k])).join(',')+'}';
   }
 
