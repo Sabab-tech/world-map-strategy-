@@ -139,9 +139,9 @@
   const profileCache=new Map();
   const mineSiteReferenceCache=new Map();
   const siteExecutionRowsCache=new Map();
-  let siteExecutionRowsCacheTurn=null;
+  let siteExecutionRowsCacheYear=null;
   const occurrenceRowsCache=new Map();
-  let occurrenceRowsCacheTurn=null;
+  let occurrenceRowsCacheYear=null;
   let mineSiteReferenceCacheYear=null;
   let engineDepositKeySource=null,engineDepositKeySourceLength=-1,engineDepositKeySet=new Set(),engineDepositKeyBuildCount=0;
   // ResourceMinistryEngine publishes its deposit array as a stable data snapshot. Build
@@ -395,7 +395,7 @@
         resourceRow.commissionedSites=resourceRow.commissionedSites.slice(-2048);
       }
     }
-    try{mineSiteReferenceCache?.clear?.();siteExecutionRowsCache?.clear?.();siteExecutionRowsCacheTurn=-1;}catch(_){}
+    try{mineSiteReferenceCache?.clear?.();siteExecutionRowsCache?.clear?.();siteExecutionRowsCacheYear=null;}catch(_){}
     let hydration=null;
     try{hydration=hydrateCountry(country);}catch(error){hydration={status:'FAILED',reason:String(error?.message||error)};}
     g.__OmegaLastMineCommissionBinding={countryId:country,siteId,status:'APPLIED_TO_RESOURCE_RUNTIME',hydrationStatus:hydration?.status||'NOT_CONFIRMED',turn:turn()};
@@ -546,7 +546,7 @@
         // catalog finishes loading. Invalidate those earlier profile-only caches so the
         // newly loaded legacy records produce their reserve/extraction occurrences too.
         try{mineSiteReferenceCache?.clear?.();}catch(_){}
-        try{siteExecutionRowsCache?.clear?.();siteExecutionRowsCacheTurn=-1;}catch(_){}
+        try{siteExecutionRowsCache?.clear?.();siteExecutionRowsCacheYear=null;}catch(_){}
         data.sites=normalizedRows;
         data.baseSiteCount=baseRows.length;
         data.expansionSiteCount=acceptedExpansion.length;
@@ -982,7 +982,8 @@
     const currentYear=simulationYear();
     if(mineSiteReferenceCacheYear!==currentYear){
       mineSiteReferenceCache.clear();
-      occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;
+      occurrenceRowsCache.clear();occurrenceRowsCacheYear=null;
+      siteExecutionRowsCache.clear();siteExecutionRowsCacheYear=null;
       mineSiteReferenceCacheYear=currentYear;
     }
     const cached=mineSiteReferenceCache.get(wanted);
@@ -1146,13 +1147,17 @@
 
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
-    const wanted=canonical(c),siteReferences=mineSiteReferenceRows(wanted),currentTurn=turn();
-    if(occurrenceRowsCacheTurn!==currentTurn){
-      occurrenceRowsCache.clear();occurrenceRowsCacheTurn=currentTurn;
+    const wanted=canonical(c),siteReferences=mineSiteReferenceRows(wanted),currentYear=simulationYear();
+    if(occurrenceRowsCacheYear!==currentYear){
+      occurrenceRowsCache.clear();occurrenceRowsCacheYear=currentYear;
     }
-    const reserveStates=rr.reserveStates||null,cached=occurrenceRowsCache.get(wanted);
+    const reserveStates=rr.reserveStates||null;
+    const depositSource=Array.isArray(e.deposits)?e.deposits:null;
+    const depositCount=depositSource?.length??0;
+    const cached=occurrenceRowsCache.get(wanted);
     if(cached&&cached.registry===reg&&cached.engine===e&&cached.reserveStates===reserveStates&&
-       cached.reserveSize===(reserveStates?.size??null)&&cached.siteReferences===siteReferences){
+       cached.reserveSize===(reserveStates?.size??null)&&cached.siteReferences===siteReferences&&
+       cached.depositSource===depositSource&&cached.depositCount===depositCount){
       return cached.rows.map(row=>{
         const key=String(row?.occurrenceKey||'');
         return{
@@ -1351,7 +1356,7 @@
     }
     occurrenceRowsCache.set(wanted,{
       registry:reg,engine:e,reserveStates,reserveSize:reserveStates?.size??null,
-      siteReferences,rows:out
+      siteReferences,depositSource,depositCount,rows:out
     });
     return out;
   }
@@ -1488,18 +1493,34 @@ function batchFromExtraction(x,record){
 
   function siteExecutionRows(c,existing={},authoritativeOccurrences=null){
     const cid=canonical(c);
-    const currentTurn=turn();
-    if(siteExecutionRowsCacheTurn!==currentTurn){
+    const currentYear=simulationYear();
+    if(siteExecutionRowsCacheYear!==currentYear){
       siteExecutionRowsCache.clear();
-      siteExecutionRowsCacheTurn=currentTurn;
+      siteExecutionRowsCacheYear=currentYear;
     }
-    if(occurrenceRowsCacheTurn!==currentTurn){
+    if(occurrenceRowsCacheYear!==currentYear){
       occurrenceRowsCache.clear();
-      occurrenceRowsCacheTurn=currentTurn;
+      occurrenceRowsCacheYear=currentYear;
     }
-    const cached=siteExecutionRowsCache.get(cid);
+    const siteReferences=mineSiteReferenceRows(cid);
+    const registry=g.__OmegaResourceIdentityRegistry;
+    const sourceEngine=engine();
+    const reserveRegistry=g.__OmegaResourceReserveRegistry;
+    const reserveStates=reserveRegistry?.reserveStates||null;
+    const reserveSize=reserveStates?.size??null;
+    const depositSource=Array.isArray(sourceEngine?.deposits)?sourceEngine.deposits:null;
+    const depositCount=depositSource?.length??0;
+    const profileSource=profile(cid);
+    const cacheEntry=siteExecutionRowsCache.get(cid);
+    const cacheValid=!!(cacheEntry&&cacheEntry.registry===registry&&cacheEntry.engine===sourceEngine&&
+      cacheEntry.reserveStates===reserveStates&&cacheEntry.reserveSize===reserveSize&&
+      cacheEntry.siteReferences===siteReferences&&cacheEntry.profile===profileSource&&
+      cacheEntry.depositSource===depositSource&&cacheEntry.depositCount===depositCount&&
+      cacheEntry.siteCatalog===canonicalSiteCatalogMap&&Array.isArray(cacheEntry.rows));
+    if(cacheEntry&&!cacheValid)siteExecutionRowsCache.delete(cid);
+    const cached=cacheValid?cacheEntry.rows:null;
     const requestedOccurrenceKeys=new Set(Array.isArray(existing?.requestedOccurrenceKeys)?existing.requestedOccurrenceKeys.map(String):[]);
-    if(g.__OMEGA_RESOURCE_ECONOMY_PERF__===true){const p=g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__||(g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__={});p.siteRowsCacheHits=(p.siteRowsCacheHits||0)+(cached?1:0);p.siteRowsCacheMisses=(p.siteRowsCacheMisses||0)+(cached?0:1);p.siteRowsCacheInvalidationTurn=siteExecutionRowsCacheTurn;p.siteRowsRequestedOccurrenceCalls=(p.siteRowsRequestedOccurrenceCalls||0)+(requestedOccurrenceKeys.size?1:0);}
+    if(g.__OMEGA_RESOURCE_ECONOMY_PERF__===true){const p=g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__||(g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__={});p.siteRowsCacheHits=(p.siteRowsCacheHits||0)+(cached?1:0);p.siteRowsCacheMisses=(p.siteRowsCacheMisses||0)+(cached?0:1);p.siteRowsCacheInvalidationYear=siteExecutionRowsCacheYear;p.siteRowsRequestedOccurrenceCalls=(p.siteRowsRequestedOccurrenceCalls||0)+(requestedOccurrenceKeys.size?1:0);}
     const selectRowsForRequestedSites=sourceRows=>{
       const saved=existing?.mineStates&&typeof existing.mineStates==='object'?existing.mineStates:{};
       let reusableRows=sourceRows;
@@ -1527,9 +1548,19 @@ function batchFromExtraction(x,record){
         );
       }
       const ReserveState=(g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine)?.ReserveState;
+      const reserveRegistry=g.__OmegaResourceReserveRegistry;
       for(const row of reusableRows){
-        const persisted=saved[row.occurrenceKey];
-        if(persisted&&ReserveState)row.reserveState=new ReserveState(clone(persisted));
+        const key=String(row?.occurrenceKey||'');
+        const persisted=saved[key];
+        const currentReserve=reserveRegistry?.getReserveState?.(key);
+        if(currentReserve&&ReserveState)row.reserveState=new ReserveState(clone(currentReserve));
+        else if(persisted&&ReserveState)row.reserveState=new ReserveState(clone(persisted));
+        const currentCapacity=reserveRegistry?.getCapacityForOccurrence?.(key);
+        if(currentCapacity)row.capacity=currentCapacity;
+        const currentLifecycle=reserveRegistry?.lifecycles?.get?.(key);
+        if(currentLifecycle)row.lifecycle=currentLifecycle;
+        const currentAccessibility=reserveRegistry?.accessibilityStates?.get?.(key);
+        if(currentAccessibility)row.accessibility=currentAccessibility;
       }
       return reusableRows;
     };
@@ -1541,7 +1572,7 @@ function batchFromExtraction(x,record){
       const fullRows=siteExecutionRows(c,{...existing,requestedOccurrenceKeys:[]},authoritativeOccurrences);
       return selectRowsForRequestedSites(fullRows);
     }
-    const p=profile(cid)||{},rows=[],seen=new Set(),realism=g.Omega?.ResourceRealism||g.OmegaResourceRealism;
+    const p=profileSource||{},rows=[],seen=new Set(),realism=g.Omega?.ResourceRealism||g.OmegaResourceRealism;
     // Registry-backed deposit occurrences are the production authority. A profile-derived
     // site that resolves to the same canonical site/resource must not create a second mine
     // or extract the same physical deposit again under SITE_OCC while it already runs as OCC.
@@ -1662,7 +1693,10 @@ function batchFromExtraction(x,record){
       list.forEach(name=>add({name,sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+canonical(c)+'.hydrocarbon_resource_base.'+key},
         null,key==='oil'?'crude_oil':'natural_gas',key==='oil'?'OIL_FIELD':'GAS_FIELD'));
     }
-    if(requestedOccurrenceKeys.size===0)siteExecutionRowsCache.set(cid,rows);
+    if(requestedOccurrenceKeys.size===0)siteExecutionRowsCache.set(cid,{
+      registry,engine:sourceEngine,reserveStates,reserveSize,siteReferences,profile:profileSource,
+      depositSource,depositCount,siteCatalog:canonicalSiteCatalogMap,rows
+    });
     return rows;
   }
 
@@ -2430,6 +2464,43 @@ function batchFromExtraction(x,record){
     const mineSiteIds=new Set(mineAssets.map(asset=>String(asset?.siteId||'').trim()).filter(Boolean));
     const operationalMineSiteIds=new Set(mineAssets.filter(asset=>String(asset?.status||'').toUpperCase()==='OPERATIONAL')
       .map(asset=>String(asset?.siteId||'').trim()).filter(Boolean));
+    // Automatic turn scheduling is restricted to physically operational catalog sites
+    // and player-commissioned mine assets. A deposit's commodity child streams are not
+    // separate mines: the occurrence commodity must match the canonical site's identity.
+    const productionEligibleSiteIds=new Set(operationalMineSiteIds);
+    const productionResourceIdsBySite=new Map();
+    const addProductionSite=(siteId,resourceId)=>{
+      const id=String(siteId||'').trim();
+      if(!id)return;
+      productionEligibleSiteIds.add(id);
+      const resource=rid(resourceId);
+      if(!resource)return;
+      if(!productionResourceIdsBySite.has(id))productionResourceIdsBySite.set(id,new Set());
+      productionResourceIdsBySite.get(id).add(resource);
+    };
+    const explicitlyInactiveStatus=status=>/(^|_)(INACTIVE|NOT_ACTIVE|HISTORICAL|HISTORICALLY|CARE_AND_MAINTENANCE|SUSPEND|SUSPENDED|BLOCKED|CLOSED|ABANDON|ABANDONED|DEPLETED|DEVELOPMENT|RESTARTING|CESSATION_OF_PRODUCTION|DISRUPTED|NOT_APPLICABLE|NO_CURRENT_CONCESSION|PERMIT_PROCESSING|RESOURCE_IDENTITY_UNVERIFIED|DISPUTED_OPERATION|RESTRICTED)(_|$)/.test(String(status||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_'));
+    const operationalStatus=status=>/(^|_)(ACTIVE_EXTRACTION|ACTIVE_PRODUCING|ACTIVE|DEPLETING|RESERVE_DEPLETING|OPERATING|RUNNING|PRODUCING)(_|$)/.test(String(status||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_'));
+    for(const site of Array.isArray(bucket.mineSiteReferences)?bucket.mineSiteReferences:[]){
+      const siteId=String(site?.siteReferenceKey||site?.siteId||'').trim();
+      const raw=site?.rawSiteReference&&typeof site.rawSiteReference==='object'?site.rawSiteReference:{};
+      const operation=site?.operation&&typeof site.operation==='object'?site.operation:(raw.operation||{});
+      const lifecycle=String(operation.status||operation.operationalStatus||
+        raw.sourceSiteRecord?.status||raw.status||'');
+      const commercial=site?.commercialExtraction!==false&&operation.commercialExtraction!==false&&
+        raw.commercialExtraction!==false&&raw.operation?.commercialExtraction!==false;
+      const alias=!!(site?.runtime?.aliasOfSiteId||raw.runtime?.aliasOfSiteId);
+      const mapEligible=site?.map?.markerEligible!==false&&raw.map?.markerEligible!==false;
+      if(siteId&&commercial&&!alias&&mapEligible&&!explicitlyInactiveStatus(lifecycle)&&operationalStatus(lifecycle))
+        addProductionSite(siteId,site?.resourceId||site?.resourceTypeId||raw.identity?.resourceTypeId);
+    }
+    for(const site of Array.isArray(bucket.commissionedSites)?bucket.commissionedSites:[]){
+      if(['COMMISSIONED','OPERATIONAL'].includes(String(site?.status||'').toUpperCase()))
+        addProductionSite(site?.siteId,site?.resourceId);
+    }
+    for(const asset of mineAssets){
+      if(String(asset?.status||'').toUpperCase()==='OPERATIONAL')
+        addProductionSite(asset?.siteId,asset?.resourceId);
+    }
     // A site is paused only when none of its commissioned mine units remain operational.
     // One paused/destroyed unit must not stop another operational unit at the same deposit.
     const decommissionedSiteIds=new Set([...mineSiteIds].filter(siteId=>
@@ -2439,9 +2510,15 @@ function batchFromExtraction(x,record){
       if(successfulOccurrences.has(String(key)))return false;
       if(attempted.has(String(key))&&!retryableBlocked.has(String(key)))return false;
       const row=states[key]||{},siteKey=String(row.siteReferenceKey||row.siteId||row.sourceSiteId||siteByOccurrence.get(String(key))||'');
-      if(decommissionedSiteIds.has(siteKey)||decommissionedSiteIds.has(String(siteByOccurrence.get(String(key))||'')))return false;
-      if(!requestedSites)return true;
-      return requestedSites.has(siteKey)||requestedSites.has(String(siteByOccurrence.get(String(key))||''));
+      const mappedSiteKey=String(siteByOccurrence.get(String(key))||'');
+      if(decommissionedSiteIds.has(siteKey)||decommissionedSiteIds.has(mappedSiteKey))return false;
+      if(requestedSites&&!(requestedSites.has(siteKey)||requestedSites.has(mappedSiteKey)))return false;
+      if(!requestedSites&&!productionEligibleSiteIds.has(siteKey)&&!productionEligibleSiteIds.has(mappedSiteKey))return false;
+      const selectedSiteKey=productionResourceIdsBySite.has(siteKey)?siteKey:mappedSiteKey;
+      const allowedResources=productionResourceIdsBySite.get(selectedSiteKey);
+      const occurrenceResource=rid(row.resourceId||row.resourceTypeId||row.resourceTypeKey);
+      if(allowedResources?.size&&(!occurrenceResource||!allowedResources.has(occurrenceResource)))return false;
+      return true;
     });
     const currentSiteIds=new Set(currentLedger.filter(row=>n(row?.turn)===t&&(n(row?.quantity)||0)>0)
       .map(row=>String(row.siteReferenceKey||row.mineId||row.occurrenceKey||'')).filter(Boolean));
@@ -2562,7 +2639,7 @@ function batchFromExtraction(x,record){
       };
       // A failed optional reference load remains retryable instead of becoming an empty READY cache.
       supplementalResourceDataReport=report.status==='READY'?report:null;
-      try{profileCache.clear();mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;}catch(_){}
+      try{profileCache.clear();mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheYear=null;occurrenceRowsCache.clear();occurrenceRowsCacheYear=null;}catch(_){}
       g.OmegaResourceSupplementalDataReport=clone(report);
       g.Omega=g.Omega||{};
       g.Omega.ResourceSupplementalDataReport=g.OmegaResourceSupplementalDataReport;
@@ -3264,7 +3341,7 @@ function batchFromExtraction(x,record){
     const serializedAfter=JSON.stringify(merged);
     const changed=!existing||serializedBefore!==serializedAfter;
     const becameExecutable=!wasExecutable;
-    if(changed){mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;}
+    if(changed){mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheYear=null;occurrenceRowsCache.clear();occurrenceRowsCacheYear=null;}
     return{status:!existing?'REGISTERED':changed?'ENRICHED':'EXISTS',siteId,countryId,resourceId,
       changed,executionRequired:!existing||becameExecutable};
   }
@@ -3538,7 +3615,7 @@ function batchFromExtraction(x,record){
       data.totalSiteCount=data.sites.length;
       data.dynamicSimulationSiteCount=Math.max(0,n(data.dynamicSimulationSiteCount)||0)+1;
     }
-    mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;
+    mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheYear=null;occurrenceRowsCache.clear();occurrenceRowsCacheYear=null;
     return{status:'REGISTERED',siteId,countryId,resourceId,identityAuthority:'CANONICAL_SITE_REGISTRY',
       quantityAuthority:'SIMULATED',productionAuthority:'SIMULATED'};
   }
