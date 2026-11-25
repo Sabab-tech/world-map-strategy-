@@ -1072,7 +1072,9 @@
         });
       }
 
-      const stateRevision=this._sourceRevision(countryId,ministryId,context,execution);
+      const publishedSourceRevision=this.provider?.getRevision?.(countryId,ministryId)??null;
+      const stateRevision=publishedSourceRevision!==null?String(publishedSourceRevision):
+        (execution.stateRevision!==undefined&&execution.stateRevision!==null?String(execution.stateRevision):null);
       const runtimeStatus=packet.runtimeState||{};
       const policyCount=Object.keys(publishedFacts).filter(k=>k.startsWith('store.')).length;
       const projectFact=publishedFacts['projects.registry'];

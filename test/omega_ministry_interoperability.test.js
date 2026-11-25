@@ -505,6 +505,27 @@ test('Q2: Interior runtime reads and publishes Home Ministry police state for th
   assert.equal(peer.publishedFacts['interior.police.policeCount'].countryId,s.countryA);
 });
 
+test('ministry provider describe reads a path once and caches top-domain revisions within a publication',()=>{
+  const s=createSandbox();
+  const provider=s.sandbox.Omega.MinistryStateProvider.create({
+    stateSource:s.state,countryRows:readRepositoryCountries()
+  });
+  let availabilityReads=0,revisionReads=0;
+  const originalAvailability=provider.getAvailability.bind(provider);
+  const originalRevision=provider.getRevision.bind(provider);
+  provider.getAvailability=(...args)=>{availabilityReads++;return originalAvailability(...args);};
+  provider.getRevision=(...args)=>{revisionReads++;return originalRevision(...args);};
+  const first=provider.describe(s.countryA,'resource');
+  assert.equal(first.availability,'AVAILABLE');
+  assert.equal(availabilityReads,1,'describe must reuse its first availability result for provenance');
+  assert.equal(revisionReads,1,'describe must obtain one source revision');
+  const revisionCache=new Map();
+  provider.describe(s.countryA,'resource',{revisionCache});
+  provider.describe(s.countryA,'resource.inventory',{revisionCache});
+  assert.equal(revisionReads,2,'the same top-level domain is fingerprinted only once per publication');
+  assert.equal(availabilityReads,3,'each requested path is described once');
+});
+
 test('committed command audit records write paths and revisions without copying full before/after domain state',()=>{
   const s=createSandbox();
   const before={rows:Array.from({length:1200},(_,index)=>({index,payload:'B'.repeat(250)}))};
