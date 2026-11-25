@@ -138,6 +138,38 @@
   const profileCache=new Map();
   const mineSiteReferenceCache=new Map();
   const siteExecutionRowsCache=new Map();
+  // Selected extraction slices must not rescan every site reference. Build one lookup
+  // per immutable country reference-array snapshot, then resolve only requested site IDs.
+  const siteReferenceRowIndexCache=new WeakMap();
+  let siteReferenceRowIndexBuildCount=0,siteReferenceRowIndexHitCount=0;
+  let siteReferenceRowIndexIndexedCount=0,siteReferenceRowIndexLookupCount=0,siteReferenceRowIndexSelectedCount=0;
+  function requestedSiteReferenceRows(rows,requestedKeys){
+    if(!Array.isArray(rows)||!requestedKeys?.size)return[];
+    let index=siteReferenceRowIndexCache.get(rows);
+    if(!index){
+      index=new Map();
+      for(const row of rows){
+        const key=String(row?.siteReferenceKey||row?.siteId||'').trim();
+        if(!key)continue;
+        let matches=index.get(key);
+        if(!matches){matches=[];index.set(key,matches);}
+        matches.push(row);
+      }
+      siteReferenceRowIndexCache.set(rows,index);
+      siteReferenceRowIndexBuildCount++;
+      siteReferenceRowIndexIndexedCount+=rows.length;
+    }else siteReferenceRowIndexHitCount++;
+    const selected=[],seen=new Set();
+    for(const key of requestedKeys){
+      siteReferenceRowIndexLookupCount++;
+      for(const row of index.get(String(key))||[]){
+        if(seen.has(row))continue;
+        seen.add(row);selected.push(row);
+      }
+    }
+    siteReferenceRowIndexSelectedCount+=selected.length;
+    return selected;
+  }
   let siteExecutionRowsCacheTurn=null;
   const occurrenceRowsCache=new Map();
   let occurrenceRowsCacheTurn=null;
@@ -1623,9 +1655,10 @@ function batchFromExtraction(x,record){
         }
       }
     }
-    siteReferences.forEach(ref=>{
-      const siteId=String(ref?.siteReferenceKey||ref?.siteId||'').trim();
-      if(requestedSiteReferenceKeys.size&&!requestedSiteReferenceKeys.has(siteId))return;
+    const executionSiteReferences=requestedOccurrenceKeys.size
+      ?requestedSiteReferenceRows(siteReferences,requestedSiteReferenceKeys)
+      :siteReferences;
+    executionSiteReferences.forEach(ref=>{
       if(ref.commercialExtraction===false)return;
       add(ref,null,ref.resourceId||ref.resourceTypeId||ref.resourceTypeKey||null,'MINE_SITE');
     });
@@ -3418,7 +3451,7 @@ function batchFromExtraction(x,record){
       return !!siteId&&site?.map?.markerEligible!==false&&!site?.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[siteId];
     }).length;
     const globalCanonicalSiteCount=canonicalSiteReferenceCount||mineSiteReferenceCount||modeledSiteReferenceCount;
-    let profileDerivedExecutableAssetCount=0,profileDerivedActiveAssetCount=0,profileDerivedBlockedAssetCount=0;for(const c of countries()){const rs=state()?.resource?.[c]||{};const outs=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.values(rs.mineOutputs):[];const simOuts=outs.filter(x=>x?.simulationGenerated===true);profileDerivedExecutableAssetCount+=simOuts.length;profileDerivedActiveAssetCount+=simOuts.filter(x=>x?.status==='APPROVED'||x?.status==='PARTIALLY_APPROVED').length;profileDerivedBlockedAssetCount+=simOuts.filter(x=>String(x?.status||'').startsWith('BLOCKED')).length;} return{version:VERSION,unifiedAssetSchemaVersion:g.GSRSK_Part04?.UNIFIED_ASSET_SCHEMA_VERSION||'UNKNOWN',engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON + PER_SITE_SIMULATION_RESERVE_DATA',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,structuredMineCount,executableAssetCount,fieldAssetCount,mineSiteReferenceCount:globalCanonicalSiteCount,mineSiteControllerCount:globalCanonicalSiteCount,lastBootstrap:clone(g.__omegaResourceEndowmentLastBootstrap||null),materializedMineSiteReferenceCount:mineSiteReferenceCount,materializedMineSiteControllerCount:mineSiteControllerCount,modeledMineSiteReferenceCount:modeledSiteReferenceCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount,profileDerivedExecutableAssetCount,profileDerivedActiveAssetCount,profileDerivedBlockedAssetCount,fullEffortPolicy:'MODEL_DRIVEN'};
+    let profileDerivedExecutableAssetCount=0,profileDerivedActiveAssetCount=0,profileDerivedBlockedAssetCount=0;for(const c of countries()){const rs=state()?.resource?.[c]||{};const outs=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.values(rs.mineOutputs):[];const simOuts=outs.filter(x=>x?.simulationGenerated===true);profileDerivedExecutableAssetCount+=simOuts.length;profileDerivedActiveAssetCount+=simOuts.filter(x=>x?.status==='APPROVED'||x?.status==='PARTIALLY_APPROVED').length;profileDerivedBlockedAssetCount+=simOuts.filter(x=>String(x?.status||'').startsWith('BLOCKED')).length;} return{version:VERSION,unifiedAssetSchemaVersion:g.GSRSK_Part04?.UNIFIED_ASSET_SCHEMA_VERSION||'UNKNOWN',engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON + PER_SITE_SIMULATION_RESERVE_DATA',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,structuredMineCount,executableAssetCount,fieldAssetCount,mineSiteReferenceCount:globalCanonicalSiteCount,mineSiteControllerCount:globalCanonicalSiteCount,lastBootstrap:clone(g.__omegaResourceEndowmentLastBootstrap||null),materializedMineSiteReferenceCount:mineSiteReferenceCount,materializedMineSiteControllerCount:mineSiteControllerCount,modeledMineSiteReferenceCount:modeledSiteReferenceCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount,profileDerivedExecutableAssetCount,profileDerivedActiveAssetCount,profileDerivedBlockedAssetCount,siteReferenceRowIndex:{buildCount:siteReferenceRowIndexBuildCount,cacheHitCount:siteReferenceRowIndexHitCount,indexedReferenceCount:siteReferenceRowIndexIndexedCount,lookupCount:siteReferenceRowIndexLookupCount,selectedReferenceCount:siteReferenceRowIndexSelectedCount},fullEffortPolicy:'MODEL_DRIVEN'};
   }
   function init(){
     install();
