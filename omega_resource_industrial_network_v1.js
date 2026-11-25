@@ -5657,14 +5657,8 @@ async function executeSitePipeline(input={}){
   const hydrated=await endowment.hydrateCountry(cid);
   captureFactoryPipelineState('AFTER_COUNTRY_HYDRATION');
   if(hydrated?.status!=='APPLIED'||hydrated?.result?.accepted===false)return{status:'BLOCKED',reason:'COUNTRY_HYDRATION_NOT_COMMITTED',detail:hydrated};
-  let extractionPlan=null;
-  // An explicit quantity or a requested simulation bootstrap keeps its existing
-  // caller-supplied planning semantics. For a real selected factory, planning is
-  // deferred until its live cycle capacity is known below.
-  if(input.autoCommissionFactory===true||input.quantity!==undefined&&input.quantity!==null){
-    extractionPlan=planExtraction({countryId:cid,siteId:site.siteId,resourceId:rid,quantity:input.quantity,remainingReserve:input.remainingReserve});
-    if(extractionPlan?.status!=='PLANNED')return{status:'BLOCKED',reason:'INDUSTRIAL_EXTRACTION_PLAN_BLOCKED',siteId:site.siteId,detail:extractionPlan};
-  }
+  const extractionPlan=planExtraction({countryId:cid,siteId:site.siteId,resourceId:rid,quantity:input.quantity,remainingReserve:input.remainingReserve});
+  if(extractionPlan?.status!=='PLANNED')return{status:'BLOCKED',reason:'INDUSTRIAL_EXTRACTION_PLAN_BLOCKED',siteId:site.siteId,detail:extractionPlan};
   const countryState=state()?.resource?.[cid]||{},controllers=countryState.mineSiteControllers||{};
   const siteKey=String(site.siteId),controller=controllers[siteKey]||Object.values(controllers).find(x=>String(x?.siteReferenceKey||'')===siteKey);
   const linkedKeys=Array.isArray(controller?.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys.map(String).filter(Boolean):[];
@@ -5748,45 +5742,7 @@ async function executeSitePipeline(input={}){
     factoryCandidatesBeforeExtraction[0]?.asset||null;
   const selectedFactoryIdBeforeExtraction=String(selectedFactoryBeforeExtraction?.id||
     selectedFactoryBeforeExtraction?.assetId||selectedFactoryBeforeExtraction?.projectId||'').trim();
-  if(!extractionPlan){
-    let requestedQuantity=num(input.quantity);
-    if(requestedQuantity===null&&selectedFactoryBeforeExtraction){
-      const capacity=Math.max(0,num(selectedFactoryBeforeExtraction.capacityPerDay??
-        selectedFactoryBeforeExtraction.capacity??selectedFactoryBeforeExtraction.productionCapacity??
-        selectedFactoryBeforeExtraction.throughput)||0);
-      if(capacity>0){
-        const utilityLimit=factoryUtilityProductionLimit(cid,selectedFactoryBeforeExtraction,capacity);
-        const effectiveDailyCapacity=utilityLimit?.status==='READY'
-          ?Math.max(0,num(utilityLimit.allowedProduction)||0):capacity;
-        const recipe=recipeFor(rid,selectedFactoryBeforeExtraction);
-        const cycleDays=Math.max(1,num(recipe?.cycleDays)||num(selectedFactoryBeforeExtraction.cycleDays)||1);
-        if(effectiveDailyCapacity>0)requestedQuantity=effectiveDailyCapacity*cycleDays;
-      }
-    }
-    extractionPlan=planExtraction({countryId:cid,siteId:site.siteId,resourceId:rid,
-      quantity:requestedQuantity===null?undefined:requestedQuantity,remainingReserve:input.remainingReserve});
-    if(extractionPlan?.status!=='PLANNED')
-      return{status:'BLOCKED',reason:'INDUSTRIAL_EXTRACTION_PLAN_BLOCKED',siteId:site.siteId,detail:extractionPlan};
-  }
-  // Divide the one-cycle input allowance across all physical occurrences linked to
-  // this site/resource. This keeps a multi-occurrence site within the selected
-  // factory's total cycle input instead of granting the full allowance to each row.
-  const reserveRegistry=g.__OmegaResourceReserveRegistry||g.OmegaResourceReserveRegistry;
-  const occurrenceWeights=keys.map(key=>{
-    const capacity=reserveRegistry?.getCapacityForOccurrence?.(key)||{};
-    return Math.max(0,num(capacity.activeRate)||num(capacity.dailyRate)||num(capacity.nominalRate)||0);
-  });
-  const weightTotal=occurrenceWeights.reduce((sum,value)=>sum+value,0);
-  const quantityByOccurrence={};
-  let quantityAssigned=0;
-  keys.forEach((key,index)=>{
-    const share=index===keys.length-1
-      ?Math.max(0,Number(extractionPlan.approvedQuantity)-quantityAssigned)
-      :Number(extractionPlan.approvedQuantity)*(weightTotal>0?occurrenceWeights[index]/weightTotal:1/Math.max(1,keys.length));
-    quantityByOccurrence[key]=share;
-    quantityAssigned+=share;
-  });
-  const extraction=await endowment.extractCountry(cid,keys,{quantityByOccurrence});
+  const extraction=await endowment.extractCountry(cid,keys);
   const extractionResult=extraction?.result||extraction||{};
   const records=Array.isArray(extractionResult?.records)?extractionResult.records:[];
   const record=records.find(x=>keys.includes(String(x?.occurrenceKey||''))&&canonicalCountry(x?.countryId||cid)===cid&&x?.producedBatch);
