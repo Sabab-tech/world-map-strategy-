@@ -5924,8 +5924,11 @@ async function executeSitePipeline(input={}){
         selectedFactoryBeforeExtraction.throughput)||0);
       if(capacity>0){
         const utilityLimit=factoryUtilityProductionLimit(cid,selectedFactoryBeforeExtraction,capacity);
-        const effectiveDailyCapacity=utilityLimit?.status==='READY'
-          ?Math.max(0,num(utilityLimit.allowedProduction)||0):capacity;
+        if(utilityLimit?.status!=='READY'||!(num(utilityLimit.allowedProduction)>0))
+          return{status:'BLOCKED',reason:'SELECTED_FACTORY_UTILITY_CAPACITY_UNAVAILABLE',
+            countryId:cid,siteId:site.siteId,factoryId:selectedFactoryIdBeforeExtraction,
+            utilityLimit:clone(utilityLimit||{})};
+        const effectiveDailyCapacity=Math.max(0,num(utilityLimit.allowedProduction)||0);
         const recipe=recipeFor(rid,selectedFactoryBeforeExtraction);
         const cycleDays=Math.max(1,num(recipe?.cycleDays)||num(selectedFactoryBeforeExtraction.cycleDays)||1);
         if(effectiveDailyCapacity>0)requestedQuantity=effectiveDailyCapacity*cycleDays;
