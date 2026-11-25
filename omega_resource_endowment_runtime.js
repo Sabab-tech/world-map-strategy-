@@ -879,7 +879,7 @@
   }
   function emit(type,c,payload={},commandId=null){
     const m=interop();if(!m?.emitEvent)return null;
-    try{return m.emitEvent(type,canonical(c),'resource',{countryId:canonical(c),...clone(payload)},{turn:turn(),causationId:commandId,correlationId:payload?.correlationId||payload?.extractionId||null});}
+    try{return m.emitEvent(type,canonical(c),'resource',{countryId:canonical(c),...payload},{turn:turn(),causationId:commandId,correlationId:payload?.correlationId||payload?.extractionId||null,returnSummary:true});}
     catch(_){return null;}
   }
   function profile(c){
