@@ -4958,7 +4958,50 @@ function allocateFactoryInputProportionally(rows,availableQuantity){
   return allocations;
 }
 
-function factoryInputWarehouseAvailability(countryId,resourceId,recipe,asset=null){
+function buildFactoryInputIndex(countryId){
+  const cid=canonicalCountry(countryId),rs=resourceState(cid),network=netState(cid),
+    batchesByResource=new Map(),siteFlowBatchIds=new Set(),flowSiteByBatchId=new Map(),
+    requisitionInboundByFactoryResource=new Map(),transferInboundByFactoryResource=new Map();
+  const batchRows=Array.isArray(rs.batches)?rs.batches:[];
+  for(const batch of batchRows){
+    const rid=tok(batch?.resourceId||batch?.materialIdentity);
+    if(!rid)continue;
+    if(!batchesByResource.has(rid))batchesByResource.set(rid,[]);
+    batchesByResource.get(rid).push(batch);
+  }
+  for(const rows of batchesByResource.values())
+    rows.sort((a,b)=>(num(a?.createdTurn)||0)-(num(b?.createdTurn)||0));
+  const siteRows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
+  for(const row of siteRows){
+    if(!row?.batchId)continue;
+    const batchId=String(row.batchId);
+    siteFlowBatchIds.add(batchId);
+    if(row.siteId)flowSiteByBatchId.set(batchId,String(row.siteId));
+  }
+  const makeKey=(factoryId,resourceId)=>String(factoryId||'')+'\u0000'+tok(resourceId);
+  const shipments=Array.isArray(network.shipments)?network.shipments:[];
+  for(const shipment of shipments){
+    const factoryId=String(shipment?.factoryId||'').trim(),rid=tok(shipment?.resourceId);
+    if(!factoryId||!rid)continue;
+    const status=String(shipment?.status||'');
+    const type=String(shipment?.shipmentType||'');
+    if(type==='FACTORY_INPUT'&&['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(status)){
+      const key=makeKey(factoryId,rid);
+      requisitionInboundByFactoryResource.set(key,(requisitionInboundByFactoryResource.get(key)||0)+
+        Math.max(0,num(shipment?.targetQuantity)||0));
+    }
+    if(['FACTORY_INPUT','WAREHOUSE_TO_FACTORY','RAW_TO_FACTORY'].includes(type)&&
+       ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
+        'BLOCKED_BATCH_LEDGER_MISMATCH'].includes(status)){
+      const key=makeKey(factoryId,rid);
+      transferInboundByFactoryResource.set(key,(transferInboundByFactoryResource.get(key)||0)+
+        Math.max(0,num(shipment?.targetQuantity??shipment?.quantity)||0));
+    }
+  }
+  return{batchesByResource,siteFlowBatchIds,flowSiteByBatchId,
+    requisitionInboundByFactoryResource,transferInboundByFactoryResource,makeKey};
+}
+function factoryInputWarehouseAvailability(countryId,resourceId,recipe,asset=null,inputIndex=null){
   const cid=canonicalCountry(countryId),rid=tok(resourceId),rs=resourceState(cid);
   if(!rid)return 0;
   const inventoryKey=quantityObjectKey(rs.inventory||{},rid);
@@ -4966,13 +5009,15 @@ function factoryInputWarehouseAvailability(countryId,resourceId,recipe,asset=nul
   if(countryRemaining<=1e-9)return 0;
   const targetUnit=recipe?.inputUnit||asset?.inputUnit||
     cat()?.factoryCatalogPolicy?.unitNormalization?.targetUnit||'';
-  const batches=(Array.isArray(rs.batches)?rs.batches:[])
-    .filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid)
-    .slice().sort((a,b)=>(num(a?.createdTurn)||0)-(num(b?.createdTurn)||0));
+  const batches=inputIndex
+    ?(inputIndex.batchesByResource.get(rid)||[])
+    :(Array.isArray(rs.batches)?rs.batches:[])
+      .filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid)
+      .slice().sort((a,b)=>(num(a?.createdTurn)||0)-(num(b?.createdTurn)||0));
   const boundSiteId=String(asset?.sourceSiteId||asset?.siteId||'').trim();
-  const siteRows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
-  const flowSiteByBatchId=new Map(siteRows.filter(row=>row?.batchId&&row?.siteId)
-    .map(row=>[String(row.batchId),String(row.siteId)]));
+  const flowSiteByBatchId=inputIndex?inputIndex.flowSiteByBatchId:
+    new Map((Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[])
+      .filter(row=>row?.batchId&&row?.siteId).map(row=>[String(row.batchId),String(row.siteId)]));
   const nonTransferable=new Set(['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED']);
   const warehouseRemaining=new Map();
   let total=0;
@@ -5007,7 +5052,7 @@ function factoryInputWarehouseAvailability(countryId,resourceId,recipe,asset=nul
   return Number(total.toFixed(6));
 }
 
-function planFactoryInputRequests(countryId,plans){
+function planFactoryInputRequests(countryId,plans,inputIndex=null){
   const cid=canonicalCountry(countryId),network=netState(cid),groups=new Map();
   network.factoryInputRequests=Array.isArray(network.factoryInputRequests)?network.factoryInputRequests:[];
   for(const plan of plans||[]){
@@ -5020,13 +5065,15 @@ function planFactoryInputRequests(countryId,plans){
       if(!rid||coefficient===null||coefficient<=0)continue;
       const stockKey=quantityObjectKey(stock,rid);
       const factoryStock=stockKey===null?0:Math.max(0,num(stock[stockKey])||0);
-      const inbound=network.shipments.filter(row=>String(row?.shipmentType||'')==='FACTORY_INPUT'&&
-        String(row?.factoryId||'')===factoryId&&tok(row?.resourceId)===rid&&
-        ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(row?.status||'')))
-        .reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0);
+      const inbound=inputIndex
+        ?(inputIndex.requisitionInboundByFactoryResource.get(inputIndex.makeKey(factoryId,rid))||0)
+        :network.shipments.filter(row=>String(row?.shipmentType||'')==='FACTORY_INPUT'&&
+          String(row?.factoryId||'')===factoryId&&tok(row?.resourceId)===rid&&
+          ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(row?.status||'')))
+          .reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0);
       const requested=Math.max(0,capacity*coefficient-factoryStock-inbound);
       if(requested<=1e-9)continue;
-      const accessible=factoryInputWarehouseAvailability(cid,rid,plan.recipe,asset);
+      const accessible=factoryInputWarehouseAvailability(cid,rid,plan.recipe,asset,inputIndex);
       const row={plan,factoryId,resourceId:rid,coefficient,requestedQuantity:Number(requested.toFixed(6)),
         accessibleQuantity:accessible,inTransitQuantity:Number(inbound.toFixed(6)),factoryStock};
       if(!groups.has(rid))groups.set(rid,[]);
@@ -5035,7 +5082,7 @@ function planFactoryInputRequests(countryId,plans){
   }
   const created=[];
   for(const [rid,rows] of groups){
-    const sample=rows[0],available=factoryInputWarehouseAvailability(cid,rid,sample.plan.recipe,null);
+    const sample=rows[0],available=factoryInputWarehouseAvailability(cid,rid,sample.plan.recipe,null,inputIndex);
     const allocations=allocateFactoryInputProportionally(rows.map(row=>({
       factoryId:row.factoryId,requestedQuantity:row.requestedQuantity,
       accessibleQuantity:row.accessibleQuantity
@@ -5139,42 +5186,48 @@ function reconcileFactoryInputRequestDeliveries(countryId,plan,transferResult){
   return{updatedRequestCount:(plan?.requestIds||[]).length};
 }
 
-function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTargets=null){
+function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTargets=null,inputIndex=null){
   const cid=canonicalCountry(countryId),rs=resourceState(cid),n=netState(cid);
   const stock=asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:(asset.inputInventory={});
   const lots=Array.isArray(asset.inputBatchLots)?asset.inputBatchLots:(asset.inputBatchLots=[]);
   const capacity=Math.max(0,num(asset.capacityPerDay??asset.capacity??asset.productionCapacity??asset.throughput)||0);
   const transfers=[],blocked=[];
   if(!(capacity>1e-9))return{status:'BLOCKED',reason:'PRODUCTION_CAPACITY_UNAVAILABLE',transfers,blocked};
-  const batches=Array.isArray(rs.batches)?rs.batches:[];
+  const allBatches=Array.isArray(rs.batches)?rs.batches:[];
   const nonTransferable=new Set(['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED','TRANSFERRED_TO_FACTORY']);
   const boundSourceSiteId=String(asset?.sourceSiteId||asset?.siteId||'').trim();
   const siteFlowRows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
-  const siteFlowBatchIds=new Set(siteFlowRows.filter(row=>row?.batchId).map(row=>String(row.batchId)));
-  const flowSiteByBatchId=new Map(siteFlowRows.filter(row=>row?.batchId&&row?.siteId)
-    .map(row=>[String(row.batchId),String(row.siteId)]));
+  const siteFlowBatchIds=inputIndex?inputIndex.siteFlowBatchIds:
+    new Set(siteFlowRows.filter(row=>row?.batchId).map(row=>String(row.batchId)));
+  const flowSiteByBatchId=inputIndex?inputIndex.flowSiteByBatchId:
+    new Map(siteFlowRows.filter(row=>row?.batchId&&row?.siteId)
+      .map(row=>[String(row.batchId),String(row.siteId)]));
   for(const [rawId,rawCoefficient] of Object.entries(recipe?.inputs||{})){
-    const rid=tok(rawId),coefficient=num(rawCoefficient);
+    const rid=tok(rawId),coefficient=num(rawCoefficient),
+      batches=inputIndex?(inputIndex.batchesByResource.get(rid)||[]):
+        allBatches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid);
     if(!rid||coefficient===null||coefficient<=0){blocked.push({resourceId:rid||rawId,reason:'FACTORY_RECIPE_COEFFICIENT_INVALID'});continue;}
     const currentKey=quantityObjectKey(stock,rid),current=currentKey===null?0:Math.max(0,num(stock[currentKey])||0);
-    const inTransit=n.shipments.filter(row=>
-      ['FACTORY_INPUT','WAREHOUSE_TO_FACTORY','RAW_TO_FACTORY'].includes(String(row?.shipmentType||''))&&
-      String(row?.factoryId||'')===String(asset.id||asset.assetId||asset.projectId)&&tok(row?.resourceId)===rid&&
-      ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH','BLOCKED_BATCH_LEDGER_MISMATCH'].includes(String(row?.status||'')))
-      .reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity??row?.quantity)||0),0);
+    const inTransit=inputIndex
+      ?(inputIndex.transferInboundByFactoryResource.get(inputIndex.makeKey(asset.id||asset.assetId||asset.projectId,rid))||0)
+      :n.shipments.filter(row=>
+        ['FACTORY_INPUT','WAREHOUSE_TO_FACTORY','RAW_TO_FACTORY'].includes(String(row?.shipmentType||''))&&
+        String(row?.factoryId||'')===String(asset.id||asset.assetId||asset.projectId)&&tok(row?.resourceId)===rid&&
+        ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH','BLOCKED_BATCH_LEDGER_MISMATCH'].includes(String(row?.status||'')))
+        .reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity??row?.quantity)||0),0);
     const hasAllocation=allocationTargets&&Object.prototype.hasOwnProperty.call(allocationTargets,rid);
     const target=hasAllocation?
       Math.max(0,num(allocationTargets[rid])||0)+inTransit:Math.max(0,capacity*coefficient-current);
     let remaining=Math.max(0,target-inTransit);
     if(remaining<=1e-9)continue;
-    const candidates=batches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid&&
+    const candidates=batches.filter(batch=>
       !siteFlowBatchIds.has(String(batch?.batchId||''))&&
       !nonTransferable.has(String(batch?.status||'').toUpperCase())&&
       ['RAW','PROCESSED'].includes(factorySourceWarehouse(rs,batch).kind)&&
       Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9&&
       batchBelongsToBoundFactorySite(rs,batch,boundSourceSiteId,flowSiteByBatchId,cid))
       .sort((a,b)=>(num(a?.createdTurn)||0)-(num(b?.createdTurn)||0));
-    const routeManagedBatches=batches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid&&
+    const routeManagedBatches=batches.filter(batch=>
       siteFlowBatchIds.has(String(batch?.batchId||''))&&
       !nonTransferable.has(String(batch?.status||'').toUpperCase())&&
       Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9&&
@@ -5523,10 +5576,10 @@ function selectFactoryProductionRecipeForTurn(countryId,asset){
       selectionAuthority:'AVAILABLE_TRACKED_WAREHOUSE_BATCHES',candidateResourceCount:sources.length};
 }
 
-async function processPendingFactoryInputs(countryId){
+async function processPendingFactoryInputs(countryId,options={}){
   const cid=canonicalCountry(countryId),n=factoryCycleStore(cid),assets=factoryAssets(cid),
     completed=[],started=[],awaiting=[],blocked=[],transfers=[];
-  const employmentSummary=reconcileFactoryEmployment(cid);
+  const employmentSummary=options.employmentSummary||reconcileFactoryEmployment(cid);
   const nav=g.navigator||{},ua=String(nav.userAgent||'');
   const constrained=/Android|Mobile|iPhone|iPad/i.test(ua)||Number(nav.deviceMemory||8)<=4||Number(nav.hardwareConcurrency||8)<=4;
   const yieldEvery=constrained?3:8;
@@ -5557,6 +5610,9 @@ async function processPendingFactoryInputs(countryId){
     else if(outcome.status!=='PAUSED')blocked.push({factoryId:fid,reason:outcome.reason||'FACTORY_PRODUCTION_CYCLE_PAUSED',detail:outcome});
   }
 
+  // Index the post-completion ledgers once for the planning and transfer passes.
+  // The due-cycle pass above may have created finished-goods batches for this same turn.
+  const inputIndex=buildFactoryInputIndex(cid);
   // Requisition planning is country-wide and happens before any factory transfers stock.
   // This removes productionAssets ordering as an input-allocation advantage.
   const pendingPlans=[],planByFactory=new Map();
@@ -5590,7 +5646,7 @@ async function processPendingFactoryInputs(countryId){
     const plan={asset,factoryId:fid,first,recipe,gate,allocations:{},requestIds:[]};
     pendingPlans.push(plan);planByFactory.set(fid,plan);
   }
-  const requisitions=planFactoryInputRequests(cid,pendingPlans);
+  const requisitions=planFactoryInputRequests(cid,pendingPlans,inputIndex);
 
   for(const asset of assets){
     await yieldFactoryWork();
@@ -5603,7 +5659,7 @@ async function processPendingFactoryInputs(countryId){
     if(factoryCycleActive(prior)){
       if(prior.status==='PAUSED'&&factoryCycleDue(prior)){
         recipe=recipe||recipeFor(first,prior?.recipeId?{...asset,recipeId:prior.recipeId}:asset);
-        const result=transferFactoryInputsFromWarehouse(cid,asset,recipe,plan?.allocations||null);
+        const result=transferFactoryInputsFromWarehouse(cid,asset,recipe,plan?.allocations||null,inputIndex);
         feeder=result;transfers.push(...(result.transfers||[]));
         reconcileFactoryInputRequestDeliveries(cid,plan,result);
         const resumedMetrics=factoryProductionMetrics(asset,recipe,prior.cycleId);
@@ -5769,8 +5825,14 @@ async function executeSitePipeline(input={}){
   const hydrated=await endowment.hydrateCountry(cid);
   captureFactoryPipelineState('AFTER_COUNTRY_HYDRATION');
   if(hydrated?.status!=='APPLIED'||hydrated?.result?.accepted===false)return{status:'BLOCKED',reason:'COUNTRY_HYDRATION_NOT_COMMITTED',detail:hydrated};
-  const extractionPlan=planExtraction({countryId:cid,siteId:site.siteId,resourceId:rid,quantity:input.quantity,remainingReserve:input.remainingReserve});
-  if(extractionPlan?.status!=='PLANNED')return{status:'BLOCKED',reason:'INDUSTRIAL_EXTRACTION_PLAN_BLOCKED',siteId:site.siteId,detail:extractionPlan};
+  let extractionPlan=null;
+  // An explicit quantity or a requested simulation bootstrap keeps its existing
+  // caller-supplied planning semantics. For a real selected factory, planning is
+  // deferred until its live cycle capacity is known below.
+  if(input.autoCommissionFactory===true||input.quantity!==undefined&&input.quantity!==null){
+    extractionPlan=planExtraction({countryId:cid,siteId:site.siteId,resourceId:rid,quantity:input.quantity,remainingReserve:input.remainingReserve});
+    if(extractionPlan?.status!=='PLANNED')return{status:'BLOCKED',reason:'INDUSTRIAL_EXTRACTION_PLAN_BLOCKED',siteId:site.siteId,detail:extractionPlan};
+  }
   const countryState=state()?.resource?.[cid]||{},controllers=countryState.mineSiteControllers||{};
   const siteKey=String(site.siteId),controller=controllers[siteKey]||Object.values(controllers).find(x=>String(x?.siteReferenceKey||'')===siteKey);
   const linkedKeys=Array.isArray(controller?.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys.map(String).filter(Boolean):[];
@@ -5854,7 +5916,48 @@ async function executeSitePipeline(input={}){
     factoryCandidatesBeforeExtraction[0]?.asset||null;
   const selectedFactoryIdBeforeExtraction=String(selectedFactoryBeforeExtraction?.id||
     selectedFactoryBeforeExtraction?.assetId||selectedFactoryBeforeExtraction?.projectId||'').trim();
-  const extraction=await endowment.extractCountry(cid,keys);
+  if(!extractionPlan){
+    let requestedQuantity=num(input.quantity);
+    if(requestedQuantity===null&&selectedFactoryBeforeExtraction){
+      const capacity=Math.max(0,num(selectedFactoryBeforeExtraction.capacityPerDay??
+        selectedFactoryBeforeExtraction.capacity??selectedFactoryBeforeExtraction.productionCapacity??
+        selectedFactoryBeforeExtraction.throughput)||0);
+      if(capacity>0){
+        const utilityLimit=factoryUtilityProductionLimit(cid,selectedFactoryBeforeExtraction,capacity);
+        if(utilityLimit?.status!=='READY'||!(num(utilityLimit.allowedProduction)>0))
+          return{status:'BLOCKED',reason:'SELECTED_FACTORY_UTILITY_CAPACITY_UNAVAILABLE',
+            countryId:cid,siteId:site.siteId,factoryId:selectedFactoryIdBeforeExtraction,
+            utilityLimit:clone(utilityLimit||{})};
+        const effectiveDailyCapacity=Math.max(0,num(utilityLimit.allowedProduction)||0);
+        const recipe=recipeFor(rid,selectedFactoryBeforeExtraction);
+        const cycleDays=Math.max(1,num(recipe?.cycleDays)||num(selectedFactoryBeforeExtraction.cycleDays)||1);
+        if(effectiveDailyCapacity>0)requestedQuantity=effectiveDailyCapacity*cycleDays;
+      }
+    }
+    extractionPlan=planExtraction({countryId:cid,siteId:site.siteId,resourceId:rid,
+      quantity:requestedQuantity===null?undefined:requestedQuantity,remainingReserve:input.remainingReserve});
+    if(extractionPlan?.status!=='PLANNED')
+      return{status:'BLOCKED',reason:'INDUSTRIAL_EXTRACTION_PLAN_BLOCKED',siteId:site.siteId,detail:extractionPlan};
+  }
+  // Divide the one-cycle input allowance across all physical occurrences linked to
+  // this site/resource. This keeps a multi-occurrence site within the selected
+  // factory's total cycle input instead of granting the full allowance to each row.
+  const reserveRegistry=g.__OmegaResourceReserveRegistry||g.OmegaResourceReserveRegistry;
+  const occurrenceWeights=keys.map(key=>{
+    const capacity=reserveRegistry?.getCapacityForOccurrence?.(key)||{};
+    return Math.max(0,num(capacity.activeRate)||num(capacity.dailyRate)||num(capacity.nominalRate)||0);
+  });
+  const weightTotal=occurrenceWeights.reduce((sum,value)=>sum+value,0);
+  const quantityByOccurrence={};
+  let quantityAssigned=0;
+  keys.forEach((key,index)=>{
+    const share=index===keys.length-1
+      ?Math.max(0,Number(extractionPlan.approvedQuantity)-quantityAssigned)
+      :Number(extractionPlan.approvedQuantity)*(weightTotal>0?occurrenceWeights[index]/weightTotal:1/Math.max(1,keys.length));
+    quantityByOccurrence[key]=share;
+    quantityAssigned+=share;
+  });
+  const extraction=await endowment.extractCountry(cid,keys,{quantityByOccurrence});
   const extractionResult=extraction?.result||extraction||{};
   const records=Array.isArray(extractionResult?.records)?extractionResult.records:[];
   const record=records.find(x=>keys.includes(String(x?.occurrenceKey||''))&&canonicalCountry(x?.countryId||cid)===cid&&x?.producedBatch);
@@ -6914,7 +7017,7 @@ function runCountryTurn(countryValue){
     await loadCatalog();
     const shipments=await advanceShipments(cid);
     const projects=await advanceProjects(cid);
-    const factory=await processPendingFactoryInputs(cid);
+    const factory=await processPendingFactoryInputs(cid,{employmentSummary:projects.employment});
     return{status:'COMPLETED',countryId:cid,turn:turn(),shipments,projects,factory,
       employment:factory.employmentSummary||null};
   });

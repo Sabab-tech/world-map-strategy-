@@ -53,7 +53,9 @@ function txFactory(state,countryId){
         cur=cur[parts[i]];
       }
       cur[parts.at(-1)]=value;
-    }
+    },
+    // Match the production transaction API used by the endowment handler.
+    setOwned(path,value){return this.set(path,value);}
   };
 }
 

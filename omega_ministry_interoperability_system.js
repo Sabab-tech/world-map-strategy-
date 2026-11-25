@@ -440,6 +440,10 @@
       this.requestLedger=new Map();
       this.events=new Map();
       this.commands=new Map();
+      // Only recent in-process extraction results are retained for idempotent retries.
+      // Durable command receipts keep a compact summary instead of duplicating full
+      // inventory/batch records that already live in authoritative country state.
+      this.transientCommandResults=new Map();
       this.integrityConflicts=[];
       this.commandHandlers=new Map();
       this._receivedMessageIds=new Set();
@@ -570,10 +574,10 @@
       return clone(this.integrityConflicts.filter(row=>!country||row.countryId===country));
     }
 
-    _providerValue(countryId,path,context,observed){
+    _providerValue(countryId,path,context,observed,providerOptions={}){
       if(this.provider&&typeof this.provider.describe==='function'){
         this.metrics.providerReads+=1;
-        const d=this.provider.describe(countryId,path,{currentTurn:this.lastTurn});
+        const d=this.provider.describe(countryId,path,providerOptions);
         if(d.availability===AVAILABILITY.AVAILABLE||d.availability===AVAILABILITY.ESTIMATED||d.availability===AVAILABILITY.STALE||d.availability===AVAILABILITY.INVALID){
           return d;
         }
@@ -1034,6 +1038,13 @@
       const execution=packet.domainExecution||{};
       const context=packet.context||{};
       const observed=execution.observedInputs||{};
+      // Reuse one authoritative ministry revision and memoize each top-domain
+      // content fingerprint across the facts in this publication.
+      const revisionCache=context.revisionCache instanceof Map?context.revisionCache:new Map();
+      const describeOptions={currentTurn:this.lastTurn,revisionCache};
+      const publishedSourceRevision=this.provider?.getRevision?.(countryId,ministryId,{revisionCache})??null;
+      const stateRevision=publishedSourceRevision!==null?String(publishedSourceRevision):
+        (execution.stateRevision!==undefined&&execution.stateRevision!==null?String(execution.stateRevision):null);
       const configuredPaths=[...(Array.isArray(engine?.inputs)?engine.inputs:[]),...(STANDARD_PUBLIC_PATHS[ministryId]||[])];
       const isOwnedPath=path=>{
         const p=String(path||'');
@@ -1047,11 +1058,10 @@
       const publishedFacts={};
       const dataGaps=[];
       for(const path of paths){
-        const described=this._providerValue(countryId,path,context,observed);
+        const described=this._providerValue(countryId,path,context,observed,describeOptions);
         const visibility=this._factVisibility(ministryId,path);
-        const sourceRevision=this.provider?.getRevision?.(countryId,ministryId)??null;
         const fact={
-          value:described.value===undefined?null:clone(described.value),
+          value:described.value===undefined?null:described.value,
           availability:described.availability||AVAILABILITY.UNAVAILABLE,
           availabilityReason:described.availabilityReason||null,
           visibility,
@@ -1060,7 +1070,7 @@
           path,
           simulationTurn:turn,
           sourceTurn:described.provenance?.simulationTurn??turn,
-          stateRevision:sourceRevision,
+          stateRevision:publishedSourceRevision,
           publishedAt:Date.now(),
           timestampIsTelemetry:true,
           provenance:clone(described.provenance||null),
@@ -1072,7 +1082,6 @@
         });
       }
 
-      const stateRevision=this._sourceRevision(countryId,ministryId,context,execution);
       const runtimeStatus=packet.runtimeState||{};
       const policyCount=Object.keys(publishedFacts).filter(k=>k.startsWith('store.')).length;
       const projectFact=publishedFacts['projects.registry'];
@@ -1299,7 +1308,7 @@
       return clone(list.slice(-10));
     }
 
-    publishState(ministryId,packet={}){
+    publishState(ministryId,packet={},options={}){
       const id=String(ministryId||'');
       if(!this.ids.includes(id))throw new Error('UNKNOWN_MINISTRY:'+id);
       const snapshot=this._compilePublicSnapshot(id,packet);
@@ -1314,6 +1323,10 @@
         stateRevision:snapshot.stateRevision,
         dataAvailability:snapshot.dataAvailability
       },snapshot.simulationTurn);
+      if(options.returnPeerState===false){
+        return{status:'PUBLISHED',ministryId:id,countryId:snapshot.countryId,
+          simulationTurn:snapshot.simulationTurn,stateRevision:snapshot.stateRevision};
+      }
       return this.getPeerState(id,id,snapshot.countryId,{currentTurn:snapshot.simulationTurn});
     }
 
@@ -1641,11 +1654,31 @@
           throw new Error('COMMAND_ID_COLLISION');
         }
         this.metrics.duplicate+=1;
-        return {...clone(previousCommand),duplicate:true,idempotentReplay:true};
+        const replay=clone(previousCommand);
+        const transientResult=this.transientCommandResults.get(commandId);
+        if(transientResult!==undefined)replay.result=clone(transientResult);
+        replay.duplicate=true;
+        replay.idempotentReplay=true;
+        return replay;
       }
 
+      // Keep the full payload only in the in-flight `command` passed to the
+      // authoritative handler. The durable command ledger is an idempotency
+      // receipt; retaining another deep copy of large inventory/resource payloads
+      // makes every save grow with historical command input size.
       const row={
-        ...clone(command),
+        schemaVersion:command.schemaVersion,
+        commandId:command.commandId,
+        commandType:command.commandType,
+        actionId:command.actionId,
+        sourceMinistryId:command.sourceMinistryId,
+        countryId:command.countryId,
+        simulationTurn:command.simulationTurn,
+        stateOwnerMinistryId:command.stateOwnerMinistryId,
+        correlationId:command.correlationId,
+        causationId:command.causationId,
+        provenance:clone(command.provenance||null),
+        payloadOmitted:true,
         contentFingerprint:commandContentFingerprint,
         status:'CREATED',
         statusHistory:[{status:'CREATED',simulationTurn:turn}],
@@ -1672,7 +1705,7 @@
           ?this.provider.root()
           :(global.Game?.state||global.gameState||global.Omega?.World?.state||null);
         const stateTransaction=transactionFactory?.create
-          ? transactionFactory.create(handler.ownerMinistry,country,turn,commandId,authoritativeState,{commandType})
+          ? transactionFactory.create(handler.ownerMinistry,country,turn,commandId,authoritativeState,{commandType,includeOperationValues:false})
           : null;
         if(!stateTransaction){
           throw new Error('AUTHORITATIVE_STATE_TRANSACTION_UNAVAILABLE');
@@ -1736,7 +1769,21 @@
         }
         const stagedWrites=Array.isArray(stateTransaction?.operations)?stateTransaction.operations.length:0;
         const intentionalNoWrite=result?.noStateChangeAccepted===true||result?.duplicate===true||result?.idempotent===true||options.allowNoStateChange===true;
-        row.result=clone(result);
+        const compactDurableResult=commandType==='OMEGA_RESOURCE_EXTRACT_TICK'&&result&&typeof result==='object'
+          ?{
+            accepted:result.accepted!==false,
+            countryId:result.countryId||country,
+            simulationTurn:result.simulationTurn??turn,
+            extracted:Number(result.extracted)||0,
+            replayed:Number(result.replayed)||0,
+            blocked:Number(Array.isArray(result.blocked)?result.blocked.length:result.blocked)||0,
+            recordCount:Array.isArray(result.records)?result.records.length:0,
+            successfulRecordCount:Array.isArray(result.records)
+              ?result.records.filter(record=>Number(record?.approvedQuantity??record?.quantity)>0).length:0,
+            resultPayloadOmitted:true
+          }
+          :null;
+        row.result=compactDurableResult||clone(result);
         row.stateChanged=Boolean(row.transaction?.changed);
         row.stateWriteCount=stagedWrites;
         row.eventsStaged=stagedEvents.length+(result?.eventType?1:0);
@@ -1746,7 +1793,8 @@
         if(row.status==='ACCEPTED_NO_STATE_WRITE'){
           row.reason='NO_AUTHORITATIVE_STATE_WRITE';
           row.result={accepted:false,code:'NO_AUTHORITATIVE_STATE_WRITE',reason:'NO_AUTHORITATIVE_STATE_WRITE',
-            handlerResult:clone(result),warning:'The handler acknowledged the command but staged no authoritative state write.'};
+            handlerResult:compactDurableResult||clone(result),
+            warning:'The handler acknowledged the command but staged no authoritative state write.'};
           this.metrics.noStateWrites+=1;
         }
         if(row.transaction?.afterRevision)row.stateRevisionAfter=row.transaction.afterRevision;
@@ -1774,7 +1822,20 @@
         }else{
           row.eventsDiscarded=eventsToPublish.length;
         }
-        return clone(row);
+        if(commandType==='OMEGA_RESOURCE_EXTRACT_TICK'){
+          this.transientCommandResults.set(commandId,result);
+          const transientLimit=Math.min(8,Math.max(1,this.maxHistory));
+          while(this.transientCommandResults.size>transientLimit){
+            const oldest=this.transientCommandResults.keys().next().value;
+            if(oldest===undefined)break;
+            this.transientCommandResults.delete(oldest);
+          }
+        }
+        const response=clone(row);
+        // Preserve the original synchronous dispatch contract for the active caller.
+        // The copy returned by getCommand()/save contains only the compact receipt.
+        if(commandType==='OMEGA_RESOURCE_EXTRACT_TICK')response.result=clone(result);
+        return response;
       }catch(error){
         const code=String(error?.code||error?.message||error);
         row.status='FAILED';
@@ -1852,6 +1913,9 @@
         event.browserEventError=String(error?.message||error);
       }
       this._invalidateKnowledgeCache();
+      // High-volume internal publishers that discard the returned event should not
+      // deep-clone the complete payload a second time after it was stored and sent.
+      if(options.returnSummary===true)return{eventId,eventType:type,countryId:country,simulationTurn:turn};
       return clone(event);
     }
 

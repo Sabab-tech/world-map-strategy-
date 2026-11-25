@@ -393,11 +393,21 @@ function provisionSimulationInfrastructure(countryId){
     rootState.transport=rootState.transport||{};
     const t=rootState.transport[countryId]||(rootState.transport[countryId]={});
     t.infrastructure=t.infrastructure||{};
-    t.infrastructure.roads=t.infrastructure.roads||{capacityPerDay:50000,quality:.9};
-    t.infrastructure.rail=t.infrastructure.rail||{capacityPerDay:120000,quality:.8};
-    t.infrastructure.ports=t.infrastructure.ports||{capacityPerDay:200000,quality:.9};
-    t.infrastructure.bridges=t.infrastructure.bridges||{capacityPerDay:50000,quality:.8};
-    t.infrastructure.pipelines=t.infrastructure.pipelines||{capacityPerDay:400000,quality:.8};
+    const ensureMinimumTransportCapacity=(key,capacityPerDay,quality)=>{
+      const row=t.infrastructure[key]&&typeof t.infrastructure[key]==='object'
+        ?t.infrastructure[key]:(t.infrastructure[key]={});
+      const existingCapacity=Number(row.capacityPerDay);
+      const existingQuality=Number(row.quality);
+      row.capacityPerDay=Math.max(Number.isFinite(existingCapacity)?existingCapacity:0,capacityPerDay);
+      row.quality=Math.max(Number.isFinite(existingQuality)?existingQuality:0,quality);
+      row.authority=row.authority||'EXHAUSTIVE_TEST_FIXTURE';
+      row.simulationOnly=true;
+    };
+    ensureMinimumTransportCapacity('roads',50000,.9);
+    ensureMinimumTransportCapacity('rail',120000,.8);
+    ensureMinimumTransportCapacity('ports',200000,.9);
+    ensureMinimumTransportCapacity('bridges',50000,.8);
+    ensureMinimumTransportCapacity('pipelines',400000,.8);
     t.infrastructure.utilitySupply={electricityMWhPerDay:1000000,waterM3PerDay:1000000,
       authority:'EXHAUSTIVE_TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]};
     rootState.economy=rootState.economy||{};
@@ -407,6 +417,39 @@ function provisionSimulationInfrastructure(countryId){
     e.laborForce=Math.max(Number(e.laborForce)||0,1000000);
     e.unemployment_rate=10;
   }
+}
+async function provisionSiteTransportFixture(site){
+  const request={countryId:site.countryId,siteId:site.siteId,quantity:1};
+  let preview=await industry.previewSiteTransport(request);
+  if(preview?.status==='READY')return{status:'READY',provisioned:[]};
+  if(preview?.reason!=='TRANSPORT_FLEET_UNAVAILABLE')
+    return{status:preview?.status||'BLOCKED',reason:preview?.reason||'SITE_ROUTE_NOT_READY',preview};
+  const zeroFleetLegs=(Array.isArray(preview.transportTypes)?preview.transportTypes:[])
+    .filter(row=>Number(row.count)===0);
+  if(!zeroFleetLegs.length)
+    return{status:'BLOCKED',reason:'ZERO_FLEET_ROUTE_HAS_NO_DERIVED_TRANSPORT_REQUIREMENT',preview};
+  const provisioned=[];
+  for(const leg of zeroFleetLegs){
+    const mode=String(leg.transportType||'').trim().toLowerCase();
+    const unit=mode==='pipeline'?'PIPELINE_LINES':'TRANSPORT_VEHICLES';
+    const required=Number(mode==='pipeline'?leg.requiredLineCount:leg.requiredVehicleCount);
+    if(!mode||!Number.isFinite(required)||required<=0)
+      return{status:'BLOCKED',reason:'SITE_ROUTE_DID_NOT_DERIVE_REQUIRED_FLEET_COUNT',
+        transportType:mode,unit,leg,preview};
+    const count=Math.ceil(required);
+    const result=industry.setTransportFleet({
+      countryId:site.countryId,siteId:site.siteId,transportType:mode,count
+    });
+    if(result?.status!=='APPLIED')
+      return{status:'BLOCKED',reason:'TEST_SITE_TRANSPORT_FLEET_PROVISION_FAILED',
+        transportType:mode,count,result,preview};
+    provisioned.push({transportType:mode,count,unit,authority:'TEST_ONLY_DERIVED_FROM_CANONICAL_ROUTE_REQUIREMENT'});
+  }
+  preview=await industry.previewSiteTransport(request);
+  if(preview?.status!=='READY')
+    return{status:'BLOCKED',reason:'TEST_SITE_TRANSPORT_ROUTE_NOT_READY_AFTER_FLEET_PROVISION',
+      provisioned,preview};
+  return{status:'READY',provisioned,route:preview};
 }
 function liveCountryState(countryId){return game.state.resource?.[countryId]||{};}
 function flowFor(countryId,batchId){
@@ -435,9 +478,16 @@ for(let siteIndex=0;siteIndex<sites.length;siteIndex++){
   game.state.simulation.playerCountryId=site.countryId;
   game.state.simulation.session=game.state.simulation.session||{};
   game.state.simulation.session.playerCountryId=site.countryId;
+  const transportFixture=await provisionSiteTransportFixture(site);
+  if(transportFixture.status!=='READY'){
+    failures.push({siteId:site.siteId,countryId:site.countryId,resourceId:site.resourceId,
+      stage:'TRANSPORT_FIXTURE',status:transportFixture.status,reason:transportFixture.reason,
+      detail:transportFixture});
+    continue;
+  }
   const result=await industry.executeSitePipeline({
     countryId:site.countryId,siteId:site.siteId,resourceId:site.resourceId,
-    quantity:1,autoCommissionFactory:true,transportMode:'rail'
+    quantity:1,autoCommissionFactory:true
   });
   if(result?.status!=='IN_TRANSIT'){
     failures.push({siteId:site.siteId,countryId:site.countryId,resourceId:site.resourceId,

@@ -30,6 +30,7 @@
   const MAX_PARTICIPANTS_PER_SLICE=4;
   const MAX_EVENT_HISTORY=2000;
   const MAX_COMMAND_HISTORY=2000;
+  const saveProfileNow=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
 
   const PHASES=Object.freeze([
     'INPUT',
@@ -135,7 +136,89 @@
       const key=keys[index];
       yield* emit(JSON.stringify(key));
       yield* emit(':');
-      for(const chunk of stableJsonChunks(snapshot[key],false,false))yield* emit(chunk);
+      let partChars=0;
+      const profile=global.__OMEGA_SIMULATION_SAVE_PROFILE__||null;
+      if(profile&&(key==='worldState'||key==='interoperability')){
+        // Profile large persistent branches while preserving the exact JSON
+        // order and bytes used by the save checksum and stored snapshot.
+        const pathMetric=key==='worldState'?'worldStatePathChars':'interoperabilityPathChars';
+        const pathMetrics=profile[pathMetric]||(profile[pathMetric]={});
+        const pathStack=[];
+        const emitWorldChunk=function*(chunk){
+          partChars+=chunk.length;
+          for(const entry of pathStack){
+            entry.chars+=chunk.length;
+            pathMetrics[entry.path]=entry.chars;
+          }
+          yield* emit(chunk);
+        };
+        const profiledWorldChunks=function*(value,path,depth){
+          if(depth<=0||value===null||typeof value!=='object'||Array.isArray(value)||value instanceof Date){
+            for(const chunk of stableJsonChunks(value,false,false))yield* emitWorldChunk(chunk);
+            return;
+          }
+          const childKeys=Object.keys(value).filter(childKey=>childKey!=='__proto__'&&
+            childKey!=='constructor'&&typeof value[childKey]!=='function'&&
+            value[childKey]!==undefined).sort();
+          const entry={path,chars:0};
+          pathStack.push(entry);
+          yield* emitWorldChunk('{');
+          for(let childIndex=0;childIndex<childKeys.length;childIndex++){
+            if(childIndex)yield* emitWorldChunk(',');
+            const childKey=childKeys[childIndex];
+            yield* emitWorldChunk(JSON.stringify(childKey));
+            yield* emitWorldChunk(':');
+            yield* profiledWorldChunks(value[childKey],path+'.'+childKey,depth-1);
+          }
+          yield* emitWorldChunk('}');
+          pathStack.pop();
+        };
+        yield* profiledWorldChunks(snapshot[key],key,3);
+      }else if(profile&&key==='interoperability'){
+        // Profile persisted interoperability branches in the same streaming pass.
+        // Counters add no clone or second serialization of the ledger.
+        profile.interoperabilityPathChars=profile.interoperabilityPathChars||{};
+        const pathStack=[];
+        const emitInteropChunk=function*(chunk){
+          partChars+=chunk.length;
+          for(const entry of pathStack){
+            entry.chars+=chunk.length;
+            profile.interoperabilityPathChars[entry.path]=entry.chars;
+          }
+          yield* emit(chunk);
+        };
+        const profiledInteropChunks=function*(value,path,depth){
+          if(depth<=0||value===null||typeof value!=='object'||Array.isArray(value)||value instanceof Date){
+            for(const chunk of stableJsonChunks(value,false,false))yield* emitInteropChunk(chunk);
+            return;
+          }
+          const childKeys=Object.keys(value).filter(childKey=>childKey!=='__proto__'&&
+            childKey!=='constructor'&&typeof value[childKey]!=='function'&&
+            value[childKey]!==undefined).sort();
+          const entry={path,chars:0};
+          pathStack.push(entry);
+          yield* emitInteropChunk('{');
+          for(let childIndex=0;childIndex<childKeys.length;childIndex++){
+            if(childIndex)yield* emitInteropChunk(',');
+            const childKey=childKeys[childIndex];
+            yield* emitInteropChunk(JSON.stringify(childKey));
+            yield* emitInteropChunk(':');
+            yield* profiledInteropChunks(value[childKey],path+'.'+childKey,depth-1);
+          }
+          yield* emitInteropChunk('}');
+          pathStack.pop();
+        };
+        yield* profiledInteropChunks(snapshot[key],'interoperability',5);
+      }else{
+        for(const chunk of stableJsonChunks(snapshot[key],false,false)){
+          partChars+=chunk.length;
+          yield* emit(chunk);
+        }
+      }
+      if(profile){
+        profile.rootPartChars=profile.rootPartChars||{};
+        profile.rootPartChars[key]=partChars;
+      }
     }
     hash=updateChecksumHash(hash,'}');
     const checksum=(hash>>>0).toString(16).padStart(8,'0');
@@ -151,6 +234,8 @@
     let originalBytes=0;
     const stream=new global.ReadableStream({
       pull(controller){
+        const profile=global.__OMEGA_SIMULATION_SAVE_PROFILE__||null;
+        const startedAt=profile?saveProfileNow():0;
         try{
           let text='';
           while(text.length<65536){
@@ -165,6 +250,15 @@
           }
           const bytes=encoder.encode(text);originalBytes+=bytes.byteLength;controller.enqueue(bytes);
         }catch(error){controller.error(error);}
+        finally{
+          if(profile){
+            const elapsed=saveProfileNow()-startedAt;
+            profile.jsonStreamPullCount=(Number(profile.jsonStreamPullCount)||0)+1;
+            profile.jsonStreamPullMs=(Number(profile.jsonStreamPullMs)||0)+elapsed;
+            profile.jsonStreamMaxPullMs=Math.max(Number(profile.jsonStreamMaxPullMs)||0,elapsed);
+            profile.jsonStreamBytes=originalBytes;
+          }
+        }
       },
       cancel(){try{iterator.return?.();}catch(_){}}
     });
@@ -179,6 +273,18 @@
   }
 
   function createSaveSnapshot(runtime,options={},referenceWorldState=false){
+    const profile=global.__OMEGA_SIMULATION_SAVE_PROFILE__||null;
+    const totalStartedAt=profile?saveProfileNow():0;
+    const timed=(name,task)=>{
+      if(!profile)return task();
+      const startedAt=saveProfileNow();
+      try{return task();}
+      finally{
+        const elapsed=saveProfileNow()-startedAt;
+        profile.snapshotParts=profile.snapshotParts||{};
+        profile.snapshotParts[name]=Number((Number(profile.snapshotParts[name]||0)+elapsed).toFixed(2));
+      }
+    };
     const snapshot={
       schemaVersion:SESSION_VERSION,
       runtimeVersion:VERSION,
@@ -187,22 +293,23 @@
       // saveSlot holds the simulation save barrier while a bounded JSON
       // stream reads the authoritative root. Public saveState() keeps the
       // detached deep-clone contract by default.
-      worldState:referenceWorldState?runtime.world.state:runtime.world.snapshot(),
-      commands:runtime.commandQueue.snapshot(),
-      events:runtime.events.snapshot(),
-      ministryRuntime:runtime.ministryRuntime?.saveState?.()||null,
-      interoperability:runtime.interoperability?.saveState?.()||null,
-      worldEngine:runtime.worldEngine?.exportSaveState?.({authoritativeState:true})||null
+      worldState:timed('worldState',()=>referenceWorldState?runtime.world.state:runtime.world.snapshot()),
+      commands:timed('commands',()=>runtime.commandQueue.snapshot()),
+      events:timed('events',()=>runtime.events.snapshot()),
+      ministryRuntime:timed('ministryRuntime',()=>runtime.ministryRuntime?.saveState?.({includeInteroperability:false})||null),
+      interoperability:timed('interoperability',()=>runtime.interoperability?.saveState?.()||null),
+      worldEngine:timed('worldEngine',()=>runtime.worldEngine?.exportSaveState?.({authoritativeState:true})||null)
     };
     // Phase 6 contributes only a compact calculation-provenance snapshot.
     // It is an optional extension outside the authoritative world tree, so older
     // saves remain compatible and no country/economy state is mutated.
     const phase6Api=global.OmegaPhase6NationalCapacity||global.Omega?.Phase6NationalCapacity;
-    const phase6Snapshot=phase6Api?.saveState?.();
+    const phase6Snapshot=timed('phase6NationalCapacity',()=>phase6Api?.saveState?.());
     if(phase6Snapshot)snapshot.phase6NationalCapacity=clone(phase6Snapshot);
     // Volatile diagnostics duplicate large participant results already held in
     // runtime memory. Callers can omit them from routine durable autosaves.
     if(options.includeDiagnostics!==false)snapshot.diagnostics=runtime.diagnostics();
+    if(profile)profile.snapshotCreationMs=Number((saveProfileNow()-totalStartedAt).toFixed(2));
     return snapshot;
   }
 
@@ -343,7 +450,14 @@
         // a Blob before compression; a 197-country world could exhaust the
         // Chromium renderer before IndexedDB was even reached.
         const compressedStream=source.stream.pipeThrough(new global.CompressionStream('gzip'));
+        const compressionStartedAt=global.__OMEGA_SIMULATION_SAVE_PROFILE__?saveProfileNow():0;
         const compressedBlob=await new global.Response(compressedStream).blob();
+        const saveProfile=global.__OMEGA_SIMULATION_SAVE_PROFILE__||null;
+        if(saveProfile){
+          saveProfile.compressionWallMs=Number((saveProfileNow()-compressionStartedAt).toFixed(2));
+          saveProfile.jsonSerializationMs=Number((Number(saveProfile.jsonStreamPullMs)||0).toFixed(2));
+          saveProfile.jsonStreamBytes=source.originalBytes;
+        }
         const value=new global.Blob([SAVE_COMPRESSION_PREFIX,compressedBlob],{
           type:'application/x-omega-simulation-save'
         });
@@ -851,11 +965,16 @@
         :{type:'OMEGA_SIMULATION_TURN_COMMITTED',detail:clone(event)};
       const turn=Math.max(0,finite(event?.simulationTurn,0));
       const results=[];
+      const profile=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true?global.__OMEGA_SIMULATION_STEP_PROFILE__:null;
+      const now=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
       global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=true;
       let participantSliceCount=0;
       try{
       for(const entry of rows){
         if(this.turnParticipants.get(entry.id)!==entry)continue;
+        const startedAt=profile?now():0;
+        const timing=profile?{id:entry.id,priority:entry.priority,sequence:entry.sequence,status:'RUNNING'}:null;
+        if(timing){profile.participants.push(timing);profile.activeParticipant=entry.id;}
         try{
           const value=await entry.handler.call(global,browserEvent,{
             turn,
@@ -869,8 +988,10 @@
           });
           this.world.state.simulation.subsystemTurns=this.world.state.simulation.subsystemTurns||{};
           this.world.state.simulation.subsystemTurns[entry.id]=turn;
+          if(timing){timing.status='COMPLETED';timing.durationMs=Number((now()-startedAt).toFixed(2));profile.activeParticipant=null;}
           results.push({id:entry.id,turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
         }catch(error){
+          if(timing){timing.status='FAILED';timing.durationMs=Number((now()-startedAt).toFixed(2));timing.error=String(error?.message||error);profile.activeParticipant=null;}
           const failure={id:entry.id,turn,status:'FAILED',error:String(error?.message||error)};
           results.push(failure);
           // Stop the world immediately rather than silently let one sector miss a day.
@@ -929,12 +1050,19 @@
           return a.priority-b.priority||a.sequence-b.sequence;
         });
       const results=[];
+      const profile=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true?global.__OMEGA_SIMULATION_STEP_PROFILE__:null;
+      const now=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
       for(const entry of rows){
         if(this.turnFinalizers.get(entry.id)!==entry)continue;
+        const startedAt=profile?now():0;
+        const timing=profile?{id:entry.id,priority:entry.priority,sequence:entry.sequence,status:'RUNNING'}:null;
+        if(timing){profile.finalizers.push(timing);profile.activeFinalizer=entry.id;}
         try{
           const value=await entry.handler.call(global,context);
+          if(timing){timing.status='COMPLETED';timing.durationMs=Number((now()-startedAt).toFixed(2));profile.activeFinalizer=null;}
           results.push({id:entry.id,turn:context.turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
         }catch(error){
+          if(timing){timing.status='FAILED';timing.durationMs=Number((now()-startedAt).toFixed(2));timing.error=String(error?.message||error);profile.activeFinalizer=null;}
           const failure={id:entry.id,turn:context.turn,status:'FAILED',error:String(error?.message||error)};
           results.push(failure);
           this.status='ERROR';
@@ -1012,13 +1140,25 @@
         if(worldEngine?.setAuthoritativeState){
           worldEngine.setAuthoritativeState(this.world.state);
         }
+        const profile=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true?global.__OMEGA_SIMULATION_STEP_PROFILE__:null;
+        const profileNow=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
         if(worldEngine?.processSimulationTick){
+          const startedAt=profile?profileNow():0;
           worldResult=worldEngine.processSimulationTick(stepDurationMs,turn);
+          if(profile)profile.simulateComponents.push({name:'worldEngine.processSimulationTick',status:'COMPLETED',durationMs:Number((profileNow()-startedAt).toFixed(2))});
         }
 
         let ministryResult=null;
         if(typeof this.ministryPump==='function'){
-          ministryResult=await this.ministryPump({turn,stepDurationMs,countryId:this.getPlayerCountryId(),state:this.world.state});
+          const startedAt=profile?profileNow():0;
+          if(profile)profile.activeSimulateComponent='ministryPump';
+          try{
+            ministryResult=await this.ministryPump({turn,stepDurationMs,countryId:this.getPlayerCountryId(),state:this.world.state});
+            if(profile)profile.simulateComponents.push({name:'ministryPump',status:'COMPLETED',durationMs:Number((profileNow()-startedAt).toFixed(2))});
+          }catch(error){
+            if(profile)profile.simulateComponents.push({name:'ministryPump',status:'FAILED',durationMs:Number((profileNow()-startedAt).toFixed(2)),error:String(error?.message||error)});
+            throw error;
+          }finally{if(profile)profile.activeSimulateComponent=null;}
         }
 
         return {worldResult,ministryResult};
@@ -1326,11 +1466,32 @@
       this.lastError=null;
       const finalizersAtTurnStart=[...this.turnFinalizers.values()];
       const commandResults=[];
+      let turnProfile=null;
+      const profileNow=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
       try{
         this.world.hydrateCompatibility();
         const time=this.clock.advanceTurn();
         const turn=time.turn;
         this.status='RUNNING';
+        const profiling=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
+        turnProfile=profiling?{
+          turn,status:'RUNNING',startedAt:profileNow(),phases:[],participants:[],finalizers:[],
+          simulateComponents:[],activePhase:null,activeParticipant:null,activeFinalizer:null,activeSimulateComponent:null
+        }:null;
+        if(turnProfile)global.__OMEGA_SIMULATION_STEP_PROFILE__=turnProfile;
+        const runProfiledPhase=async(name,task)=>{
+          if(!turnProfile)return task();
+          const startedAt=profileNow(),row={name,status:'RUNNING'};
+          turnProfile.phases.push(row);turnProfile.activePhase=name;
+          try{
+            const result=await task();
+            row.status='COMPLETED';row.durationMs=Number((profileNow()-startedAt).toFixed(2));
+            turnProfile.activePhase=null;return result;
+          }catch(error){
+            row.status='FAILED';row.durationMs=Number((profileNow()-startedAt).toFixed(2));row.error=String(error?.message||error);
+            turnProfile.activePhase=null;throw error;
+          }
+        };
 
         const commands=this.commandQueue.drain();
         for(const command of commands)this.commandQueue.record({...command,status:'PROCESSING',simulationTurn:turn});
@@ -1344,15 +1505,15 @@
         };
 
         const phaseResults={};
-        const inputResult=await this.phaseHandlers.get('INPUT')(context);
+        const inputResult=await runProfiledPhase('INPUT',()=>this.phaseHandlers.get('INPUT')(context));
         commandResults.push(...(Array.isArray(inputResult)?inputResult:[]));
         phaseResults.INPUT=clone(inputResult);
 
-        phaseResults.VALIDATE=clone(await this.phaseHandlers.get('VALIDATE')({...context,commandResults}));
-        phaseResults.SIMULATE=clone(await this.phaseHandlers.get('SIMULATE')({...context,commandResults}));
-        phaseResults.COMMIT=clone(await this.phaseHandlers.get('COMMIT')({...context,commandResults,simulationResult:phaseResults.SIMULATE}));
-        phaseResults.PUBLISH=clone(await this.phaseHandlers.get('PUBLISH')({...context,commandResults,phaseResults}));
-        phaseResults.CHECKPOINT=clone(await this.phaseHandlers.get('CHECKPOINT')({...context,commandResults,phaseResults}));
+        phaseResults.VALIDATE=clone(await runProfiledPhase('VALIDATE',()=>this.phaseHandlers.get('VALIDATE')({...context,commandResults})));
+        phaseResults.SIMULATE=clone(await runProfiledPhase('SIMULATE',()=>this.phaseHandlers.get('SIMULATE')({...context,commandResults})));
+        phaseResults.COMMIT=clone(await runProfiledPhase('COMMIT',()=>this.phaseHandlers.get('COMMIT')({...context,commandResults,simulationResult:phaseResults.SIMULATE})));
+        phaseResults.PUBLISH=clone(await runProfiledPhase('PUBLISH',()=>this.phaseHandlers.get('PUBLISH')({...context,commandResults,phaseResults})));
+        phaseResults.CHECKPOINT=clone(await runProfiledPhase('CHECKPOINT',()=>this.phaseHandlers.get('CHECKPOINT')({...context,commandResults,phaseResults})));
 
         // Mark the world/session as committed before the finalizer phase so its
         // durable snapshot contains the exact date, turn, and completion metadata.
@@ -1376,7 +1537,7 @@
 
         // The save finalizer executes after all state mutations and the completion
         // event, so the durable snapshot represents the completed turn, not a preview.
-        phaseResults.FINALIZE=clone(await this.runTurnFinalizers({
+        phaseResults.FINALIZE=clone(await runProfiledPhase('FINALIZE',async()=>await this.runTurnFinalizers({
           turn,
           day:turn+1,
           stepDurationMs:this.clock.stepDurationMs,
@@ -1385,10 +1546,12 @@
           state:this.world.state,
           clock:this.clock,
           simulation:this
-        },finalizersAtTurnStart));
+        },finalizersAtTurnStart)));
         this.lastStepSummary.phases=clone(phaseResults);
+        if(turnProfile){turnProfile.status='COMPLETED';turnProfile.totalMs=Number((profileNow()-turnProfile.startedAt).toFixed(2));turnProfile.activePhase=null;turnProfile.completedAt=profileNow();}
         return clone(this.lastStepSummary);
       }catch(error){
+        if(turnProfile){turnProfile.status='FAILED';turnProfile.error=String(error?.message||error);turnProfile.totalMs=Number((profileNow()-turnProfile.startedAt).toFixed(2));turnProfile.activePhase=turnProfile.activePhase||'STEP_ERROR';}
         this.lastError=String(error?.message||error);
         this.status='ERROR';
         this.clock.pause();
@@ -1503,6 +1666,13 @@
       const sequences=this.saveSlotSequences || (this.saveSlotSequences=new Map());
       const sequence=(sequences.get(key)||0)+1;
       sequences.set(key,sequence);
+      const profiling=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
+      const saveProfile=profiling?{
+        slot:key,turn:this.clock.turn,status:'RUNNING',startedAt:saveProfileNow(),
+        snapshotParts:{},jsonStreamPullCount:0,jsonStreamPullMs:0,jsonStreamMaxPullMs:0,
+        jsonStreamBytes:0,compressionWallMs:0,indexedDbPutMs:0
+      }:null;
+      if(saveProfile)global.__OMEGA_SIMULATION_SAVE_PROFILE__=saveProfile;
       let releaseSave;
       const currentSave=new Promise(resolve=>{releaseSave=resolve;});
       this.saveBarrier=currentSave;
@@ -1516,9 +1686,12 @@
       try{
         // Exit flushes must not be queued behind an earlier compression promise.
         if(previousSave&&options.synchronousLocalStorage!==true)await previousSave;
+        if(saveProfile)saveProfile.previousSaveWaitMs=Number((saveProfileNow()-saveProfile.startedAt).toFixed(2));
         // Volatile diagnostics are omitted. Canonical JSON and its checksum
         // are emitted together as a stream, avoiding a full-size JSON duplicate.
+        const snapshotStartedAt=saveProfile?saveProfileNow():0;
         const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},true);
+        if(saveProfile)saveProfile.snapshotTotalMs=Number((saveProfileNow()-snapshotStartedAt).toFixed(2));
       // Keep the checksum over the canonical plain JSON snapshot, but store a
       // gzip envelope when the browser supports both compression directions.
       // Large 197-country saves can exceed localStorage/IndexedDB quotas.
@@ -1535,9 +1708,17 @@
           storedBytes:stored.storedBytes
         };
         if(global.indexedDB&&typeof global.indexedDB.open==='function'){
-          return indexedDbSaveRequest(global.indexedDB,'put',key,stored.value).then(() => ({
-            ...result,storage:'INDEXEDDB'
-          })).catch(async indexedDbError => {
+          const indexedDbStartedAt=saveProfile?saveProfileNow():0;
+          return indexedDbSaveRequest(global.indexedDB,'put',key,stored.value).then(() => {
+            if(saveProfile){
+              saveProfile.indexedDbPutMs=Number((saveProfileNow()-indexedDbStartedAt).toFixed(2));
+              saveProfile.storage='INDEXEDDB';
+              saveProfile.originalBytes=stored.originalBytes;
+              saveProfile.storedBytes=stored.storedBytes;
+              saveProfile.compression=stored.compression;
+            }
+            return {...result,storage:'INDEXEDDB'};
+          }).catch(async indexedDbError => {
             try{
               if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
               let fallbackValue=stored.value,fallbackCompression=stored.compression,fallbackBytes=stored.storedBytes;
@@ -1568,16 +1749,39 @@
         global.localStorage.setItem(key,stored.value);
         return {...result,storage:'LOCAL_STORAGE_FALLBACK'};
       };
+      const encodingStartedAt=saveProfile?saveProfileNow():0;
       const stored=encodeStoredSnapshot(snapshot,options);
+      const finishSaveProfile=result=>{
+        if(saveProfile){
+          saveProfile.encodeAndPersistMs=Number((saveProfileNow()-encodingStartedAt).toFixed(2));
+          saveProfile.status='COMPLETED';
+          saveProfile.totalMs=Number((saveProfileNow()-saveProfile.startedAt).toFixed(2));
+          saveProfile.result={ok:result?.ok===true,storage:result?.storage||null,turn:result?.turn??null,
+            originalBytes:result?.originalBytes??saveProfile.originalBytes??null,
+            storedBytes:result?.storedBytes??saveProfile.storedBytes??null,
+            compression:result?.compression??saveProfile.compression??null,
+            skipped:result?.skipped===true};
+        }
+        return result;
+      };
+      const failSaveProfile=error=>{
+        if(saveProfile){
+          saveProfile.status='FAILED';
+          saveProfile.totalMs=Number((saveProfileNow()-saveProfile.startedAt).toFixed(2));
+          saveProfile.error=String(error?.message||error);
+        }
+        throw error;
+      };
       if(stored&&typeof stored.then==='function')
-        return Promise.resolve(stored).then(persistStoredSave).finally(releaseCurrentSave);
+        return Promise.resolve(stored).then(persistStoredSave).then(finishSaveProfile,failSaveProfile).finally(releaseCurrentSave);
       // Keep a plain-JSON/no-IndexedDB fallback synchronous. pagehide and
       // beforeunload cannot rely on another promise microtask before teardown.
       const persisted=persistStoredSave(stored);
       if(persisted&&typeof persisted.then==='function')
-        return persisted.finally(releaseCurrentSave);
+        return persisted.then(finishSaveProfile,failSaveProfile).finally(releaseCurrentSave);
+      const profiledPersisted=finishSaveProfile(persisted);
       releaseCurrentSave();
-      return persisted;
+      return profiledPersisted;
       }catch(error){
         releaseCurrentSave();
         throw error;

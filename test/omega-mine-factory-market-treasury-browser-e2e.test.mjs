@@ -61,7 +61,7 @@ async function saveArtifact(name, value) {
 }
 
 test('one fresh Chromium gameplay session completes mine extraction through factory production, market clearing and Treasury settlement', {
-  timeout: 16 * 60 * 1000
+  timeout: 10 * 60 * 1000
 }, async (t) => {
   const host = await startStaticOrigin();
   const browser = await chromium.launch({
@@ -79,6 +79,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
   const stageTrace = [];
   const milestoneTrace = [];
   let setupSummaryForFailure = null;
+  let deadlineWatchdog = null;
   page.on('pageerror', error => pageErrors.push(String(error?.stack || error)));
   page.on('crash', () => pageErrors.push('CHROMIUM_PAGE_CRASHED'));
   page.on('console', message => {
@@ -86,11 +87,19 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     if (message.type() === 'error') consoleErrors.push(text);
     if (text.startsWith('[OMEGA_MMT_E2E_STAGE]') || text.startsWith('[SAB34_PROGRESS] RESOURCE_ECONOMY_'))
       stageTrace.push(text.slice(0, 1200));
-    if (/TEMPORARY_SINGLE_MINE_FACTORY_SCOPE_APPLIED|MINE_EXTRACTION_COMMITTED|PIPELINE_TURN_SNAPSHOT|FACTORY_PRODUCTION_WAIT_BEGIN|FACTORY_PRODUCTION_WAIT_END|FINAL_MARKET_REBUILD_AFTER_FINISHED_GOODS|TEMPORARY_PLAYER_COUNTRY_PIPELINE_SCOPE_RESTORED/.test(text))
+    if (/FULL_PLAYER_COUNTRY_RUNTIME_RETAINED|MINE_EXTRACTION_COMMITTED|PIPELINE_TURN_SNAPSHOT|FACTORY_PRODUCTION_WAIT_BEGIN|FACTORY_PRODUCTION_WAIT_END|FINAL_MARKET_REBUILD_AFTER_FINISHED_GOODS|FULL_PLAYER_COUNTRY_RUNTIME_UNMODIFIED/.test(text))
       milestoneTrace.push(text.slice(0, 3500));
   });
 
   try {
+    // Node's test timeout only marks the test failed; it does not cancel a pending
+    // page.evaluate. Close Chromium before that timeout so a stalled browser promise
+    // cannot keep the Node process alive until the workflow's outer 18-minute kill.
+    deadlineWatchdog = setTimeout(() => {
+      pageErrors.push('E2E_DEADLINE_WATCHDOG_CLOSED_BROWSER');
+      void context.close().catch(() => {});
+      void browser.close().catch(() => {});
+    }, 9 * 60 * 1000);
     await page.goto(host.origin + '/', { waitUntil: 'domcontentloaded', timeout: 120000 });
     await page.waitForFunction(() => {
       const g = window;
@@ -136,47 +145,144 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         const code = countryCode(profile);
         if (/^[A-Z]{3}$/.test(code)) profileByCountry.set(code, profile);
       });
-      const currencyGroups = new Map();
-      for (const [code] of profileByCountry) {
-        const currency = trade.currencyOf(code);
-        if (!currency) continue;
-        if (!currencyGroups.has(currency)) currencyGroups.set(currency, []);
-        currencyGroups.get(currency).push(code);
-      }
       const sites = g.Omega?.IndividualResourceSiteBinding?.sites || [];
       const locations = Object.keys(g.Game?.locationsRegistry || {});
       const runtime = g.OmegaCountryRuntimeData;
+      const gameState = g.Game?.state || {};
+      const profileCodes = new Set(profileByCountry.keys());
+      const sitesByCountry = new Map();
+      for (const site of sites) {
+        const country = String(site?.countryId || site?.identity?.countryIso3 || '').trim().toUpperCase();
+        const resource = token(site?.real?.resourceId || site?.sourceSiteRecord?.resourceId ||
+          site?.identity?.resourceTypeId || site?.sourceSiteRecord?.resourceTypeId);
+        if (!profileCodes.has(country) || !resource) continue;
+        let rows = sitesByCountry.get(country);
+        if (!rows) sitesByCountry.set(country, rows = []);
+        rows.push(site);
+      }
+      const locationByCountry = new Map();
+      for (const key of locations) {
+        const identity = runtime?.resolveCountry?.(key);
+        const code = String(identity?.iso3 || '').trim().toUpperCase();
+        if (profileCodes.has(code) && !locationByCountry.has(code)) locationByCountry.set(code, key);
+      }
+      const resolvedCountryCode = value => {
+        const raw = String(value ?? '').trim().toUpperCase();
+        if (/^[A-Z]{3}$/.test(raw) && profileCodes.has(raw)) return raw;
+        const identity = runtime?.resolveCountry?.(value);
+        const code = String(identity?.iso3 || identity?.countryIso3 || identity?.iso3Code || '').trim().toUpperCase();
+        return /^[A-Z]{3}$/.test(code) && profileCodes.has(code) ? code : raw;
+      };
+      const countryEntry = (map, code) => {
+        if (!map || typeof map !== 'object') return null;
+        if (Object.prototype.hasOwnProperty.call(map, code)) return map[code];
+        const key = Object.keys(map).find(value => resolvedCountryCode(value) === code);
+        return key === undefined ? null : map[key];
+      };
+      const readPath = (root, path) => path.split('.').reduce((value, key) =>
+        value && typeof value === 'object' ? value[key] : null, root);
+      const relationshipMaps = code => {
+        const foreign = countryEntry(gameState.foreign, code);
+        const tradeState = countryEntry(gameState.trade, code);
+        return [
+          foreign?.relations,
+          tradeState?.relations,
+          countryEntry(gameState.relations, code)
+        ].filter(value => value && typeof value === 'object');
+      };
+      const treatyMap = code => countryEntry(gameState.foreign, code)?.treaties;
+      const activeTreaty = treaty => !!treaty &&
+        /SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(treaty.status || treaty.stage || '').toUpperCase());
+      // OpponentCountryRuntime owns the canonical relations.json dataset; not every
+      // save eagerly copies all 197 country relation maps into Game.state.
+      // Reuse the opponent runtime's existing dataset gateway. relations.json is
+      // optional and is not loaded by the countries-only bootstrap; load it once
+      // without a second deep copy, then index only its explicit relationship edges.
+      const opponentRuntime = g.Omega?.OpponentCountryRuntime ||
+        g.OmegaOpponentCountryRuntime || null;
+      let canonicalRelationDataset = {};
+      try {
+        if (typeof opponentRuntime?.loadDataset === 'function')
+          await opponentRuntime.loadDataset('relations', {copy:false});
+        canonicalRelationDataset = opponentRuntime?.getDataset?.('relations') ||
+          opponentRuntime?.instance?.gw?.get?.('relations') || {};
+      } catch (_) {}
+      const fundedBalanceByCountry = new Map();
+      for (const code of profileCodes) fundedBalanceByCountry.set(code, bankBalance(code));
+      const possibleBuyersBySeller = new Map();
+      const addPossiblePair = (buyer, seller) => {
+        if (!profileCodes.has(buyer) || !profileCodes.has(seller) || buyer === seller) return;
+        let buyers = possibleBuyersBySeller.get(seller);
+        if (!buyers) possibleBuyersBySeller.set(seller, buyers = new Set());
+        buyers.add(buyer);
+      };
+      // Index the actual relationship/treaty edges once. Avoid the former nested
+      // country-by-country review loop (up to 197 x 197 expensive trade API calls).
+      const indexedRelationOwners = new Map();
+      for (const [ownerRaw, relationshipMap] of Object.entries(canonicalRelationDataset || {})) {
+        const owner = resolvedCountryCode(ownerRaw);
+        if (profileCodes.has(owner) && relationshipMap && typeof relationshipMap === 'object')
+          indexedRelationOwners.set(owner, relationshipMap);
+      }
+      for (const owner of profileCodes) {
+        const datasetRelations = indexedRelationOwners.get(owner) || countryEntry(canonicalRelationDataset, owner);
+        const maps = [...relationshipMaps(owner),
+          ...(datasetRelations && typeof datasetRelations === 'object' ? [datasetRelations] : [])];
+        for (const map of maps) {
+          for (const [otherRaw, relationship] of Object.entries(map)) {
+            const other = resolvedCountryCode(otherRaw);
+            if (!profileCodes.has(other) || relationship?.trade_agreement !== true) continue;
+            // The row belongs to the importing/buyer country and points to its
+            // approved seller. Do not manufacture the reverse edge.
+            addPossiblePair(owner, other);
+          }
+        }
+        for (const [otherRaw, treaty] of Object.entries(treatyMap(owner) || {})) {
+          const other = resolvedCountryCode(otherRaw);
+          if (activeTreaty(treaty)) addPossiblePair(owner, other);
+        }
+      }
       const candidates = [];
       for (const [seller, profile] of profileByCountry) {
         const factoryCounts = baseline.getCountryBaseline(seller)?.factoryCounts || {};
         if (!(Number(factoryCounts.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT || 0) > 0)) continue;
-        const currency = trade.currencyOf(seller);
-        const buyers = (currencyGroups.get(currency) || []).filter(code => code !== seller)
-          .map(code => ({ code, treasury:bankBalance(code) }))
-          .filter(row => row.treasury !== null && row.treasury > 100)
-          .sort((a,b) => b.treasury-a.treasury);
-        if (!buyers.length) continue;
-        const mineSites = sites.filter(site => {
-          if (String(site?.countryId || site?.identity?.countryIso3 || '').toUpperCase() !== seller) return false;
-          return !!token(site?.real?.resourceId || site?.sourceSiteRecord?.resourceId ||
-            site?.identity?.resourceTypeId || site?.sourceSiteRecord?.resourceTypeId);
-        });
+        const mineSites = sitesByCountry.get(seller) || [];
         if (!mineSites.length) continue;
-        const matchingLocation = locations.find(key => {
-          const identity = runtime?.resolveCountry?.(key);
-          return String(identity?.iso3 || '').toUpperCase() === seller;
-        });
+        const currency = trade.currencyOf(seller);
+        const sourceResourceId = token(mineSites[0]?.real?.resourceId ||
+          mineSites[0]?.sourceSiteRecord?.resourceId || mineSites[0]?.identity?.resourceTypeId ||
+          mineSites[0]?.sourceSiteRecord?.resourceTypeId);
+        const buyers = [...(possibleBuyersBySeller.get(seller) || [])].map(code => {
+          const treasury = fundedBalanceByCountry.get(code);
+          const fxRate = trade.fxRate(code, seller);
+          if (!(treasury > 100) || fxRate === null) return null;
+          const review = trade.reviewRequest({
+            countryId:code,targetCountryId:seller,resourceId:sourceResourceId,
+            quantity:1,unitPrice:1,needPressure:0.5
+          });
+          const relationScore = Number(review?.relationScore);
+          if (review?.agreement !== true || !Number.isFinite(relationScore) || relationScore < 0.25)
+            return null;
+          return {code,treasury,relationScore,fxRate,agreement:true};
+        }).filter(Boolean).sort((a,b) => b.treasury-a.treasury);
+        if (!buyers.length) continue;
+        const matchingLocation = locationByCountry.get(seller) || null;
         const countryName = String(profile.name || profile.officialName || matchingLocation || seller);
         const searchName = matchingLocation || countryName;
         candidates.push({ seller, profile, countryName, searchName, currency,
-          mineSiteCount:mineSites.length, buyer:buyers[0].code });
+          mineSiteCount:mineSites.length, buyer:buyers[0].code,
+          buyers:buyers.map(row => row.code) });
       }
       candidates.sort((a,b) => b.mineSiteCount-a.mineSiteCount);
       const chosen = candidates.find(row => row.searchName) || null;
       if (!chosen) return {
-        ok:false,reason:'NO_MAP_SELECTABLE_COUNTRY_WITH_MINE_FACTORY_AND_FUNDED_SAME_CURRENCY_BUYER',
+        ok:false,reason:'NO_MAP_SELECTABLE_COUNTRY_WITH_MINE_FACTORY_AND_FUNDED_APPROVED_FX_TRADE_BUYER',
         profileCount:profileByCountry.size,siteCount:sites.length,
-        locationCount:locations.length
+        locationCount:locations.length,
+        relationDatasetOwnerCount:indexedRelationOwners.size,
+        relationDatasetOwners:[...indexedRelationOwners.keys()].slice(0,12),
+        bangladeshRelationTargets:Object.keys(indexedRelationOwners.get('BGD')||{}).slice(0,12),
+        indexedTradePartnerCount:[...possibleBuyersBySeller.values()].reduce((sum,rows)=>sum+rows.size,0)
       };
       g.__omegaMineMarketTreasuryPlayerBootstrap = chosen;
       return { ok:true, seller:chosen.seller, countryName:chosen.countryName,
@@ -298,47 +404,6 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         if (/^[A-Z]{3}$/.test(code)) profileByCountry.set(code, profile);
       }
 
-      const currencyGroups = new Map();
-      for (const [code, profile] of profileByCountry) {
-        const currency = trade.currencyOf(code);
-        if (!currency) continue;
-        if (!currencyGroups.has(currency)) currencyGroups.set(currency, []);
-        currencyGroups.get(currency).push(code);
-      }
-
-      const candidateCountries = [];
-      for (const [seller, profile] of profileByCountry) {
-        const row = baseline.getCountryBaseline(seller);
-        const factoryCounts = row?.factoryCounts || {};
-        const stateFactoryCount = Number(factoryCounts.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT || 0);
-        if (!(stateFactoryCount > 0)) continue;
-        const currency = trade.currencyOf(seller);
-        const sameCurrencyBuyers = (currencyGroups.get(currency) || []).filter(code => code !== seller)
-          .map(code => ({ code, treasury: bankBalance(code) }))
-          .filter(item => item.treasury !== null && item.treasury > 100);
-        if (!sameCurrencyBuyers.length) continue;
-        const mineSites = sites.filter(site => {
-          if (String(site?.countryId || site?.identity?.countryIso3 || '').toUpperCase() !== seller) return false;
-          const rid = token(site?.real?.resourceId || site?.sourceSiteRecord?.resourceId ||
-            site?.identity?.resourceTypeId || site?.sourceSiteRecord?.resourceTypeId);
-          return !!rid;
-        });
-        if (mineSites.length) candidateCountries.push({
-          seller, profile, currency, mineSites, stateFactoryCount,
-          buyers: sameCurrencyBuyers.sort((a, b) => b.treasury - a.treasury)
-        });
-      }
-      candidateCountries.sort((a, b) => b.mineSites.length - a.mineSites.length);
-      mark('COUNTRY_CANDIDATES_READY', {
-        profileCount: profileByCountry.size, siteCount: sites.length,
-        candidateCount: candidateCountries.length,
-        topCandidates: candidateCountries.slice(0, 8).map(row => ({ seller: row.seller, mineSiteCount: row.mineSites.length }))
-      });
-      if (!candidateCountries.length) fail('NO_COUNTRY_WITH_MINE_BASELINE_FACTORY_AND_FUNDED_SAME_CURRENCY_BUYER', {
-        profileCount: profileByCountry.size, siteCount: sites.length, factoryCatalog: catalogDiag,
-        currencyGroups: [...currencyGroups.entries()].map(([currency, rows]) => ({ currency, countries: rows.length }))
-      });
-
       const existingSession = g.Game.state?.simulation?.session || null;
       const existingSessionUsable = !!(
         existingSession?.sessionId &&
@@ -357,15 +422,61 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           sessionCountry: seller, simulationCountry: canonicalPlayerCountry,
           sessionId: existingSession.sessionId
         });
-      const chosenCountry = candidateCountries.find(row => row.seller === seller);
-      if (!chosenCountry) fail('SAVED_PLAYER_COUNTRY_HAS_NO_MINE_FACTORY_AND_FUNDED_SAME_CURRENCY_BUYER', {
-        seller, sessionId: existingSession.sessionId,
-        eligibleCountryCodes: candidateCountries.map(row => row.seller),
-        profileCount: profileByCountry.size, mineSiteCount: sites.length
+      const profile = profileByCountry.get(seller);
+      const row = baseline.getCountryBaseline(seller);
+      const factoryCounts = row?.factoryCounts || {};
+      const stateFactoryCount = Number(factoryCounts.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT || 0);
+      const mineSites = sites.filter(site =>
+        String(site?.countryId || site?.identity?.countryIso3 || '').toUpperCase() === seller &&
+        !!token(site?.real?.resourceId || site?.sourceSiteRecord?.resourceId ||
+          site?.identity?.resourceTypeId || site?.sourceSiteRecord?.resourceTypeId));
+      if (!profile || !(stateFactoryCount > 0) || !mineSites.length)
+        fail('SAVED_PLAYER_COUNTRY_HAS_NO_MINE_BASELINE_FACTORY', {
+          seller, sessionId:existingSession.sessionId, hasFinanceProfile:!!profile,
+          stateFactoryCount, mineSiteCount:mineSites.length, profileCount:profileByCountry.size,
+          siteCount:sites.length
+        });
+      const currency = trade.currencyOf(seller);
+      const sourceResourceId = token(mineSites[0]?.real?.resourceId ||
+        mineSites[0]?.sourceSiteRecord?.resourceId || mineSites[0]?.identity?.resourceTypeId ||
+        mineSites[0]?.sourceSiteRecord?.resourceTypeId);
+      const bootstrap = g.__omegaMineMarketTreasuryPlayerBootstrap || {};
+      const bootstrapBuyerCodes = Array.isArray(bootstrap.buyers) ? bootstrap.buyers :
+        (bootstrap.buyer ? [bootstrap.buyer] : []);
+      const approvedBuyers = [...new Set(bootstrapBuyerCodes)].filter(code =>
+        code !== seller && profileByCountry.has(code)).map(code => {
+          const treasury = bankBalance(code);
+          const fxRate = trade.fxRate(code, seller);
+          if (!(treasury > 100) || fxRate === null) return null;
+          const review = trade.reviewRequest({
+            countryId:code,targetCountryId:seller,resourceId:sourceResourceId,
+            quantity:1,unitPrice:1,needPressure:0.5
+          });
+          const relationScore = Number(review?.relationScore);
+          if (review?.agreement !== true || !Number.isFinite(relationScore) || relationScore < 0.25)
+            return null;
+          return {code,treasury,relationScore,fxRate,agreement:true};
+        }).filter(Boolean).sort((a,b) => b.treasury-a.treasury);
+      const candidateCountries = approvedBuyers.length ? [{
+        seller, profile, currency, mineSites, stateFactoryCount, buyers:approvedBuyers
+      }] : [];
+      mark('COUNTRY_CANDIDATES_READY', {
+        profileCount:profileByCountry.size, siteCount:sites.length,
+        candidateCount:candidateCountries.length, sellerMineSiteCount:mineSites.length,
+        approvedBuyerCount:approvedBuyers.length,
+        approvedBuyers:approvedBuyers.slice(0,5).map(row=>({
+          code:row.code,treasury:row.treasury,relationScore:row.relationScore,fxRate:row.fxRate
+        }))
       });
+      if (!candidateCountries.length) fail('SAVED_PLAYER_COUNTRY_HAS_NO_FUNDED_APPROVED_FX_TRADE_PARTNER', {
+        seller, profileCount:profileByCountry.size, siteCount:sites.length,
+        mineSiteCount:mineSites.length, currency,
+        fundedCountryCount:[...profileByCountry.keys()].filter(code=>code!==seller&&bankBalance(code)>100).length
+      });
+      const chosenCountry = candidateCountries[0];
       const buyer = chosenCountry.buyers[0]?.code || null;
-      if (!buyer) fail('SAVED_PLAYER_COUNTRY_HAS_NO_FUNDED_SAME_CURRENCY_BUYER', {
-        seller, currency: chosenCountry.currency
+      if (!buyer) fail('SAVED_PLAYER_COUNTRY_HAS_NO_APPROVED_TRADE_BUYER', {
+        seller, currency
       });
       const sessionId = String(existingSession.sessionId);
       let liveSession = existingSession;
@@ -463,65 +574,99 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         });
       }
 
-      // The world-autonomy scheduler evaluates separate ACTIVE/MACRO countries and
-      // is covered by its own world-simulation workflow. It is not part of this
-      // player-country resource acceptance scenario. Keep the authoritative player
-      // Resource Economy participant and all other registered gameplay participants.
+      // Keep every production participant, the world-autonomy scheduler, the world
+      // engine and the Ministry pump active. Advance time only through the visible
+      // Game Clock's Step Day control so the browser exercises the ordinary UI path.
       const worldSchedulerId = 'omega.world-simulation.scheduler.v1';
       const worldSchedulerEntry = simulation.turnParticipants?.get?.(worldSchedulerId) || null;
-      if (worldSchedulerEntry) simulation.turnParticipants.delete(worldSchedulerId);
-      g.__omegaMineMarketTreasuryExcludedWorldScheduler = worldSchedulerEntry;
+      if (!worldSchedulerEntry)
+        fail('WORLD_SIMULATION_SCHEDULER_NOT_REGISTERED', {
+          participants: simulation.participantDiagnostics?.() || [],
+          scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null
+        });
 
-      // This acceptance test advances the real ordered player-country economic turn:
-      // mine extraction, industrial haul/receipts, factory processing, market/trade and
-      // Treasury publication remain active. Only the separate world-autonomy scheduler,
-      // global world tick, and 17-ministry pump are outside this test's scope. Save/load
-      // is still tested explicitly below.
       g.__omegaMineMarketTreasuryAdvanceTurns = async turns => {
-        const previousWorldEngine = simulation.worldEngine;
-        const previousMinistryPump = simulation.ministryPump;
         const requestedTurns = Math.max(0, Math.floor(Number(turns) || 0));
-        simulation.worldEngine = {
-          setAuthoritativeState() {},
-          processSimulationTick() {
-            return {
-              status: 'SKIPPED_TEST_SCOPE',
-              authority: 'OMEGA_RESOURCE_BROWSER_E2E_SCOPE',
-              countriesProcessed: 0,
-              syntheticMutations: 0
-            };
-          }
+        const startingTurn = Number(simulation.clock?.turn ?? g.Game.state.simulation?.turn ?? 0);
+        const readLifecycle = () => g.Omega?.GameLifecycle?.getDiagnostics?.() || null;
+        const readStepControl = () => g.document.querySelector('[data-omega-action="step-day"]');
+        const advanceDiagnostics = (before, nowTurn, stepControl) => {
+          const lifecycle = readLifecycle();
+          return {
+            before, nowTurn, status: simulation.status,
+            stepInProgress: simulation.stepInProgress === true,
+            manualAdvanceInProgress: simulation.manualAdvanceInProgress === true,
+            stepControlDisabled: stepControl?.disabled ?? null,
+            manualProgress: simulation.manualAdvanceProgress || null,
+            lifecycle: lifecycle ? {
+              manualCommandInFlight: lifecycle.manualCommandInFlight === true,
+              savePending: lifecycle.savePending === true,
+              savedTurn: lifecycle.savedTurn ?? null,
+              status: lifecycle.status || null
+            } : null
+          };
         };
-        simulation.ministryPump = null;
-        try {
-          const result = await simulation.advance(requestedTurns);
-          if (result?.status === 'ERROR' || result?.steps !== requestedTurns) {
-            const lifecycleDiagnostics = g.Omega?.GameLifecycle?.getDiagnostics?.() || null;
-            const failedSession = simulation.world?.state?.simulation?.session || null;
-            const finalizerResults = (simulation.lastTurnFinalizerResults || []).slice(-12);
-            const participantFailures = (simulation.lastTurnParticipantResults || [])
-              .filter(row => String(row.status || '').toUpperCase() !== 'COMPLETED').slice(-12);
-            throw new Error('RESOURCE_GAMEPLAY_TURN_ADVANCE_FAILED:' + JSON.stringify({
-              requestedTurns,
-              result: { turn: result?.turn ?? null, steps: result?.steps ?? null, status: result?.status ?? null },
-              lastError: simulation.lastError || null,
-              failedSession: failedSession ? {
-                sessionId: failedSession.sessionId || null,
-                playerCountryId: failedSession.playerCountryId || null,
-                status: failedSession.status || null,
-                failedFinalizer: failedSession.failedFinalizer || null,
-                lastError: failedSession.lastError || null
-              } : null,
-              finalizerResults,
-              participantFailures,
-              lifecycleDiagnostics
-            }).slice(0, 12000));
-          }
-          return result;
-        } finally {
-          simulation.worldEngine = previousWorldEngine;
-          simulation.ministryPump = previousMinistryPump;
+        const waitForVisibleClockReady = async (before, requireCommittedTurn) => {
+          await new Promise((resolve, reject) => {
+            const startedAt = Date.now();
+            const timer = g.setInterval(() => {
+              const nowTurn = Number(simulation.clock?.turn ?? g.Game.state.simulation?.turn ?? 0);
+              const session = g.Game.state?.simulation?.session || {};
+              const stepControl = readStepControl();
+              const lifecycle = readLifecycle();
+              const turnCommitted = !requireCommittedTurn || nowTurn >= before + 1;
+              const simulationIdle = simulation.stepInProgress !== true &&
+                simulation.frameInProgress !== true &&
+                simulation.manualAdvanceInProgress !== true;
+              // advance() resolves before the UI lifecycle's post-turn durable save
+              // and finally() release the manual-command mutex. The visible button
+              // remains disabled throughout that boundary; do not click it early.
+              const lifecycleIdle = lifecycle?.manualCommandInFlight !== true &&
+                lifecycle?.savePending !== true;
+              const visibleControlReady = !!stepControl && stepControl.disabled === false;
+              if (simulation.status === 'ERROR' || String(session.status || '').toUpperCase() === 'ERROR') {
+                g.clearInterval(timer);
+                reject(new Error('VISIBLE_CLOCK_TURN_FAILED:' + JSON.stringify({
+                  ...advanceDiagnostics(before, nowTurn, stepControl),
+                  lastError: simulation.lastError || session.lastError || null,
+                  participants: simulation.lastTurnParticipantResults || [],
+                  finalizers: simulation.lastTurnFinalizerResults || []
+                }).slice(0, 12000)));
+              } else if (turnCommitted && simulationIdle && lifecycleIdle && visibleControlReady) {
+                g.clearInterval(timer);
+                resolve();
+              } else if (Date.now() - startedAt > 180000) {
+                g.clearInterval(timer);
+                reject(new Error('VISIBLE_CLOCK_STEP_DAY_TIMEOUT:' + JSON.stringify(
+                  advanceDiagnostics(before, nowTurn, stepControl)
+                ).slice(0, 7000)));
+              }
+            }, 50);
+          });
+        };
+        for (let index = 0; index < requestedTurns; index++) {
+          const before = Number(simulation.clock?.turn ?? g.Game.state.simulation?.turn ?? 0);
+          const stepControl = readStepControl();
+          if (!stepControl) throw new Error('VISIBLE_GAME_CLOCK_STEP_DAY_CONTROL_MISSING');
+          // The first/next click is only legal after the prior visible Step Day
+          // command, including its canonical post-turn save, releases the UI lock.
+          await waitForVisibleClockReady(before, false);
+          const readyControl = readStepControl();
+          if (!readyControl || readyControl.disabled)
+            throw new Error('VISIBLE_GAME_CLOCK_STEP_DAY_NOT_READY:' +
+              JSON.stringify(advanceDiagnostics(before, before, readyControl)));
+          readyControl.click();
+          await waitForVisibleClockReady(before, true);
         }
+        const result = {
+          turn: Number(simulation.clock?.turn ?? g.Game.state.simulation?.turn ?? 0),
+          steps: Number(simulation.clock?.turn ?? g.Game.state.simulation?.turn ?? 0) - startingTurn,
+          status: simulation.status,
+          requestedTurns
+        };
+        if (result.steps !== requestedTurns)
+          throw new Error('VISIBLE_CLOCK_ADVANCE_INCOMPLETE:' + JSON.stringify(result));
+        return result;
       };
 
       const hydration = await waitStage('PLAYER_COUNTRY_ENDOWMENT_HYDRATION', () => endowment.hydrateCountry(seller));
@@ -614,10 +759,20 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           });
         }
       }
-      mineCandidates.sort((a, b) => b.expectedOutput - a.expectedOutput);
+      const routeTravelDays = row => {
+        const value = Number(row?.routePreview?.travelTimeDays);
+        return Number.isFinite(value) && value >= 0 ? value : Number.MAX_SAFE_INTEGER;
+      };
+      // Prefer a real, short-haul site so the browser acceptance run tests the full
+      // logistics and production chain without spending most of its budget waiting
+      // for a deliberately remote route. Expected output remains the tie-breaker.
+      mineCandidates.sort((a, b) =>
+        routeTravelDays(a) - routeTravelDays(b) || b.expectedOutput - a.expectedOutput
+      );
       mark('MINE_CANDIDATES_READY', {
         seller, candidateCount: mineCandidates.length, rejectedSiteCount: rejectedSites.length,
-        previewAttemptCount, selectedSiteId: mineCandidates[0]?.siteId || null
+        previewAttemptCount, selectedSiteId: mineCandidates[0]?.siteId || null,
+        selectedRouteTravelTimeDays: routeTravelDays(mineCandidates[0])
       });
       if (!mineCandidates.length)
         fail('NO_REAL_MINE_SITE_HAS_A_LIVE_BASELINE_FACTORY_AND_EXECUTABLE_ROUTE', {
@@ -654,9 +809,16 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           commandStatus: command?.status || null,
           commandStateWriteCount: command?.stateWriteCount ?? null,
           transactionPaths: (command?.transaction?.operations || []).map(row => row.path),
-          inventoryLotOperationIncludesBatch: !!operation &&
-            !!operation.after && Object.prototype.hasOwnProperty.call(operation.after, batchId),
-          inventoryLotOperationBatchCount: operation?.after ? Object.keys(operation.after).length : null
+          // Committed transaction audit rows intentionally retain only the
+          // write path and operation type. Verify the actual authoritative lot
+          // after commit instead of relying on a duplicate before/after copy.
+          inventoryLotOperationIncludesBatch: !!operation && !!batchId &&
+            Object.prototype.hasOwnProperty.call(bucket?.inventoryLots||{}, batchId),
+          inventoryLotOperationBatchCount: operation
+            ? Object.keys(bucket?.inventoryLots||{}).length : null,
+          inventoryLotOperationAuditIsCompacted: !!operation &&
+            !Object.prototype.hasOwnProperty.call(operation,'before') &&
+            !Object.prototype.hasOwnProperty.call(operation,'after')
         };
       };
       const extractionAuditListener = event => {
@@ -677,16 +839,20 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       g.addEventListener('OMEGA_RESOURCE_EXTRACTION_COMPLETED', extractionAuditListener, true);
       const observedEndowment = endowmentOriginal && typeof endowmentOriginal.extractCountry === 'function'
         ? Object.assign({}, endowmentOriginal, {
-            extractCountry: async function (countryId, occurrenceKeys) {
-              const result = await endowmentOriginal.extractCountry(countryId, occurrenceKeys);
+            extractCountry: async function (countryId, occurrenceKeys, options) {
+              if (!options?.quantityByOccurrence)
+                throw new Error('SITE_PIPELINE_EXTRACTION_QUANTITY_CAP_NOT_FORWARDED');
+              const result = await endowmentOriginal.extractCountry(countryId, occurrenceKeys, options);
               const row = result?.result || result || {};
-              const produced = (Array.isArray(row.records) ? row.records : [])
-                .find(record => record?.producedBatch?.batchId) || null;
-              const batchId = String(produced?.producedBatch?.batchId || '');
+              const producedRecords = (Array.isArray(row.records) ? row.records : [])
+                .filter(record => record?.producedBatch?.batchId);
               const command = result?.commandId ? interop?.getCommand?.(result.commandId) : null;
-              extractionLedgerAudit.push(inspectExtractionLedger(
-                'AFTER_EXTRACTION_COMMAND_RETURN', String(countryId || seller), batchId, command
-              ));
+              for (const record of producedRecords) {
+                const batchId = String(record.producedBatch.batchId);
+                extractionLedgerAudit.push(inspectExtractionLedger(
+                  'AFTER_EXTRACTION_COMMAND_RETURN', String(countryId || seller), batchId, command
+                ));
+              }
               return result;
             }
           })
@@ -824,8 +990,33 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       );
       const rawBatch = resourceState.batches.find(row => String(row?.batchId || '') === originBatchId);
       const originLot = resourceState.inventoryLots?.[originBatchId] || null;
+      const originCommandAudit = extractionLedgerAudit.find(audit =>
+        audit.stage === 'AFTER_EXTRACTION_COMMAND_RETURN' && audit.batchId === originBatchId) || null;
+      if (!originCommandAudit ||
+          originCommandAudit.commandStatus !== 'APPLIED' ||
+          !originCommandAudit.transactionPaths?.includes('resource.inventoryLots') ||
+          !originCommandAudit.inventoryLotOperationIncludesBatch ||
+          !originCommandAudit.inventoryLotOperationAuditIsCompacted) {
+        fail('COMPACT_TRANSACTION_AUDIT_DID_NOT_PROVE_AUTHORITATIVE_INVENTORY_LOT_COMMIT', {
+          seller, originBatchId, originCommandAudit, extractionLedgerAudit
+        });
+      }
       const rawBatchQuantity = Number(rawBatch?.remainingQuantity ?? rawBatch?.quantity);
       const originLotQuantity = Number(originLot?.remainingQuantity ?? originLot?.quantity);
+      const selectedFactoryAsset = (g.Game.state.economy?.[seller]?.productionAssets || [])
+        .find(row => String(row?.id || row?.assetId || row?.projectId || '') === selected.factoryId) || null;
+      const selectedFactoryCapacity = Number(selectedFactoryAsset?.capacityPerDay ??
+        selectedFactoryAsset?.capacity ?? selectedFactoryAsset?.productionCapacity ??
+        selectedFactoryAsset?.throughput);
+      const selectedCycleInputLimit = selectedFactoryCapacity * Math.max(1, Number(selected.cycleDays) || 1);
+      if (selectedFactoryAsset && Number.isFinite(selectedCycleInputLimit) &&
+          rawBatchQuantity > selectedCycleInputLimit + 1e-6) {
+        fail('MINE_BATCH_EXCEEDS_SELECTED_FACTORY_CYCLE_CAPACITY', {
+          siteId: selected.siteId, factoryId: selected.factoryId,
+          rawBatchQuantity, selectedFactoryCapacity, cycleDays: selected.cycleDays,
+          selectedCycleInputLimit
+        });
+      }
       if (['BLOCKED', 'FAILED', 'WAITING_DEPENDENCIES'].includes(String(pipelineStart?.status || '').toUpperCase()))
         fail('MINE_TO_FACTORY_PIPELINE_REJECTED', { pipelineStart, selected: { ...selected, routePreview: undefined } });
       if (!originBatchId || !rawBatch || !(Number(rawBatch.remainingQuantity ?? rawBatch.quantity) > 0))
@@ -858,7 +1049,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         registeredTurnParticipantIds: turnParticipants.map(row => row.id),
         requiredResourceParticipantId,
         playerResourceParticipantRetained: hasPlayerResourceParticipant,
-        excludedWorldSchedulerId: worldSchedulerId,
+        requiredWorldSchedulerId: worldSchedulerId,
         turnBeforeExtraction,
         baselineResult: { status: baselineResult?.status || null, activeAssetCount: baselineRuntimeRegistry?.liveProductionAssetsCreated || 0 },
         hydrationStatus: hydration?.status || null,
@@ -938,42 +1129,24 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const originBatchId = setup.originBatchId;
       const resource = g.Game.state.resource[seller];
       const simulation = g.Omega.Simulation;
+      const worldSchedulerId = 'omega.world-simulation.scheduler.v1';
+      const worldSchedulerEntry = simulation.turnParticipants?.get?.(worldSchedulerId) || null;
+      const requiredResourceParticipantId = 'omega.resource-economy.player-country';
+      if (!worldSchedulerEntry)
+        fail('WORLD_SIMULATION_SCHEDULER_NOT_REGISTERED_DURING_PIPELINE', {
+          participants: simulation.participantDiagnostics?.() || [],
+          scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null
+        });
       // Phase timers expose the slow player-country subsystem without changing
       // production logic or removing the Resource Economy turn runner.
       g.__OMEGA_RESOURCE_ECONOMY_PERF__ = true;
       const finishedStages = new Set(['PROCESSED', 'INTERMEDIATE', 'FINISHED', 'REFINED', 'OUTPUT']);
       const completeStatuses = new Set(['COMPLETED', 'FINISHED', 'PROCESSED', 'AVAILABLE', 'DELIVERED', 'RECEIVED', 'ARRIVED']);
-      const originalGlobalMarket = g.Omega.GlobalMarket;
-      const originalGlobalMarketAlias = g.OmegaGlobalMarket;
-      let deferredMarketRebuildCount = 0;
-      // Market index rebuild is a global 197-country projection and was taking
-      // ~17 seconds on every no-change turn. It is not required to move a physical
-      // shipment or factory cycle. Defer it while the real player-country resource
-      // pipeline advances, then rebuild once after finished goods exist.
-      const scopedGlobalMarket = Object.create(originalGlobalMarket);
-      // The production market API is frozen; assignment to an inherited
-      // non-writable method would silently leave the real 197-country rebuild in
-      // place. Define an own test-only method explicitly.
-      Object.defineProperty(scopedGlobalMarket, 'rebuildCountry', {
-        configurable: true,
-        enumerable: true,
-        writable: true,
-        value: countryId => {
-          deferredMarketRebuildCount += 1;
-          return {
-            status: 'DEFERRED_FOR_TEST_PIPELINE',
-            countryId: String(countryId || seller),
-            reason: 'NO_FINISHED_BATCH_REQUIRES_MARKET_REINDEX_YET'
-          };
-        }
-      });
-      g.Omega.GlobalMarket = scopedGlobalMarket;
-      g.OmegaGlobalMarket = scopedGlobalMarket;
-      if (g.OmegaGlobalMarket !== scopedGlobalMarket ||
-          g.OmegaGlobalMarket.rebuildCountry !== scopedGlobalMarket.rebuildCountry) {
-        throw new Error('TEST_ONLY_MARKET_REBUILD_DEFER_HOOK_NOT_INSTALLED');
-      }
-      g.__omegaMineMarketTreasuryDeferredMarketRebuilds = () => deferredMarketRebuildCount;
+      const market = g.Omega?.GlobalMarket || g.OmegaGlobalMarket;
+      const deferredMarketRebuildCount = 0;
+      if (!market || typeof market.rebuildCountry !== 'function')
+        throw new Error('AUTHORITATIVE_GLOBAL_MARKET_RUNTIME_UNAVAILABLE');
+      // The market participant is not replaced or deferred; normal turns publish it.
       const batchMap = () => new Map((resource.batches || []).map(row => [String(row?.batchId || ''), row]));
       const hasOrigin = (batch, target, map, seen = new Set()) => {
         const id = String(batch?.batchId || '');
@@ -989,241 +1162,118 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const currentFlow = () => (resource.industrialNetwork?.siteFlowLedger || [])
         .filter(row => String(row?.batchId || '') === originBatchId).slice(-1)[0] || null;
 
-      // Temporary acceptance-test scope: keep this real player session, real mine,
-      // real commissioned factory and their actual batch lineage. Other USA mine,
-      // factory and logistics rows are restored before save/load verification.
+      // Preserve the complete selected-country economy. The acceptance run includes
+      // every mine, factory, shipment, batch, inventory lot and market offer. This
+      // section is read-only diagnostics; it does not filter or rewrite any collection.
       const scopedSiteId = String(setup.selected.siteId);
       const scopedFactoryId = String(setup.selected.factoryId);
       const scopedResourceId = String(setup.selected.resourceId).toLowerCase();
       const network = resource.industrialNetwork || (resource.industrialNetwork = {});
       const economy = g.Game.state.economy?.[seller] || (g.Game.state.economy[seller] = {});
-      const controllerEntry = Object.entries(resource.mineSiteControllers || {}).find(([key, row]) =>
-        String(row?.siteReferenceKey || row?.siteId || key) === scopedSiteId) || null;
-      const selectedOccurrenceKeys = new Set(
-        Array.isArray(controllerEntry?.[1]?.linkedOccurrenceKeys) ? controllerEntry[1].linkedOccurrenceKeys.map(String) : []
-      );
-      for (const [key, row] of Object.entries(resource.mineStates || {})) {
-        if (String(row?.siteReferenceKey || row?.siteId || row?.sourceSiteId || '') === scopedSiteId)
-          selectedOccurrenceKeys.add(String(key));
-      }
-      const lineageBatchIds = new Set([originBatchId]);
-      const scopedCollections = [];
-      const addArrayScope = (owner, key, predicate) => {
-        if (!owner || !Array.isArray(owner[key])) return;
-        const original = owner[key];
-        owner[key] = original.filter(predicate);
-        scopedCollections.push({ owner, key, original, predicate, kind: 'array' });
-      };
-      const addMapScope = (owner, key, predicate) => {
-        if (!owner || !owner[key] || typeof owner[key] !== 'object' || Array.isArray(owner[key])) return;
-        const original = owner[key];
-        owner[key] = Object.fromEntries(Object.entries(original).filter(([mapKey,row]) => predicate(mapKey,row)));
-        scopedCollections.push({ owner, key, original, predicate, kind: 'map' });
-      };
-      const batchRelated = row => {
-        const id = String(row?.batchId || row?.sourceBatchId || '');
-        if (id && lineageBatchIds.has(id)) return true;
-        const parents = [
-          ...(Array.isArray(row?.sourceBatchIds) ? row.sourceBatchIds : []),
-          ...(Array.isArray(row?.batchAllocations) ? row.batchAllocations.flatMap(x => [x?.batchId, x?.originatingBatchId]) : [])
-        ].filter(Boolean).map(String);
-        if (parents.some(parent => lineageBatchIds.has(parent))) {
-          if (id) lineageBatchIds.add(id);
-          return true;
-        }
-        return false;
-      };
-      const siteRelated = row =>
-        String(row?.siteId || row?.siteReferenceKey || row?.sourceSiteId || '') === scopedSiteId ||
-        selectedOccurrenceKeys.has(String(row?.occurrenceKey || row?.mineId || ''));
-      const factoryRelated = row =>
-        String(row?.factoryId || row?.assetId || row?.id || row?.projectId || '') === scopedFactoryId ||
-        String(row?.destinationFactoryId || '') === scopedFactoryId;
-      const originalBatches = Array.isArray(resource.batches) ? resource.batches : [];
-      const unrelatedSiteBatchRows = originalBatches.filter(row => siteRelated(row) && !batchRelated(row));
-      const excludedSiteBatchSummary = Object.values(unrelatedSiteBatchRows.reduce((groups, row) => {
-        const resourceId = String(row?.resourceId || row?.materialIdentity || 'UNKNOWN');
-        const stage = String(row?.stage || 'RAW').toUpperCase();
-        const key = resourceId + '|' + stage;
-        if (!groups[key]) groups[key] = { resourceId, stage, count: 0, remainingQuantity: 0 };
-        groups[key].count += 1;
-        groups[key].remainingQuantity += Math.max(0, Number(row?.remainingQuantity ?? row?.quantity) || 0);
-        return groups[key];
-      }, {})).sort((a, b) => b.remainingQuantity - a.remainingQuantity).slice(0, 12);
-      let lineageChanged = true;
-      while (lineageChanged) {
-        lineageChanged = false;
-        for (const row of originalBatches) {
-          const id = String(row?.batchId || '');
-          if (id && !lineageBatchIds.has(id) &&
-              (Array.isArray(row?.sourceBatchIds) ? row.sourceBatchIds : []).some(parent => lineageBatchIds.has(String(parent)))) {
-            lineageBatchIds.add(id);
-            lineageChanged = true;
-          }
-        }
-      }
-      addArrayScope(economy, 'productionAssets', factoryRelated);
-      addArrayScope(resource, 'mineSiteReferences', siteRelated);
-      addMapScope(resource, 'mineSiteControllers', (key, row) =>
-        String(row?.siteReferenceKey || row?.siteId || key) === scopedSiteId);
-      addMapScope(resource, 'mineStates', key => selectedOccurrenceKeys.has(String(key)));
-      addMapScope(resource, 'mineOutputs', key => selectedOccurrenceKeys.has(String(key)));
-      addMapScope(resource, 'minePaths', key => String(key) === scopedSiteId || selectedOccurrenceKeys.has(String(key)));
-      addArrayScope(resource, 'mines', siteRelated);
-      addArrayScope(resource, 'mineAssets', siteRelated);
-      addArrayScope(resource, 'mineProductionLedger', siteRelated);
-      addArrayScope(resource, 'batches', row => batchRelated(row));
-      addMapScope(resource, 'inventoryLots', (key, row) =>
-        String(key) === originBatchId || batchRelated(row) || siteRelated(row) ||
-        String(row?.resourceId || row?.materialIdentity || '').toLowerCase() === scopedResourceId);
-      for (const warehouseName of ['warehouse', 'rawWarehouse']) {
-        const warehouse = resource[warehouseName];
-        if (!warehouse || typeof warehouse !== 'object') continue;
-        addArrayScope(warehouse, 'receipts', row => batchRelated(row) || siteRelated(row));
-        addArrayScope(warehouse, 'shipments', row => batchRelated(row) || siteRelated(row));
-        addArrayScope(warehouse, 'lots', row => batchRelated(row) ||
-          String(row?.resourceId || '').toLowerCase() === scopedResourceId);
-      }
-      addArrayScope(resource, 'warehouseReceiptLedger', row => batchRelated(row) || siteRelated(row));
-      addArrayScope(network, 'shipments', row => batchRelated(row) || siteRelated(row) || factoryRelated(row));
-      addArrayScope(network, 'deliveries', row => batchRelated(row) || siteRelated(row) || factoryRelated(row));
-      addArrayScope(network, 'extractions', row => siteRelated(row) || batchRelated(row));
-      addArrayScope(network, 'siteFlowLedger', row => siteRelated(row) || batchRelated(row));
-      addArrayScope(network, 'projects', row => siteRelated(row) || factoryRelated(row));
-      addArrayScope(network, 'factoryInputRequests', factoryRelated);
-      addArrayScope(network, 'factoryInputTransfers', row => factoryRelated(row) || batchRelated(row));
-      addArrayScope(network, 'factoryProductionCycleHistory', factoryRelated);
-      addMapScope(network, 'siteLogisticsBySiteId', key => String(key) === scopedSiteId);
-      addMapScope(network, 'transportFleetBySiteId', key =>
-        String(key) === scopedSiteId || String(key) === 'WH-' + seller + '-RAW' ||
-        String(key) === 'WH-' + seller + '-PROCESSED');
-      addMapScope(network, 'factoryProductionCycles', key => String(key) === scopedFactoryId);
-      addMapScope(network, 'factoryRuntime', key => String(key) === scopedFactoryId);
-      addMapScope(network, 'reservations', (key, row) =>
-        String(key).includes(originBatchId) || String(key).includes(scopedFactoryId) ||
-        batchRelated(row) || siteRelated(row) || factoryRelated(row));
-      const sellerTrade = g.Game.state.trade?.[seller];
-      if (sellerTrade?.offerBook && !Array.isArray(sellerTrade.offerBook) && typeof sellerTrade.offerBook === 'object') {
-        addMapScope(sellerTrade, 'offerBook', key =>
-          String(key).toLowerCase() === String(setup.selected.outputProductId).toLowerCase());
-      } else {
-        addArrayScope(sellerTrade, 'offerBook', row =>
-          String(row?.resourceId || '').toLowerCase() === String(setup.selected.outputProductId).toLowerCase());
-      }
       const scopeCounts = {
-        selectedSiteId: scopedSiteId, selectedFactoryId: scopedFactoryId,
-        selectedOccurrenceCount: selectedOccurrenceKeys.size,
-        selectedBatchLineageIds: [...lineageBatchIds],
-        excludedUnrelatedSiteBatchCount: unrelatedSiteBatchRows.length,
-        excludedUnrelatedSiteBatchSummary: excludedSiteBatchSummary,
-        retainedFactoryCount: economy.productionAssets?.length || 0,
-        retainedMineStateCount: Object.keys(resource.mineStates || {}).length,
+        dataScope: 'FULL_PLAYER_COUNTRY_RUNTIME',
+        selectedSiteId: scopedSiteId,
+        selectedFactoryId: scopedFactoryId,
+        totalFactoryCount: (economy.productionAssets || []).length,
+        totalMineStateCount: Object.keys(resource.mineStates || {}).length,
+        totalBatchCount: (resource.batches || []).length,
+        totalInventoryLotCount: Object.keys(resource.inventoryLots || {}).length,
+        totalShipmentCount: network.shipments?.length || 0,
+        totalSiteFlowCount: network.siteFlowLedger?.length || 0,
         retainedOriginBatchPresent: (resource.batches || []).some(row => String(row?.batchId || '') === originBatchId),
         retainedOriginLotPresent: !!resource.inventoryLots?.[originBatchId],
-        retainedShipmentCount: network.shipments?.length || 0,
-        retainedSiteFlowCount: network.siteFlowLedger?.length || 0,
-        scopedCollectionCount: scopedCollections.length
-      };
-      g.__omegaMineMarketTreasuryRestoreScope = () => {
-        for (const entry of scopedCollections.reverse()) {
-          const current = entry.owner[entry.key];
-          if (entry.kind === 'array') {
-            const scopedRows = Array.isArray(current) ? current : [];
-            entry.owner[entry.key] = entry.original.filter(row => !entry.predicate(row)).concat(scopedRows);
-          } else {
-            const scopedRows = current && typeof current === 'object' && !Array.isArray(current) ? current : {};
-            entry.owner[entry.key] = Object.assign(
-              Object.fromEntries(Object.entries(entry.original).filter(([key, row]) => !entry.predicate(key, row))),
-              scopedRows
-            );
-          }
-        }
-        scopedCollections.length = 0;
-        mark('TEMPORARY_PLAYER_COUNTRY_PIPELINE_SCOPE_RESTORED', {
-          selectedSiteId: scopedSiteId, selectedFactoryId: scopedFactoryId
-        });
-        g.__omegaMineMarketTreasuryRestoreScope = null;
+        filteredCollectionCount: 0
       };
       if (!scopeCounts.retainedOriginLotPresent)
-        fail('TEMPORARY_PIPELINE_SCOPE_DROPPED_ORIGIN_INVENTORY_LOT', scopeCounts);
+        fail('PLAYER_PIPELINE_ORIGIN_INVENTORY_LOT_MISSING', scopeCounts);
       g.__omegaMineMarketTreasuryScopeDetails = scopeCounts;
-      mark('TEMPORARY_SINGLE_MINE_FACTORY_SCOPE_APPLIED', {
-        ...scopeCounts,
-        marketRebuildOverrideInstalled:
-          g.OmegaGlobalMarket === scopedGlobalMarket &&
-          g.OmegaGlobalMarket.rebuildCountry === scopedGlobalMarket.rebuildCountry
-      });
+      mark('FULL_PLAYER_COUNTRY_RUNTIME_RETAINED', scopeCounts);
       const snapshots = [];
       let finished = null;
-      const participantHandlers = new Map();
       const legacyListenerRows = Array.isArray(g.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__)
         ? g.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__ : [];
       const globalMarketListenerIds = new Set(legacyListenerRows
         .filter(row => /omega_global_market_system\.js/i.test(String(row.registrationScript || '')))
         .map(row => String(row.id || '')).filter(Boolean));
-      const globalMarketParticipantIds = new Set();
-      let deferredGlobalMarketTurnCount = 0;
-      g.__omegaMineMarketTreasuryParticipantTrace = [];
-      for (const entry of simulation.turnParticipants?.values?.() || []) {
-        if (!entry || typeof entry.handler !== 'function') continue;
-        const original = entry.handler;
-        participantHandlers.set(entry, original);
-        if (globalMarketListenerIds.has(String(entry.id || ''))) {
-          globalMarketParticipantIds.add(String(entry.id));
-          entry.handler = async function () {
-            deferredGlobalMarketTurnCount++;
-            return { status: 'DEFERRED_BY_MINE_FACTORY_E2E',
-              reason: 'GLOBAL_MARKET_REBUILT_AFTER_FINISHED_GOODS',
-              turn: Number(g.Game.state.simulation?.turn || 0) + 1 };
-          };
-          continue;
-        }
-        entry.handler = async function (...args) {
-          const startedAt = Date.now();
-          const record = {
-            id: entry.id,
-            turn: Number(g.Game.state.simulation?.turn || 0) + 1,
-            status: 'RUNNING',
-            startedAt
-          };
-          g.__omegaMineMarketTreasuryParticipantTrace.push(record);
-          mark('TURN_PARTICIPANT_START', { id: entry.id, turn: record.turn });
-          try {
-            const value = await original.apply(this, args);
-            record.status = 'COMPLETED';
-            record.durationMs = Date.now() - startedAt;
-            mark('TURN_PARTICIPANT_COMPLETE', { id: entry.id, durationMs: record.durationMs });
-            return value;
-          } catch (error) {
-            record.status = 'FAILED';
-            record.durationMs = Date.now() - startedAt;
-            record.error = String(error?.message || error).slice(0, 600);
-            mark('TURN_PARTICIPANT_FAILED', { id: entry.id, durationMs: record.durationMs, message: record.error });
-            throw error;
-          }
-        };
-      }
-      if (!globalMarketParticipantIds.size)
-        fail('GLOBAL_MARKET_TURN_LISTENER_NOT_IDENTIFIED_FOR_SCOPED_E2E_WAIT', {
-          listenerRows: legacyListenerRows.filter(row => /omega_global_market_system\.js/i.test(String(row.registrationScript || ''))),
-          participantIds: [...participantHandlers.keys()].map(entry => entry.id)
+      const globalMarketParticipantIds = new Set(
+        [...(simulation.turnParticipants?.values?.() || [])]
+          .filter(entry => entry && globalMarketListenerIds.has(String(entry.id || '')))
+          .map(entry => String(entry.id))
+      );
+      const deferredGlobalMarketTurnCount = 0;
+      const participantIds = (simulation.participantDiagnostics?.() || []).map(row => row.id);
+      const requiredRuntimeParticipants = [
+        requiredResourceParticipantId,
+        worldSchedulerId,
+        ...globalMarketParticipantIds
+      ];
+      const missingRuntimeParticipants = requiredRuntimeParticipants.filter(id => !participantIds.includes(id));
+      if (missingRuntimeParticipants.length)
+        fail('NORMAL_GAMEPLAY_PARTICIPANTS_NOT_REGISTERED', {
+          missingRuntimeParticipants, participantIds, legacyListenerRows
         });
+      if (!globalMarketParticipantIds.size)
+        fail('GLOBAL_MARKET_TURN_PARTICIPANT_NOT_REGISTERED', {
+          listenerRows: legacyListenerRows.filter(row => /omega_global_market_system\.js/i.test(String(row.registrationScript || ''))),
+          participantIds
+        });
+      g.__omegaMineMarketTreasuryParticipantTrace = [];
       mark('FACTORY_PRODUCTION_WAIT_BEGIN', {
-        seller, originBatchId, participantIds: [...participantHandlers.keys()].map(entry => entry.id),
-        deferredGlobalMarketParticipantIds: [...globalMarketParticipantIds],
+        seller, originBatchId, participantIds,
+        requiredRuntimeParticipants,
+        worldSchedulerRetained: simulation.turnParticipants.get(worldSchedulerId) === worldSchedulerEntry,
+        globalMarketParticipantIds: [...globalMarketParticipantIds],
         initialTurn: Number(g.Game.state.simulation?.turn || 0)
       });
       try {
+      const productionDeadlineAt = Date.now() + 7 * 60 * 1000;
       for (let offset = 1; offset <= 64; offset++) {
-        mark('SIMULATION_TURN_START', { offset, turn: Number(g.Game.state.simulation?.turn || 0) + 1 });
-        const turnResult = await Promise.race([
-          g.__omegaMineMarketTreasuryAdvanceTurns(1),
-          new Promise((resolve, reject) => g.setTimeout(() => reject(new Error(
-            'SIMULATION_TURN_TIMEOUT:' + String(Number(g.Game.state.simulation?.turn || 0) + 1) +
-            ':PARTICIPANTS=' + JSON.stringify([...participantHandlers.keys()].map(entry => entry.id))
-          )), 150000))
-        ]);
+        const remainingDeadlineMs = productionDeadlineAt - Date.now();
+        if (remainingDeadlineMs <= 0)
+          throw new Error('E2E_PRODUCTION_DEADLINE_EXCEEDED:' + JSON.stringify({
+            turn: Number(g.Game.state.simulation?.turn || 0),
+            snapshots: snapshots.slice(-12),
+            scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null
+          }).slice(0, 12000));
+        mark('SIMULATION_TURN_START', { offset, turn: Number(g.Game.state.simulation?.turn || 0) + 1,
+          remainingDeadlineMs });
+        const turnTimeoutMs = Math.max(1, Math.min(150000, remainingDeadlineMs));
+        let turnTimeoutId = null;
+        let turnResult;
+        try {
+          turnResult = await Promise.race([
+            g.__omegaMineMarketTreasuryAdvanceTurns(1),
+            new Promise((resolve, reject) => {
+              turnTimeoutId = g.setTimeout(() => reject(new Error(
+                'SIMULATION_TURN_TIMEOUT:' + String(Number(g.Game.state.simulation?.turn || 0) + 1) +
+                ':DIAGNOSTICS=' + JSON.stringify({
+                  participantIds,
+                  lastTurnParticipantResults: simulation.lastTurnParticipantResults || [],
+                  lastTurnStatus: simulation.status,
+                  lastError: simulation.lastError || null,
+                  manualAdvanceProgress: simulation.manualAdvanceProgress || null,
+                  stepInProgress: simulation.stepInProgress === true,
+                  manualAdvanceInProgress: simulation.manualAdvanceInProgress === true,
+                  scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null,
+                  session: g.Game.state.simulation?.session || null
+                }).slice(0, 20000)
+              )), turnTimeoutMs);
+            })
+          ]);
+        } finally {
+          if (turnTimeoutId !== null) g.clearTimeout(turnTimeoutId);
+        }
         mark('SIMULATION_TURN_COMPLETE', { offset, turn: Number(g.Game.state.simulation?.turn || simulation.turn || offset), status: turnResult?.status || null });
+        const participantResults = simulation.lastTurnParticipantResults || [];
+        const incompleteParticipants = requiredRuntimeParticipants.map(id =>
+          participantResults.find(row => row.id === id) || null
+        ).filter(row => !row || String(row.status || '').toUpperCase() !== 'COMPLETED');
+        if (incompleteParticipants.length)
+          throw new Error('NORMAL_GAMEPLAY_PARTICIPANT_DID_NOT_COMPLETE:' + JSON.stringify({
+            turn: Number(g.Game.state.simulation?.turn || simulation.turn || offset),
+            requiredRuntimeParticipants, incompleteParticipants, participantResults,
+            scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null
+          }).slice(0, 12000));
         const turn = Number(g.Game.state.simulation?.turn ?? simulation.turn ?? offset);
         const map = batchMap();
         const candidates = (resource.batches || []).filter(row =>
@@ -1366,24 +1416,13 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         }).slice(0, 10000));
       }
       } finally {
-        for (const [entry, handler] of participantHandlers) entry.handler = handler;
-        if (g.__omegaMineMarketTreasuryExcludedWorldScheduler &&
-            !simulation.turnParticipants.has('omega.world-simulation.scheduler.v1')) {
-          simulation.turnParticipants.set('omega.world-simulation.scheduler.v1',
-            g.__omegaMineMarketTreasuryExcludedWorldScheduler);
-        }
-        g.Omega.GlobalMarket = originalGlobalMarket;
-        g.OmegaGlobalMarket = originalGlobalMarketAlias || originalGlobalMarket;
         mark('FACTORY_PRODUCTION_WAIT_END', {
           finished: !!finished,
           turn: Number(g.Game.state.simulation?.turn || 0),
-          deferredMarketRebuildCount,
-          deferredGlobalMarketTurnCount
+          worldSchedulerRetained: simulation.turnParticipants.get(worldSchedulerId) === worldSchedulerEntry,
+          participantIds: (simulation.participantDiagnostics?.() || []).map(row => row.id),
+          fullCountryRuntime: true
         });
-      }
-      if (finished) {
-        await waitStage('FINAL_MARKET_REBUILD_AFTER_FINISHED_GOODS', () =>
-          originalGlobalMarket.rebuildCountry(seller), 120000);
       }
 
       const output = finished.batch;
@@ -1445,12 +1484,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     const salePreparation = await page.evaluate(async ({ setup, production }) => {
       const g = window;
       const seller = setup.seller;
-      const buyer = setup.buyer;
       const productId = production.outputResourceId;
-      const resourceRoot = g.Game.state.resource || (g.Game.state.resource = {});
-      const buyerResource = resourceRoot[buyer] || (resourceRoot[buyer] = {});
-      buyerResource.inventory = buyerResource.inventory && typeof buyerResource.inventory === 'object'
-        ? buyerResource.inventory : {};
       const normalize = value => String(value ?? '').trim().toLowerCase()
         .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
       const readStock = (country, id) => {
@@ -1458,25 +1492,36 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         return Object.keys(inventory).filter(candidate => normalize(candidate) === normalize(id))
           .reduce((sum, key) => sum + Math.max(0, Number(inventory[key]) || 0), 0);
       };
-      const openingKeys = Object.keys(buyerResource.inventory).filter(key => normalize(key) === normalize(productId));
-      if (openingKeys.length > 1) throw new Error('BUYER_PRODUCT_STOCK_KEYS_AMBIGUOUS:' + openingKeys.join(','));
-      if (!openingKeys.length) buyerResource.inventory[productId] = 0;
+      const bank = g.OmegaGovernmentBanking;
+      const market = g.Omega?.GlobalMarket || g.OmegaGlobalMarket;
+      const trade = g.OmegaGlobalTrade;
+      const finance = g.Omega?.FinanceMinistry || g.OmegaFinanceMinistry;
+      const profiles = finance?.getProfiles?.() || [];
+      const candidates = profiles.map(profile => {
+        const code = String(profile?.iso3 || profile?.countryCode || profile?.code || '').trim().toUpperCase();
+        if (!/^[A-Z]{3}$/.test(code) || code === seller)
+          return null;
+        const review = trade.reviewRequest({
+          countryId: code, targetCountryId: seller, resourceId: productId,
+          quantity: 1, unitPrice: 1, needPressure: 0.5
+        });
+        const account = bank.accountSummary(code);
+        const funds = Number(account?.treasuryBalanceUsd ?? account?.availableTreasuryUsd);
+        const relationScore = Number(review?.relationScore);
+        const fxRate = trade.fxRate(code, seller);
+        if (review?.agreement !== true || !Number.isFinite(relationScore) || relationScore < 0.25 ||
+            !(funds > 100) || readStock(code, productId) > 1e-9 || fxRate === null)
+          return null;
+        return { code, funds, relationScore, agreement: review.agreement, fxRate };
+      }).filter(Boolean).sort((a,b) => b.funds-a.funds);
+      const eligibleBuyer = candidates[0] || null;
+      if (!eligibleBuyer)
+        throw new Error('NO_EXISTING_FUNDED_TRADE_PARTNER_WITHOUT_FINISHED_STOCK:' + JSON.stringify({
+          seller, productId, candidateCountryCount: profiles.length
+        }));
+      const buyer = eligibleBuyer.code;
       const buyerOpeningStock = readStock(buyer, productId);
       if (buyerOpeningStock !== 0) throw new Error('BUYER_ALREADY_OWNS_FINISHED_GOODS:' + buyerOpeningStock);
-
-      const relationRoot = g.Game.state.foreign || (g.Game.state.foreign = {});
-      const buyerForeign = relationRoot[buyer] || (relationRoot[buyer] = {});
-      buyerForeign.relations = buyerForeign.relations && typeof buyerForeign.relations === 'object'
-        ? buyerForeign.relations : {};
-      buyerForeign.relations[seller] = {
-        overall: 95, trade: 95, trust: 95, political: 95,
-        trade_agreement: true, war_state: false, sanctions: false,
-        testPreconditionOnly: true
-      };
-
-      const bank = g.OmegaGovernmentBanking;
-      const market = g.Omega.GlobalMarket;
-      const trade = g.OmegaGlobalTrade;
       const rawOffers = () => {
         const value = g.Game.state.trade?.[seller]?.offerBook;
         if (Array.isArray(value)) return value;
@@ -1499,7 +1544,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
 
       let chosenOffer = null;
       for (let offset = 0; offset <= 28; offset++) {
-        market.rebuild();
+        
         const offers = rawOffers().filter(row =>
           normalize(row.resourceId) === normalize(productId) &&
           row.source === 'OMEGA_RESOURCE_ECON_AUTO_OFFER' &&
@@ -1534,10 +1579,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const economy = g.Omega?.ResourceEconomy || g.OmegaResourceEconomy;
       if (typeof economy?.publishMarketOffers !== 'function')
         throw new Error('ECONOMY_MARKET_OFFER_REPUBLISH_API_UNAVAILABLE');
-      const offerPublication = economy.publishMarketOffers(seller);
-      if (offerPublication?.status !== 'APPLIED' || offerPublication?.result?.accepted !== true)
-        throw new Error('FACTORY_OUTPUT_OFFER_REPUBLICATION_FAILED:' + JSON.stringify(offerPublication));
-      market.rebuild();
+      const offerPublicationTurn = await g.__omegaMineMarketTreasuryAdvanceTurns(1);
+      if (offerPublicationTurn?.steps !== 1)
+        throw new Error('SELLER_ASK_NOT_PUBLISHED_BY_NORMAL_TURN:' + JSON.stringify(offerPublicationTurn));
+      
       const executableOffers = rawOffers().filter(row =>
         normalize(row.resourceId) === normalize(productId) &&
         row.source === 'OMEGA_RESOURCE_ECON_AUTO_OFFER' &&
@@ -1636,8 +1681,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         sellerBatchInventoryAudit: JSON.parse(JSON.stringify(sellerBatchInventoryAudit)),
         buyerOpeningStock, sellerBeforeStock, buyerBeforeUsd, sellerBeforeUsd
       };
-      return { seller, buyer, productId, quantity, unitPrice };
+      return { seller, buyer, productId, quantity, unitPrice,
+        buyerTradePrecondition: eligibleBuyer, buyerOpeningStock };
     }, { setup, production });
+    setup.buyer = salePreparation.buyer;
     const tradeUiOpened = await page.evaluate(buyer => {
       const ui = window.Omega?.ResourceCommandCenterUI || window.OmegaResourceCommandCenterUI;
       if (!ui || typeof ui.open !== 'function') return { ready: false, reason: 'RESOURCE_COMMAND_CENTER_UI_UNAVAILABLE' };
@@ -1678,7 +1725,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     assert.ok(uiTradeOrder?.requestId, 'the real trade form must persist a correlated buyer request');
     assert.equal(uiTradeOrder.source, 'OMEGA_RESOURCE_COMMAND_CENTER_UI');
     const sale = await page.evaluate(async ({ setup, production, uiTradeOrder }) => {
-      const g = window, saleContext = g.__omegaMineMarketTreasurySaleContext;
+      const g = window, simulation = g.Omega.Simulation, saleContext = g.__omegaMineMarketTreasurySaleContext;
       if (!saleContext) throw new Error('REAL_UI_MARKET_ORDER_CONTEXT_MISSING');
       const seller = saleContext.seller, buyer = saleContext.buyer;
       const productId = saleContext.productId, quantity = saleContext.quantity, unitPrice = saleContext.unitPrice;
@@ -1725,11 +1772,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         if (String(id || '') === settlementId) settlementDiagnostics.cancel[settlementDiagnostics.cancel.length - 1].result = result;
         return result;
       };
-      market.rebuild();
-      const quote = market.quote(productId);
-      if (String(quote?.status || '').toUpperCase() !== 'CLEARED' ||
-          !(Number(quote?.matchedQuantity) > 0 || Number(quote?.clearingPriceUsd) > 0))
-        throw new Error('REAL_MARKET_BID_DID_NOT_CLEAR_AGAINST_FACTORY_OFFER:' + JSON.stringify(quote).slice(0, 3500));
+      
+      let quote = null;
 
       const outputBatch = (g.Game.state.resource?.[seller]?.batches || [])
         .find(row => String(row.batchId) === production.outputBatchId);
@@ -1737,17 +1781,36 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       if (!(outputBatchQuantityBefore + 1e-7 >= quantity))
         throw new Error('SELLER_OUTPUT_BATCH_CANNOT_BACK_MARKET_ORDER:' + outputBatchQuantityBefore);
 
-      for (let attempt = 0; attempt < 3; attempt++) {
-        trade.processAll();
+      let request = null;
+      let buyerSchedulerEvidence = null;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        await g.__omegaMineMarketTreasuryAdvanceTurns(1);
+        quote = market.quote(productId);
         const requests = g.Game.state.trade?.[buyer]?.importRequests || [];
-        const current = requests.find(row => String(row.requestId) === requestId);
-        if (String(current?.status || '').toUpperCase() === 'SETTLED') break;
+        request = requests.find(row => String(row.requestId) === requestId) || null;
+        const schedulerParticipant = (simulation.lastTurnParticipantResults || [])
+          .find(row => row.id === 'omega.world-simulation.scheduler.v1');
+        const schedulerTurnResult = schedulerParticipant?.result || null;
+        const batch = schedulerTurnResult;
+        const buyerRow = (batch?.active?.results || []).find(row => String(row.countryId || '') === buyer);
+        const buyerTradeHandler = (buyerRow?.handlers || []).find(row =>
+          String(row.id || '') === 'omega.global-trade.country-autonomy');
+        buyerSchedulerEvidence = {
+          schedulerParticipantStatus: schedulerParticipant?.status || null,
+          schedulerTurn: batch?.turn ?? null,
+          activeCountryIds: (g.OmegaWorldSimulationScheduler?.diagnostics?.()?.lastBatch?.activeCountryIds || []),
+          buyerActive: !!buyerRow,
+          buyerTradeHandlerStatus: buyerTradeHandler?.status || null,
+          buyerTradeHandlerResult: buyerTradeHandler?.result || null
+        };
+        if (String(request?.status || '').toUpperCase() === 'SETTLED') break;
       }
-      const request = (g.Game.state.trade?.[buyer]?.importRequests || [])
-        .find(row => String(row.requestId) === requestId);
       if (String(request?.status || '').toUpperCase() !== 'SETTLED')
-        throw new Error('MARKET_REQUEST_NOT_SETTLED:' + JSON.stringify({
-          request, settlementId, settlementTrace: g.__OMEGA_SETTLEMENT_TRACE,
+        throw new Error('BUYER_ORDER_NOT_SETTLED_BY_NORMAL_WORLD_SCHEDULER:' + JSON.stringify({
+          request, buyerSchedulerEvidence,
+          scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null,
+          tradeProcessTrace: g.__OMEGA_LAST_TRADE_PROCESS_TRACE || null,
+          settlementId, settlementTrace: g.__OMEGA_SETTLEMENT_TRACE,
           settlementDiagnostics,
           bankTransaction: bank.getTransaction(settlementId),
           bankSettlementState: {
@@ -1758,6 +1821,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           buyerTreasury: bank.accountSummary(buyer), sellerTreasury: bank.accountSummary(seller)
         }).slice(0, 10000));
 
+      if (String(quote?.status || '').toUpperCase() !== 'CLEARED' ||
+          !(Number(quote?.matchedQuantity) > 0 || Number(quote?.clearingPriceUsd) > 0))
+        throw new Error('NORMAL_TURN_MARKET_BOOK_DID_NOT_CLEAR:' + JSON.stringify({
+          quote, buyerSchedulerEvidence
+        }).slice(0, 3500));
+      if (!buyerSchedulerEvidence?.buyerActive ||
+          String(buyerSchedulerEvidence.buyerTradeHandlerStatus || '').toUpperCase() !== 'COMPLETED')
+        throw new Error('BUYER_ORDER_DID_NOT_RUN_INSIDE_WORLD_SCHEDULER:' + JSON.stringify(buyerSchedulerEvidence));
       const storedTransaction = bank.getTransaction(settlementId);
       const transaction = storedTransaction?.result || storedTransaction;
       if (!storedTransaction || String(storedTransaction.status || transaction?.status || '').toUpperCase() !== 'SETTLED')
@@ -1878,7 +1949,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           status: quote.status, clearingPriceUsd: quote.clearingPriceUsd,
           matchedQuantity: quote.matchedQuantity, bestBidUsd: quote.bestBidUsd, bestAskUsd: quote.bestAskUsd
         },
-        requestId, requestStatus: request.status, settlementId,
+        requestId, requestStatus: request.status, settlementId, buyerSchedulerEvidence,
         treasuryTransaction: {
           transactionId: transaction.transactionId || transaction.id || settlementId,
           status: storedTransaction.status,
@@ -1897,7 +1968,6 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       bank.prepareTradeSettlement = originalPrepareTradeSettlement;
       bank.cancelTradeSettlement = originalCancelTradeSettlement;
       g.removeEventListener('OMEGA_TRADE_SETTLEMENT_FAILED', onTradeSettlementFailed);
-      g.__omegaMineMarketTreasuryRestoreScope?.();
       return saleReport;
     }, { setup, production, uiTradeOrder });
 
@@ -1940,6 +2010,22 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           load, transaction: stored, savedOutput: !!savedOutput, savedOrigin: !!savedOrigin,
           buyerFinishedGoods
         }).slice(0, 3500));
+      const requestBeforeReplay = (window.Game.state.trade?.[setup.buyer]?.importRequests || [])
+        .find(row => String(row.requestId || '') === String(sale.requestId)) || null;
+      const transactionBeforeReplay = JSON.stringify(stored);
+      const replayTurn = await window.__omegaMineMarketTreasuryAdvanceTurns(1);
+      const replayStored = window.OmegaGovernmentBanking.getTransaction(sale.settlementId);
+      const requestAfterReplay = (window.Game.state.trade?.[setup.buyer]?.importRequests || [])
+        .find(row => String(row.requestId || '') === String(sale.requestId)) || null;
+      if (replayTurn?.steps !== 1 ||
+          String(requestBeforeReplay?.status || '').toUpperCase() !== 'SETTLED' ||
+          String(requestAfterReplay?.status || '').toUpperCase() !== 'SETTLED' ||
+          String(requestAfterReplay?.settlementId || '') !== String(sale.settlementId) ||
+          JSON.stringify(replayStored) !== transactionBeforeReplay)
+        throw new Error('POST_LOAD_TURN_DUPLICATED_OR_CHANGED_SETTLEMENT:' + JSON.stringify({
+          replayTurn, requestBeforeReplay, requestAfterReplay,
+          transactionBeforeReplay: JSON.parse(transactionBeforeReplay), replayStored
+        }).slice(0, 5000));
       return {
         slot, saveStatus: save.status || 'COMPLETED', loadStatus: load.status || 'COMPLETED',
         loadIntegrity: simulation.lastLoadIntegrity || null,
@@ -2000,6 +2086,18 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       legacyTurnListeners,
       participantTrace,
       resourceEconomyPhaseProfile,
+      ministryTickProfile: await page.evaluate(() => window.__OMEGA_MINISTRY_TICK_PROFILE__ || null).catch(() => null),
+      simulationStepProfile: await page.evaluate(() => window.__OMEGA_SIMULATION_STEP_PROFILE__ || null).catch(() => null),
+      simulationSaveProfile: await page.evaluate(() => window.__OMEGA_SIMULATION_SAVE_PROFILE__ || null).catch(() => null),
+      worldSchedulerDiagnostics: await page.evaluate(() =>
+        window.OmegaWorldSimulationScheduler?.diagnostics?.() || null
+      ).catch(() => null),
+      simulationDiagnostics: await page.evaluate(() =>
+        window.Omega?.Simulation?.diagnostics?.() || null
+      ).catch(() => null),
+      finalizerDiagnostics: await page.evaluate(() =>
+        window.Omega?.Simulation?.finalizerDiagnostics?.() || []
+      ).catch(() => []),
       setupSummary: setupSummaryForFailure,
       milestoneTrace: milestoneTrace.slice(-100),
       turnSnapshots: await page.evaluate(() =>
@@ -2025,6 +2123,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     await saveArtifact('omega-mine-factory-market-treasury-failure.json', diagnostic).catch(() => {});
     throw error;
   } finally {
+    if (deadlineWatchdog !== null) clearTimeout(deadlineWatchdog);
     await context.close().catch(() => {});
     await browser.close().catch(() => {});
     await new Promise(resolve => host.server.close(resolve)).catch(() => {});

@@ -166,6 +166,56 @@ function createSandbox(options={}){
   return {sandbox,rows,countryA,countryB,state,ids,runtime,mesh,kernel,store,blackboard,tick,tickAll,registerTradeAction};
 }
 
+test('all 17 ministry ticks perform interoperability expiry once per simulation turn',()=>{
+  const s=createSandbox();
+  const calls=[];
+  const instance=s.mesh.instance;
+  const original=instance.advanceTurn.bind(instance);
+  instance.advanceTurn=function(turn){calls.push(turn);return original(turn);};
+  s.tickAll(4);
+  assert.deepEqual(calls,[4]);
+  s.tickAll(4);
+  assert.deepEqual(calls,[4],'repeated ticks for the same turn must not rescan expiry ledgers');
+  s.tickAll(5);
+  assert.deepEqual(calls,[4,5],'a new turn must run one fresh expiry sweep');
+});
+
+test('resource snapshot publication computes its ministry revision once for all public facts',()=>{
+  const s=createSandbox();
+  const provider=s.mesh.instance.provider;
+  assert.ok(provider&&typeof provider.getRevision==='function');
+  const original=provider.getRevision.bind(provider);
+  let resourceRevisionComputations=0;
+  provider.getRevision=(countryId,domain,options={})=>{
+    const hasCachedDomain=options.revisionCache instanceof Map &&
+      [...options.revisionCache.keys()].some(key=>String(key).endsWith('|'+String(domain)));
+    if(String(domain)==='resource'&&!hasCachedDomain)resourceRevisionComputations++;
+    return original(countryId,domain,options);
+  };
+  const result=s.mesh.publishState('resource',{
+    context:{countryId:s.countryA,turn:6},
+    domainExecution:{observedInputs:{}},
+    runtimeState:{status:'RUNNING',active:true}
+  },{returnPeerState:false});
+  assert.equal(result.status,'PUBLISHED');
+  assert.equal(resourceRevisionComputations,1,
+    'the whole resource domain revision must be calculated once per publication, not once per field');
+});
+
+test('publishState can return a publication receipt without cloning the peer read model',()=>{
+  const s=createSandbox();
+  const result=s.mesh.publishState('finance',{
+    context:{countryId:s.countryA,turn:1},
+    domainExecution:{},
+    runtimeState:{status:'RUNNING',active:true}
+  },{returnPeerState:false});
+  assert.equal(result.status,'PUBLISHED');
+  assert.equal(result.ministryId,'finance');
+  const snapshot=s.mesh.getPeerState('finance','finance',s.countryA,{currentTurn:1});
+  assert.ok(snapshot);
+  assert.equal(snapshot.countryId,s.countryA);
+});
+
 test('ISO3 country keys bypass semantic resolution in interop and state transactions',()=>{
   const s=createSandbox();
   const registry=s.sandbox.OmegaCanonicalIdentityRegistry;
@@ -477,6 +527,119 @@ test('Q2: Interior runtime reads and publishes Home Ministry police state for th
   assert.equal(peer.publishedFacts['interior.police.policeCount'].countryId,s.countryA);
 });
 
+test('ministry provider describe reads a path once and caches top-domain revisions within a publication',()=>{
+  const s=createSandbox();
+  const provider=s.sandbox.Omega.MinistryStateProvider.create({
+    stateSource:s.state,countryRows:readRepositoryCountries()
+  });
+  let availabilityReads=0,revisionComputations=0,revisionCacheHits=0;
+  const originalAvailability=provider.getAvailability.bind(provider);
+  const originalRevision=provider.getRevision.bind(provider);
+  provider.getAvailability=(...args)=>{availabilityReads++;return originalAvailability(...args);};
+  provider.getRevision=(countryId,domain,options={})=>{
+    const hasCachedDomain=options.revisionCache instanceof Map &&
+      [...options.revisionCache.keys()].some(key=>String(key).endsWith('|'+String(domain)));
+    if(hasCachedDomain)revisionCacheHits++;
+    else revisionComputations++;
+    return originalRevision(countryId,domain,options);
+  };
+  const first=provider.describe(s.countryA,'resource');
+  assert.equal(first.availability,'AVAILABLE');
+  assert.equal(availabilityReads,1,'describe must reuse its first availability result for provenance');
+  assert.equal(revisionComputations,1,'describe must obtain one source revision');
+  const revisionCache=new Map();
+  const second=provider.describe(s.countryA,'resource',{revisionCache});
+  second.value.inventory.oil=999;
+  assert.equal(s.state.resource[s.countryA].inventory.oil,10,
+    'published provider values must remain detached from authoritative state');
+  provider.describe(s.countryA,'resource.inventory',{revisionCache});
+  assert.equal(revisionComputations,2,'a new publication computes the resource revision once');
+  assert.equal(revisionCacheHits,1,'subsequent facts with the same top-level domain reuse the revision');
+  assert.equal(availabilityReads,3,'each requested path is described once');
+  const baselineRevision=provider.getRevision(s.countryA,'resource');
+  s.state.resource[s.countryA].nonPersisted=undefined;
+  assert.equal(provider.getRevision(s.countryA,'resource'),baselineRevision,
+    'content revisions must ignore undefined fields just as the defensive clone did');
+  s.state.resource[s.countryA].nonPersisted=()=>true;
+  assert.equal(provider.getRevision(s.countryA,'resource'),baselineRevision,
+    'content revisions must ignore function fields just as the defensive clone did');
+  delete s.state.resource[s.countryA].nonPersisted;
+  s.state.resource[s.countryA].orderedSet=new Set(['A','B']);
+  const orderedSetRevision=provider.getRevision(s.countryA,'resource');
+  s.state.resource[s.countryA].orderedSet=new Set(['B','A']);
+  assert.notEqual(provider.getRevision(s.countryA,'resource'),orderedSetRevision,
+    'revision hashing must preserve the insertion order used by the previous defensive-clone path');
+  delete s.state.resource[s.countryA].orderedSet;
+});
+
+test('committed command audit records write paths and revisions without copying full before/after domain state',()=>{
+  const s=createSandbox();
+  const before={rows:Array.from({length:1200},(_,index)=>({index,payload:'B'.repeat(250)}))};
+  const after={rows:Array.from({length:1200},(_,index)=>({index,payload:'A'.repeat(250)}))};
+  s.state.economy[s.countryA].largeAuditDomain=before;
+
+  let compactBaselineFingerprint=null;
+  s.mesh.registerCommandHandler('TEST_COMPACT_TRANSACTION_AUDIT','economy',(command,{stateTransaction})=>{
+    stateTransaction.set('economy.largeAuditDomain',after);
+    compactBaselineFingerprint=stateTransaction.writeBaseline.get('economy.largeAuditDomain');
+    // Compact commit may transfer the transaction-owned clone directly into
+    // authoritative state, but the caller must not retain a mutable alias.
+    after.rows[0].payload='MUTATED_AFTER_STAGE';
+    return{accepted:true};
+  });
+
+  const result=s.mesh.dispatchCommand('finance','TEST_COMPACT_TRANSACTION_AUDIT',s.countryA,{},{
+    turn:2,commandType:'TEST_COMPACT_TRANSACTION_AUDIT',commandId:'COMPACT-AUDIT-1'
+  });
+  assert.equal(result.status,'APPLIED');
+  assert.equal(result.transaction.operations.length,1);
+  assert.equal(result.transaction.operations[0].op,'SET');
+  assert.equal(result.transaction.operations[0].path,'economy.largeAuditDomain');
+  assert.match(result.transaction.beforeRevision,/^CONTENT:[0-9a-f]{8}$/);
+  assert.match(result.transaction.afterRevision,/^CONTENT:[0-9a-f]{8}$/);
+  assert.equal(result.transaction.changed,true);
+  assert.match(compactBaselineFingerprint,/^[0-9a-f]{8}$/,
+    'compact commands retain only a content fingerprint, not a deep copy of the previous domain state');
+  assert.equal(s.state.economy[s.countryA].largeAuditDomain.rows[0].payload,'A'.repeat(250));
+
+  const savedCommand=s.mesh.getCommand('COMPACT-AUDIT-1');
+  assert.ok(JSON.stringify(savedCommand).length<5000,
+    'the persistent command ledger must not embed the full old and new domain payloads');
+  assert.equal(savedCommand.transaction.operations.length,1);
+  assert.equal(Object.hasOwn(savedCommand.transaction.operations[0],'before'),false);
+  assert.equal(Object.hasOwn(savedCommand.transaction.operations[0],'after'),false);
+
+  // Direct/standalone transactions keep the historical detailed operation result.
+  const standalone=s.sandbox.OmegaMinistryStateTransaction.create(
+    'economy',s.countryA,3,'STANDALONE-TRANSACTION-DETAILS',s.state
+  );
+  const standaloneBefore=s.state.economy[s.countryA].largeAuditDomain;
+  const standaloneAfter={version:2,records:[{id:'AUDIT-DETAIL',value:42}]};
+  standalone.set('economy.largeAuditDomain',standaloneAfter);
+  const standaloneResult=standalone.commit();
+  assert.equal(JSON.stringify(standaloneResult.operations[0].before),JSON.stringify(standaloneBefore));
+  assert.equal(JSON.stringify(standaloneResult.operations[0].after),JSON.stringify(standaloneAfter));
+
+  // Compact transactions must still detect concurrent writes to their exact write set.
+  const compactConflict=s.sandbox.OmegaMinistryStateTransaction.create(
+    'economy',s.countryA,4,'COMPACT-TRANSACTION-CONFLICT',s.state,{includeOperationValues:false}
+  );
+  compactConflict.set('economy.largeAuditDomain',{transaction:'staged'});
+  s.state.economy[s.countryA].largeAuditDomain={concurrent:'external-write'};
+  assert.throws(()=>compactConflict.commit(),error=>error?.code==='STATE_TRANSACTION_CONFLICT');
+
+  // Seed the nested target explicitly: the preceding standalone transaction
+  // validates its returned audit payload, not ownership of this live state object.
+  s.state.economy[s.countryA].largeAuditDomain={records:[{id:'AUDIT-DETAIL',value:42}]};
+  const nestedCompactConflict=s.sandbox.OmegaMinistryStateTransaction.create(
+    'economy',s.countryA,5,'COMPACT-NESTED-TRANSACTION-CONFLICT',s.state,{includeOperationValues:false}
+  );
+  nestedCompactConflict.set('economy.largeAuditDomain',{transaction:'staged'});
+  s.state.economy[s.countryA].largeAuditDomain.records[0].value=43;
+  assert.throws(()=>nestedCompactConflict.commit(),error=>error?.code==='STATE_TRANSACTION_CONFLICT',
+    'compact conflict signatures must still detect nested in-place writes without recursively serializing the full ledger');
+});
+
 test('R: save/load restores logically equivalent interoperability state',()=>{
   const s=createSandbox();
   s.tickAll(1);
@@ -702,12 +865,87 @@ test('command IDs are idempotent and cannot overwrite a different command',()=>{
   assert.equal(replay.idempotentReplay,true);
   assert.equal(invocations,1,'the same command must never run twice');
   assert.equal(s.state.economy[s.countryA].gdp,101);
+
+  const savedReceipt=s.mesh.getCommand('PIPE-CMD-COLLISION-1');
+  assert.equal(savedReceipt.payloadOmitted,true,
+    'the durable idempotency receipt must not retain a second copy of the original command payload');
+  assert.equal(Object.hasOwn(savedReceipt,'payload'),false);
+  assert.ok(JSON.stringify(savedReceipt).length<5000,
+    'large command inputs must not inflate the persisted command history');
+
+  // A compact receipt must still reject a changed replay after save/load without
+  // needing the original payload to remain in the durable ledger.
+  const restored=createSandbox({state:JSON.parse(JSON.stringify(s.state))});
+  restored.mesh.instance.loadState(s.mesh.instance.exportState());
+  let restoredInvocations=0;
+  restored.mesh.registerCommandHandler('PIPELINE_IDEMPOTENCY_TEST','economy',(command,{stateTransaction})=>{
+    restoredInvocations+=1;
+    stateTransaction.set('economy.gdp',999);
+    return{accepted:true};
+  });
+  const restoredReplay=restored.mesh.dispatchCommand('finance','PIPELINE_IDEMPOTENCY_TEST',restored.countryA,{delta:1},options);
+  assert.equal(restoredReplay.idempotentReplay,true);
+  assert.equal(restoredInvocations,0,'restored idempotency receipts must not execute the command again');
+  assert.throws(
+    ()=>restored.mesh.dispatchCommand('finance','PIPELINE_IDEMPOTENCY_TEST',restored.countryA,{delta:2},options),
+    /COMMAND_ID_COLLISION/
+  );
+
   assert.throws(
     ()=>s.mesh.dispatchCommand('finance','PIPELINE_IDEMPOTENCY_TEST',s.countryA,{delta:2},options),
     /COMMAND_ID_COLLISION/
   );
   assert.equal(invocations,1);
   assert.ok(s.mesh.getIntegrityConflicts(s.countryA).some(row=>row.kind==='COMMAND_ID_COLLISION'));
+});
+
+test('extraction command receipts omit large durable results but preserve the live dispatch contract',()=>{
+  const s=createSandbox();
+  let invocations=0;
+  const records=Array.from({length:120},(_,index)=>({
+    occurrenceKey:'OCCURRENCE-'+index,
+    siteReferenceKey:'SITE_TST_'+index,
+    resourceId:'iron_ore',
+    approvedQuantity:10,
+    producedBatch:{batchId:'BATCH-'+index,provenance:{source:'TEST',notes:'X'.repeat(2048)}}
+  }));
+  s.mesh.registerCommandHandler('OMEGA_RESOURCE_EXTRACT_TICK','resource',(command,{stateTransaction})=>{
+    invocations++;
+    const inventory=stateTransaction.get('resource.inventory')||{};
+    inventory.iron_ore=(Number(inventory.iron_ore)||0)+records.length;
+    stateTransaction.set('resource.inventory',inventory);
+    return{accepted:true,countryId:s.countryA,extracted:records.length,replayed:0,blocked:0,records};
+  });
+  const options={turn:7,commandType:'OMEGA_RESOURCE_EXTRACT_TICK',commandId:'EXTRACTION-COMPACT-RECEIPT'};
+  const first=s.mesh.dispatchCommand('trade','OMEGA_RESOURCE_EXTRACT_TICK',s.countryA,{},options);
+  assert.equal(first.status,'APPLIED');
+  assert.equal(first.result.records.length,120,
+    'the active extraction caller must receive the complete handler records');
+  assert.equal(first.result.records[0].producedBatch.provenance.notes.length,2048);
+  const saved=s.mesh.getCommand(options.commandId);
+  assert.equal(saved.result.resultPayloadOmitted,true);
+  assert.equal(saved.result.recordCount,120);
+  assert.equal(saved.result.successfulRecordCount,120);
+  assert.equal(Object.hasOwn(saved.result,'records'),false,
+    'the durable receipt must not retain extraction record or batch payloads');
+  assert.ok(JSON.stringify(saved).length<5000,
+    'large extraction outputs must not increase durable command history');
+  const replay=s.mesh.dispatchCommand('trade','OMEGA_RESOURCE_EXTRACT_TICK',s.countryA,{},options);
+  assert.equal(replay.idempotentReplay,true);
+  assert.equal(replay.result.records.length,120,
+    'same-process retry must retain the full result without re-executing extraction');
+  assert.equal(invocations,1);
+
+  const restored=createSandbox({state:JSON.parse(JSON.stringify(s.state))});
+  restored.mesh.instance.loadState(s.mesh.instance.exportState());
+  restored.mesh.registerCommandHandler('OMEGA_RESOURCE_EXTRACT_TICK','resource',()=>{
+    throw new Error('PERSISTED_REPLAY_MUST_NOT_EXECUTE_HANDLER');
+  });
+  const persistedReplay=restored.mesh.dispatchCommand('trade','OMEGA_RESOURCE_EXTRACT_TICK',s.countryA,{},options);
+  assert.equal(persistedReplay.idempotentReplay,true);
+  assert.equal(restored.mesh.getCommand(options.commandId).result.resultPayloadOmitted,true);
+  assert.equal(Object.hasOwn(persistedReplay.result||{},'records'),false,
+    'a restored receipt must remain compact and must not resurrect discarded batch arrays');
 });
 
 test('event IDs reject conflicting payloads while identical retries remain stable',()=>{
@@ -838,4 +1076,55 @@ test('generic finance commands cannot use procurement cross-domain capabilities'
     economy:s.state.economy[s.countryA],
     trade:s.state.trade[s.countryA]
   }),before,'rejected cross-domain command must roll back all staged finance writes');
+});
+
+
+test('compact transaction path revisions detect overlapping writes outside the sampled ledger entries',()=>{
+  const s=createSandbox();
+  s.state.resource[s.countryA].largeLedger={
+    rows:Array.from({length:1200},(_,index)=>({index,payload:'X'.repeat(64)}))
+  };
+  const first=s.sandbox.OmegaMinistryStateTransaction.create(
+    'resource',s.countryA,11,'COMPACT-OVERLAP-FIRST',s.state,{includeOperationValues:false}
+  );
+  const second=s.sandbox.OmegaMinistryStateTransaction.create(
+    'resource',s.countryA,11,'COMPACT-OVERLAP-SECOND',s.state,{includeOperationValues:false}
+  );
+  const firstSnapshot=first.get('resource.largeLedger');
+  const secondSnapshot=second.get('resource.largeLedger');
+  firstSnapshot.rows[700].payload='FIRST';
+  secondSnapshot.rows[700].payload='SECOND';
+  first.setOwned('resource.largeLedger',firstSnapshot);
+  second.setOwned('resource.largeLedger',secondSnapshot);
+  first.commit();
+  assert.throws(()=>second.commit(),error=>error?.code==='STATE_TRANSACTION_CONFLICT',
+    'a second transaction must not overwrite a concurrent write beyond the bounded fingerprint sample');
+  assert.equal(s.state.resource[s.countryA].largeLedger.rows[700].payload,'FIRST');
+});
+
+test('compact transactions can transfer handler-owned snapshots without a second deep clone',()=>{
+  const s=createSandbox();
+  s.state.resource[s.countryA].largeLedger={
+    rows:Array.from({length:1200},(_,index)=>({index,payload:'X'.repeat(256)}))
+  };
+  const tx=s.sandbox.OmegaMinistryStateTransaction.create(
+    'resource',s.countryA,9,'OWNED-SNAPSHOT-TRANSFER',s.state,{includeOperationValues:false}
+  );
+  const owned=tx.get('resource.largeLedger');
+  owned.rows[0].payload='UPDATED';
+  tx.setOwned('resource.largeLedger',owned);
+  const committed=tx.commit();
+  assert.equal(s.state.resource[s.countryA].largeLedger,owned,
+    'compact commit transfers the transaction-owned snapshot directly into authoritative state');
+  assert.equal(s.state.resource[s.countryA].largeLedger.rows[0].payload,'UPDATED');
+  assert.equal(committed.operations.length,1);
+  assert.equal(committed.operations[0].op,'SET');
+  assert.equal(committed.operations[0].path,'resource.largeLedger');
+  assert.equal(tx.writeBaseline.size,0);
+  assert.throws(()=>{
+    const detailed=s.sandbox.OmegaMinistryStateTransaction.create(
+      'resource',s.countryA,10,'OWNED-SNAPSHOT-REJECTED',s.state
+    );
+    detailed.setOwned('resource.largeLedger',{rows:[]});
+  },/STATE_TRANSACTION_SET_OWNED_REQUIRES_COMPACT_MODE/);
 });

@@ -264,7 +264,14 @@ for(const site of unifiedProfileRows){
   unifiedProfileCount++;
 }
 assert.ok(unifiedProfileCount>=400,'the normalized authority audit must cover the canonical and supplemental physical-site population; count='+unifiedProfileCount);
-const hydrated=runtime.hydrateCountry('BGD');
+const previousResourcePerfFlag=globalThis.__OMEGA_RESOURCE_ECONOMY_PERF__;
+let hydrated;
+globalThis.__OMEGA_RESOURCE_ECONOMY_PERF__=true;
+try{
+  hydrated=runtime.hydrateCountry('BGD');
+}finally{
+  globalThis.__OMEGA_RESOURCE_ECONOMY_PERF__=previousResourcePerfFlag;
+}
 const indDiag=runtime.hydrateCountry('IND');
 const indState=runtime.countryResourceState('IND')||{};
 
@@ -964,11 +971,30 @@ const oneTapSite={
 };
 const oneTapRegistration=runtime.registerCanonicalSiteSimulationRecord(oneTapSite);
 assert.equal(oneTapRegistration.status,'REGISTERED',JSON.stringify(oneTapRegistration));
+assert.equal(runtime.extractionSliceSizeForDevice({
+  userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36',
+  deviceMemory:8,hardwareConcurrency:2
+}),8,'a two-core desktop runner with adequate memory must not be forced into mobile-sized extraction batches');
+assert.equal(runtime.extractionSliceSizeForDevice({
+  userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36',
+  deviceMemory:8,hardwareConcurrency:8
+}),128,'a capable desktop uses one identified, larger schedule row per bounded extraction batch');
+assert.equal(runtime.extractionSliceSizeForDevice({
+  userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36',
+  deviceMemory:4,hardwareConcurrency:8
+}),3,'a genuinely low-memory browser must retain bounded extraction batches');
+assert.equal(runtime.extractionSliceSizeForDevice({
+  userAgent:'Mozilla/5.0 (X11; Linux x86_64) Mobile Safari/537.36',
+  deviceMemory:8,hardwareConcurrency:8
+}),3,'handheld browsers must retain bounded extraction batches');
 // Production slices stay inside one country and avoid repeated world-catalog scans.
 const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowment_runtime.js',import.meta.url),'utf8');
 assert.doesNotMatch(endowmentRuntimeSource,/const gameplaySiteIds=new Set\(Object\.values\(canonicalSiteCatalogMap/);
 assert.match(endowmentRuntimeSource,/const canonicalDepositKeys=new Set/);
 assert.match(endowmentRuntimeSource,/const controllerKeyBySiteId=new Map/);
+assert.ok(endowmentRuntimeSource.includes(
+  'const fullRows=siteExecutionRows(c,{...existing,requestedOccurrenceKeys:[]},authoritativeOccurrences);'
+), 'a cold selected-slice request must hydrate and cache the full country site catalog once');
 assert.match(endowmentRuntimeSource,/PLAYER_COUNTRY_SCOPE_VIOLATION/);
 globalThis.Game.state.simulation.playerCountryId='BGD';
 globalThis.Game.state.simulation.session=globalThis.Game.state.simulation.session||{};
@@ -976,10 +1002,66 @@ globalThis.Game.state.simulation.session.playerCountryId='BGD';
 const foreignCountryStart=await runtime.startCountryProduction('AUS');
 assert.equal(foreignCountryStart.status,'BLOCKED',JSON.stringify(foreignCountryStart));
 assert.equal(foreignCountryStart.reason,'PLAYER_COUNTRY_SCOPE_VIOLATION',JSON.stringify(foreignCountryStart));
-const oneTapStart=await runtime.startCountryProduction('BGD',[oneTapSite.siteId]);
-assert.ok(['STARTED','PARTIALLY_STARTED'].includes(oneTapStart.status),
-  'one tap must start simulated extraction on an unattempted commercial site: '+JSON.stringify(oneTapStart));
-assert.ok(oneTapStart.startedSiteCount>0,JSON.stringify(oneTapStart));
+const oneTapHydration=await runtime.hydrateCountry('BGD');
+assert.equal(oneTapHydration.status,'APPLIED',JSON.stringify(oneTapHydration));
+const realism=globalThis.Omega.ResourceRealism;
+const originalSiteModel=realism.siteModel;
+let siteModelCallsDuringCachedExtraction=0;
+realism.siteModel=function(...args){
+  siteModelCallsDuringCachedExtraction+=1;
+  return originalSiteModel.apply(this,args);
+};
+let oneTapStart;
+try{
+  oneTapStart=await runtime.startCountryProduction('BGD',[oneTapSite.siteId]);
+  assert.ok(['STARTED','PARTIALLY_STARTED'].includes(oneTapStart.status),
+    'one tap must start simulated extraction on an unattempted commercial site: '+JSON.stringify(oneTapStart));
+  assert.ok(oneTapStart.startedSiteCount>0,JSON.stringify(oneTapStart));
+  assert.ok(Array.isArray(oneTapStart.scheduleRows)&&oneTapStart.scheduleRows.length===oneTapStart.extractionSliceCount,
+    'each bounded extraction chunk must have one identified schedule row');
+  const scheduleRowIds=oneTapStart.scheduleRows.map(row=>row.rowId);
+  assert.ok(scheduleRowIds.every(Boolean)&&new Set(scheduleRowIds).size===scheduleRowIds.length,
+    'schedule row IDs must be unique within the country/turn');
+  assert.equal(oneTapStart.scheduleRows.reduce((sum,row)=>sum+row.occurrenceCount,0),oneTapStart.attemptedOccurrenceCount,
+    'every selected occurrence must be assigned to exactly one schedule row');
+  assert.match(endowmentRuntimeSource,/options\.commandId='OMEGA-RESOURCE-EXTRACTION:'/,
+    'the schedule row ID must become the idempotent Ministry command ID');
+  assert.equal(siteModelCallsDuringCachedExtraction,0,
+    'selected extraction slices must reuse hydrated site models rather than rebuild the country catalog');
+}finally{
+  realism.siteModel=originalSiteModel;
+}
+let siteModelCallsAcrossTurn=0;
+realism.siteModel=function(...args){
+  siteModelCallsAcrossTurn+=1;
+  return originalSiteModel.apply(this,args);
+};
+try{
+  const oneTapCountryState=globalThis.Game.state.resource.BGD;
+  oneTapCountryState.mineAssets=[{
+    mineId:'TEST-AUTO-MINE:'+oneTapSite.siteId,siteId:oneTapSite.siteId,
+    countryId:'BGD',resourceId:'limestone',status:'OPERATIONAL'
+  }];
+  oneTapCountryState.commissionedSites=[];
+  advanceOneGameTurn(globalThis.Game.state);
+  const nextTurnStart=await runtime.startCountryProduction('BGD',null,{skipHydrationIfReady:true});
+  assert.ok(['STARTED','PARTIALLY_STARTED'].includes(nextTurnStart.status),
+    'the normal turn scheduler must extract an operational commissioned site on the following turn: '+JSON.stringify(nextTurnStart));
+  assert.equal(nextTurnStart.attemptedOccurrenceCount,1,
+    'the normal turn scheduler must not schedule unrelated country mines or commodity child streams: '+JSON.stringify({
+      scheduleRows:nextTurnStart.scheduleRows,
+      candidateStates:(nextTurnStart.scheduleRows||[]).flatMap(row=>row.occurrenceKeys||[]).map(key=>({
+        key,state:oneTapCountryState.mineStates?.[key]||null,
+        controller:Object.entries(oneTapCountryState.mineSiteControllers||{}).find(([,value])=>(value.linkedOccurrenceKeys||[]).includes(key))?.[0]||null
+      }))
+    }));
+  assert.equal(nextTurnStart.blockedOccurrenceCount,0,
+    'uncommissioned and unrelated occurrences must not be re-run as blocked extraction candidates');
+  assert.equal(siteModelCallsAcrossTurn,0,
+    'immutable country site models must be reused across turns rather than rebuilt for each extraction scan');
+}finally{
+  realism.siteModel=originalSiteModel;
+}
 const oneTapLedger=()=>((runtime.countryResourceState('BGD')||{}).mineProductionLedger||[]).filter(row=>
   row.siteReferenceKey===oneTapSite.siteId&&Number(row.turn)===Number(globalThis.Game.state.simulation.turn)&&Number(row.quantity)>0);
 const oneTapLedgerBefore=oneTapLedger();

@@ -163,7 +163,7 @@
     return {ok:true,count:engines.length,uniqueInstances,version:registry.version||null};
   }
 
-  function buildDomainContext(id,dt,currentTurn,store){
+  function buildDomainContext(id,dt,currentTurn,store,sharedRevisionCache=null,sharedDescriptorCache=null){
     const provider=getStateProvider();
     const state=provider?.root?.() || global.Game?.state || global.gameState || {};
     const interop=getInteroperability();
@@ -194,12 +194,24 @@
     };
 
     const paths=Array.isArray(engine?.inputs)?engine.inputs:[];
+    // A ministry context is a read-only publication window. Reuse each domain's
+    // content revision across its input paths instead of hashing a large domain
+    // once for every field (especially the selected country's resource state).
+    const revisionCache=sharedRevisionCache instanceof Map?sharedRevisionCache:new Map();
+    const describeOptions={currentTurn,revisionCache};
     for(const path of paths){
       let value;
       let described=null;
+      const descriptorKey=String(countryId||'')+'|'+String(path);
       try{
-        if(provider?.describe){
-          described=provider.describe(countryId,path,{currentTurn});
+        if(sharedDescriptorCache instanceof Map&&sharedDescriptorCache.has(descriptorKey)){
+          described=sharedDescriptorCache.get(descriptorKey);
+        }else if(provider?.describe){
+          described=provider.describe(countryId,path,describeOptions);
+          if(sharedDescriptorCache instanceof Map&&described)
+            sharedDescriptorCache.set(descriptorKey,described);
+        }
+        if(described){
           if(described.availability!=='UNOBSERVED'&&described.availability!=='UNAVAILABLE'&&described.availability!=='NOT_APPLICABLE'){
             value=described.value;
           }else if(described.value!==null&&described.value!==undefined){
@@ -217,9 +229,19 @@
     // Backward-compatible derived resource state comes through the provider,
     // never as a second authoritative resource database.
     try{
-      if(domainContext.resourceEngineState===undefined && provider?.get){
-        const resourceState=provider.get(countryId,'resourceEngineState');
-        if(resourceState!==undefined)domainContext.resourceEngineState=resourceState;
+      if(id==='resource'&&domainContext.resourceEngineState===undefined){
+        // Only ResourceEngine reads inventory/deposit counts. Reuse its already
+        // observed read-only projections instead of cloning the complete integrated
+        // resource ledger in every one of the 17 ministry contexts.
+        if(domainContext.resourceInventory!==undefined||domainContext.resourceDeposits!==undefined){
+          domainContext.resourceEngineState={
+            inventory:domainContext.resourceInventory,
+            deposits:domainContext.resourceDeposits
+          };
+        }else if(provider?.get){
+          const resourceState=provider.get(countryId,'resourceEngineState');
+          if(resourceState!==undefined)domainContext.resourceEngineState=resourceState;
+        }
       }
     }catch(_){}
 
@@ -271,6 +293,31 @@
     let initialized=false;
     let registryHealth={ok:false,reason:'NOT_INITIALIZED'};
     let interoperability=getInteroperability();
+    // The 17 ministry contexts are read-only within one committed turn. Share
+    // source-domain revisions across them so a large resource ledger is fingerprinted
+    // once per country/turn rather than once for every ministry input context.
+    let sharedRevisionCacheTurn=null;
+    let sharedRevisionCache=new Map();
+    let sharedDescriptorCacheTurn=null;
+    let sharedDescriptorCache=new Map();
+
+    function revisionCacheForTurn(turn){
+      const key=String(turn??'');
+      if(sharedRevisionCacheTurn!==key){
+        sharedRevisionCacheTurn=key;
+        sharedRevisionCache=new Map();
+      }
+      return sharedRevisionCache;
+    }
+
+    function descriptorCacheForTurn(turn){
+      const key=String(turn??'');
+      if(sharedDescriptorCacheTurn!==key){
+        sharedDescriptorCacheTurn=key;
+        sharedDescriptorCache=new Map();
+      }
+      return sharedDescriptorCache;
+    }
 
     function syncManifest(){
       const manifest=global.GLOBAL_MINISTRY_MANIFEST;
@@ -325,34 +372,84 @@
       return true;
     }
 
+    let lastInteropAdvanceBridge=null;
+    let lastInteropAdvanceTurn=null;
+
+    function recordMinistryTickProfile(profile,startedAt,clock){
+      if(!profile)return;
+      profile.totalMs=Number(Math.max(0,clock()-startedAt).toFixed(2));
+      const root=global.__OMEGA_MINISTRY_TICK_PROFILE__&&typeof global.__OMEGA_MINISTRY_TICK_PROFILE__==='object'
+        ?global.__OMEGA_MINISTRY_TICK_PROFILE__:(global.__OMEGA_MINISTRY_TICK_PROFILE__={turns:[]});
+      if(!Array.isArray(root.turns))root.turns=[];
+      let turnRow=root.turns.find(row=>row&&row.turn===profile.turn);
+      if(!turnRow){
+        turnRow={turn:profile.turn,ministries:[],totalMs:0};
+        root.turns.push(turnRow);
+        if(root.turns.length>12)root.turns.shift();
+      }
+      const existingIndex=turnRow.ministries.findIndex(row=>row&&row.id===profile.id);
+      if(existingIndex>=0)turnRow.ministries[existingIndex]=profile;
+      else turnRow.ministries.push(profile);
+      turnRow.ministryCount=turnRow.ministries.length;
+      turnRow.totalMs=Number(turnRow.ministries.reduce((sum,row)=>sum+(Number(row.totalMs)||0),0).toFixed(2));
+      turnRow.slowestMinistries=turnRow.ministries.slice().sort((a,b)=>(Number(b.totalMs)||0)-(Number(a.totalMs)||0))
+        .slice(0,5).map(row=>({id:row.id,totalMs:row.totalMs,engineMs:row.engineMs,contextMs:row.contextMs,publishStateMs:row.publishStateMs}));
+      root.latestTurn=profile.turn;
+    }
+
     function tick(id,dt,currentTurn,store,blackboard){
       if(!IDS.includes(String(id))) return null;
-      const interop=getInteroperability();
+      const profileEnabled=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
+      const profileClock=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
+      const profileStartedAt=profileEnabled?profileClock():0;
+      const profile=profileEnabled?{id:String(id),turn:Number.isFinite(Number(currentTurn))?Number(currentTurn):null,
+        status:'COMPLETED',inputSourcesMs:0,contextMs:0,dependenciesMs:0,advanceTurnMs:0,
+        inboxMs:0,engineMs:0,publishStateMs:0,telemetryMs:0,blackboardMs:0,eventMs:0}:null;
+      let phaseStartedAt=profileEnabled?profileClock():0;
+      const interoperability=getInteroperability();
+      const interop=interoperability;
       const engine=getEngineRegistry()?.get?.(id);
       if(!engine || engine.id!==id || engine.independent!==true || typeof engine.execute!=='function'){
         const s=states.get(id);
         s.failures+=1;
         s.errors.push('INDEPENDENT_ENGINE_UNAVAILABLE');
         if(s.errors.length>8) s.errors.shift();
+        if(profile){profile.status='FAILED';profile.error='INDEPENDENT_ENGINE_UNAVAILABLE';recordMinistryTickProfile(profile,profileStartedAt,profileClock);}
         return null;
       }
 
       const spec=SPECS[id]||{domain:'unknown',dependencies:[]};
       const s=states.get(id);
       const inputSources=discoverInputSources();
-      const domainContext=buildDomainContext(id,dt,currentTurn,store);
+      if(profile){profile.inputSourcesMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
+      const sharedTurnRevisions=revisionCacheForTurn(currentTurn);
+      const sharedTurnDescriptors=descriptorCacheForTurn(currentTurn);
+      const domainContext=buildDomainContext(id,dt,currentTurn,store,sharedTurnRevisions,sharedTurnDescriptors);
+      Object.defineProperty(domainContext,'revisionCache',{value:sharedTurnRevisions,enumerable:false});
       const countryId=domainContext.countryId;
+      if(profile){profile.contextMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
       const dependencySnapshot=safeDependencyStates(states,kernel,spec.dependencies);
       const phase=['OBSERVE','VALIDATE','PROCESS','COMMIT'][Math.max(0,currentTurn||0)%4];
+      if(profile){profile.dependenciesMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
       let domainExecution;
 
-      if(interop && typeof interop.advanceTurn==='function')interop.advanceTurn(currentTurn);
+      // The 17 canonical ministry ticks share one authoritative turn clock.
+      // Expiry and cleanup scans run once per turn instead of once per ministry.
+      const turnKey=Number.isFinite(Number(currentTurn))?Number(currentTurn):String(currentTurn??'');
+      if(interop && typeof interop.advanceTurn==='function' &&
+        (lastInteropAdvanceBridge!==interop||lastInteropAdvanceTurn!==turnKey)){
+        interop.advanceTurn(currentTurn);
+        lastInteropAdvanceBridge=interop;
+        lastInteropAdvanceTurn=turnKey;
+      }
+      if(profile){profile.advanceTurnMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
 
       if(interop && countryId && typeof interop.drainInbox==='function'){
         interop.drainInbox(countryId,id,(message)=>{
           handleMessage(id,message);
         },100);
       }
+      if(profile){profile.inboxMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
 
       try{
         domainExecution=engine.execute(domainContext);
@@ -360,8 +457,10 @@
         s.failures+=1;
         s.errors.push(String(err?.message||err));
         if(s.errors.length>8) s.errors.shift();
+        if(profile){profile.status='FAILED';profile.error=String(err?.message||err);profile.engineMs=Number((profileClock()-phaseStartedAt).toFixed(2));recordMinistryTickProfile(profile,profileStartedAt,profileClock);}
         throw err;
       }
+      if(profile){profile.engineMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
 
       s.status=typeof kernel?.getMinistryState==='function' ? kernel.getMinistryState(id):'RUNNING';
       s.active=s.status==='RUNNING'||s.status==='READY';
@@ -374,16 +473,18 @@
       s.dependencies=dependencySnapshot;
       s.phase=phase;
 
+      let publication=null;
       if(interoperability && typeof interoperability.publishState==='function' && countryId){
-        interoperability.publishState(id,{
+        publication=interoperability.publishState(id,{
           domain:spec.domain,
           domainExecution,
           context:domainContext,
           store,
           runtimeState:s,
           turn:currentTurn
-        });
+        },{returnPeerState:false});
       }
+      if(profile){profile.publishStateMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
 
       const telemetry={
         id,
@@ -403,11 +504,12 @@
         interoperability:interoperability && typeof interoperability.getConnection==='function'
           ? {
               ministryConnections:interoperability.connectionsFor?.(id,'ALL')?.length ?? 0,
-              publishedSnapshot:!!interoperability.getPeerState?.(id,id)
+              publishedSnapshot:publication?.status==='PUBLISHED'
             }
           : null,
         timestamp:s.lastUpdate
       };
+      if(profile){profile.telemetryMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
 
       if(store){
         if(store.policies instanceof Map) store.policies.set('__omega_runtime__',telemetry);
@@ -436,9 +538,11 @@
         s.errors.push(String(err?.message||err));
         if(s.errors.length>8) s.errors.shift();
       }
+      if(profile){profile.blackboardMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
 
       try{ bridge?.emitEvent?.('OMEGA_MINISTRY_RUNTIME_TICK',telemetry); }catch(_){}
       publishEvent('OMEGA_MINISTRY_RUNTIME_TICK',telemetry);
+      if(profile){profile.eventMs=Number((profileClock()-phaseStartedAt).toFixed(2));recordMinistryTickProfile(profile,profileStartedAt,profileClock);}
       return telemetry;
     }
 
@@ -487,7 +591,7 @@
 
     function getEngine(id){ return getEngineRegistry()?.get?.(String(id))||null; }
 
-    function saveState(){
+    function saveState(options={}){
       const engineStates={};
       for(const id of IDS){
         const engine=getEngineRegistry()?.get?.(id);
@@ -498,7 +602,10 @@
         version:VERSION,
         ministries:Object.fromEntries([...states.entries()].map(([id,state])=>[id,clone(state)])),
         engines:engineStates,
-        interoperability:interoperability?.saveState?.()||null
+        // Simulation snapshots persist the same interoperability ledger once
+        // at the top level. Keep the nested copy for standalone/legacy callers,
+        // but let the canonical save root avoid serializing it twice.
+        interoperability:options.includeInteroperability===false?null:(interoperability?.saveState?.()||null)
       };
     }
 

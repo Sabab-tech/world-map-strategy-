@@ -78,9 +78,9 @@
   function stable(value){
     if(value===null||typeof value!=='object')return JSON.stringify(value);
     if(Array.isArray(value))return '['+value.map(stable).join(',')+']';
-    if(value instanceof Map){const o={};for(const [k,v] of value.entries())o[String(k)]=v;return stable(o);}
-    if(value instanceof Set)return '['+[...value].map(stable).sort().join(',')+']';
-    const keys=Object.keys(value).filter(k=>k!=='__proto__'&&k!=='constructor').sort();
+    if(value instanceof Map){const o={};for(const [k,v] of value.entries()){if(v!==undefined&&typeof v!=='function')o[String(k)]=v;}return stable(o);}
+    if(value instanceof Set)return stable([...value]);
+    const keys=Object.keys(value).filter(k=>k!=='__proto__'&&k!=='constructor'&&value[k]!==undefined&&typeof value[k]!=='function').sort();
     return '{'+keys.map(k=>JSON.stringify(k)+':'+stable(value[k])).join(',')+'}';
   }
 
@@ -187,7 +187,7 @@
         const section=state?.resources||state?.resourceSummary;
         if(!section||typeof section!=='object'||!countryId)return undefined;
         const key=countryBucketKey(section,countryId);
-        return key===null?undefined:clone(section[key]);
+        return key===null?undefined:section[key];
       }
       if(path==='resourceInventory'||path==='resourceDeposits'||path==='resourceEngineState'){
         const engine=global.ResourceMinistryEngine;
@@ -203,18 +203,22 @@
               const owner=row?.countryCode??row?.countryId??row?.country;
               return owner!==undefined&&String(owner).trim().toUpperCase()===cid;
             });
-            return filtered.length?clone(filtered):undefined;
+            return filtered.length?filtered:undefined;
           }
         }catch(_){}
       }
       return undefined;
     }
 
-    get(countryId,path){
+    _readValue(countryId,path){
       const id=canonicalCountryId(countryId);
       const special=this._specialPath(id,String(path??''));
-      if(special!==undefined)return clone(special);
-      const value=this._directPath(id,path);
+      if(special!==undefined)return special;
+      return this._directPath(id,path);
+    }
+
+    get(countryId,path){
+      const value=this._readValue(countryId,path);
       return value===undefined?undefined:clone(value);
     }
 
@@ -227,18 +231,25 @@
       return null;
     }
 
-    getRevision(countryId,domain){
+    getRevision(countryId,domain,options={}){
       const id=canonicalCountryId(countryId);
       const d=String(domain??'').trim();
+      const cache=options?.revisionCache instanceof Map?options.revisionCache:null;
+      const cacheKey=id+'|'+d;
+      if(cache?.has(cacheKey))return cache.get(cacheKey);
       const state=this.root();
       const override=readPath(this.revisionOverrides,[id,d].join('.')) ??
         readPath(state,['stateRevisions',id,d].join('.')) ??
         readPath(state,['revisions',id,d].join('.')) ??
         readPath(state,['domainRevisions',id,d].join('.'));
-      if(override!==undefined&&override!==null)return String(override);
-      const snapshot=this.getSnapshot(id,d);
-      if(snapshot===null||snapshot===undefined)return null;
-      return 'CONTENT:'+hash(snapshot);
+      let revision;
+      if(override!==undefined&&override!==null)revision=String(override);
+      else{
+        const snapshot=(d==='country'||d==='identity')?this.countryRecord(id):this._readValue(id,d);
+        revision=snapshot===null||snapshot===undefined?null:'CONTENT:'+hash(snapshot);
+      }
+      if(cache)cache.set(cacheKey,revision);
+      return revision;
     }
 
     getAvailability(countryId,path,options={}){
@@ -246,7 +257,7 @@
       const p=String(path??'');
       if(!id||!p)return {status:AVAILABILITY.NOT_APPLICABLE,reason:'INVALID_ID_OR_PATH'};
       const state=this.root();
-      let value=this.get(id,p);
+      let value=this._readValue(id,p);
       if((p==='country.identity'||p==='countryRecord') && this.countryRecord(id)){
         value=this.countryRecord(id);
       }
@@ -281,10 +292,10 @@
       return {value:clone(value),status:AVAILABILITY.AVAILABLE,reason:'OBSERVED'};
     }
 
-    getProvenance(countryId,path,options={}){
+    getProvenance(countryId,path,options={},knownAvailability=null){
       const id=canonicalCountryId(countryId);
       const p=String(path??'');
-      const availability=this.getAvailability(id,p,options);
+      const availability=knownAvailability||this.getAvailability(id,p,options);
       const repositoryIdentity=(p==='country.identity'||p==='countryRecord') && !!this.countryRecord(id);
       return {
         provider:'OmegaMinistryStateProvider',
@@ -292,7 +303,7 @@
         fieldPath:p||null,
         sourceType:repositoryIdentity?'CANONICAL_REPOSITORY_DATA':'AUTHORITATIVE_RUNTIME_STATE',
         source:repositoryIdentity?'countries.json / canonical country registry':'Game.state / canonical repository authority',
-        sourceRevision:this.getRevision(id,topDomain(p)),
+        sourceRevision:this.getRevision(id,topDomain(p),options),
         simulationTurn:this.simulationTurn(),
         availability:availability.status,
         reason:availability.reason,
@@ -310,7 +321,7 @@
         value:value===undefined?null:value,
         availability:availability.status,
         availabilityReason:availability.reason,
-        provenance:this.getProvenance(id,path,options)
+        provenance:this.getProvenance(id,path,options,availability)
       };
     }
 

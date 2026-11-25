@@ -558,6 +558,73 @@ test('concurrent IndexedDB saves to different slots do not supersede each other'
     'the default checkpoint must remain independently loadable');
 });
 
+test('canonical save stores interoperability exactly once and still restores the full ledger',async()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const ledger={events:[{eventId:'EVENT-1',payload:{countryId:'BGD',value:7}}],commands:[{commandId:'COMMAND-1'}]};
+  const calls={save:0,load:0,nestedOptions:null};
+  const interoperability={
+    saveState(){calls.save+=1;return ledger;},
+    loadState(snapshot){calls.load+=1;assert.deepEqual(snapshot,ledger);return true;}
+  };
+  const ministryRuntime={
+    saveState(options={}){
+      calls.nestedOptions=options.includeInteroperability;
+      return{schemaVersion:2,interoperability:options.includeInteroperability===false?null:interoperability.saveState()};
+    },
+    loadState(snapshot){
+      if(snapshot?.interoperability)interoperability.loadState(snapshot.interoperability);
+      return true;
+    }
+  };
+  sandbox.Omega.Simulation.configure({
+    state,interoperability,ministryRuntime,
+    worldEngine:{setAuthoritativeState(){},processSimulationTick(){return{advanced:true};}}
+  });
+  const runtime=sandbox.Omega.Simulation;
+  runtime.createSession({playerCountryId:'BGD'});
+  const saved=await runtime.saveSlot('interop-single-copy');
+  assert.equal(saved.ok,true);
+  const snapshot=JSON.parse(sandbox.localStorage.getItem(saved.key));
+  assert.equal(calls.nestedOptions,false,
+    'canonical Simulation save must ask MinistryRuntime not to duplicate its separately persisted interoperability ledger');
+  assert.equal(calls.save,1,'the canonical interoperability ledger must be exported once');
+  assert.equal(snapshot.ministryRuntime.interoperability,null);
+  assert.deepEqual(snapshot.interoperability,ledger);
+
+  await runtime.loadSlot('interop-single-copy');
+  assert.equal(calls.load,1,
+    'the top-level canonical interoperability copy must restore exactly once');
+  assert.equal(runtime.lastLoadIntegrity,'VERIFIED');
+});
+
+test('legacy ministry runtime saves can still restore nested interoperability state',async()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const ledger={events:[{eventId:'LEGACY-EVENT'}]};
+  let loaded=null;
+  const interoperability={saveState(){return ledger;},loadState(snapshot){loaded=snapshot;return true;}};
+  const ministryRuntime={
+    saveState(){return{schemaVersion:2,interoperability:ledger};},
+    loadState(snapshot){if(snapshot?.interoperability)interoperability.loadState(snapshot.interoperability);return true;}
+  };
+  sandbox.Omega.Simulation.configure({
+    state,interoperability,ministryRuntime,
+    worldEngine:{setAuthoritativeState(){},processSimulationTick(){return{advanced:true};}}
+  });
+  const runtime=sandbox.Omega.Simulation;
+  const legacySnapshot={
+    schemaVersion:1, status:'PAUSED',
+    worldState:{simulation:{turn:0,session:{playerCountryId:'BGD'}}},
+    clock:{turn:0,stepDurationMs:86400000,simulationTimeMs:0,startEpochMs:Date.UTC(2015,0,1),speed:0},
+    ministryRuntime:{schemaVersion:2,interoperability:ledger},
+    interoperability:null
+  };
+  runtime.loadState(legacySnapshot);
+  assert.deepEqual(loaded,ledger,
+    'older snapshots with the nested interoperability copy must remain loadable');
+});
+
 test('turn autosave uses the canonical IndexedDB slot and retains legacy recovery',()=>{
   const lifecycle=fs.readFileSync(new URL('../omega_game_lifecycle_runtime_v1.js',import.meta.url),'utf8');
   const runtime=fs.readFileSync(new URL('../omega_simulation_runtime.js',import.meta.url),'utf8');

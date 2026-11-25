@@ -130,6 +130,19 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
   loadBrowserScript('omega_ministry_registry.js',sandbox);
   loadBrowserScript('omega_ministry_state_provider.js',sandbox);
   loadBrowserScript('omega_ministry_domain_engines.js',sandbox);
+  const provider=sandbox.OmegaMinistryStateProvider.instance;
+  const describeCalls=new Map();
+  const originalDescribe=provider.describe.bind(provider);
+  provider.describe=function(countryId,path,options){
+    describeCalls.set(String(path),(describeCalls.get(String(path))||0)+1);
+    return originalDescribe(countryId,path,options);
+  };
+  let fullResourceStateReads=0;
+  const originalProviderGet=provider.get.bind(provider);
+  provider.get=function(countryId,path){
+    if(String(path)==='resourceEngineState')fullResourceStateReads+=1;
+    return originalProviderGet(countryId,path);
+  };
   loadBrowserScript('omega_ministry_runtime_v1.js',sandbox);
 
   const engines=sandbox.OmegaMinistryDomainEngines;
@@ -210,6 +223,13 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
     assert.equal(runtime.getState(id).ticks,1);
   }
 
+  assert.equal(describeCalls.get('economy.gdp'),1,
+    'shared country fields must be described once across all ministries in the same turn');
+  assert.equal(describeCalls.get('resourceSummary'),1,
+    'resource summary must be reused across defense, resource and statistics ministries');
+  assert.equal(fullResourceStateReads,0,
+    'resource ministry must reuse observed inventory/deposit projections instead of cloning the full ledger');
+
   const health=runtime.health();
   assert.equal(health.version,RUNTIME_VERSION);
   assert.equal(health.count,17);
@@ -227,6 +247,9 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
     17,
     'both runtime event sinks must report all 17 ministries'
   );
+  runtime.tick('defense',16.7,43,{policies:new Map(),knowledgeGraph:new Map(),goalStack:[]},null);
+  assert.equal(describeCalls.get('economy.gdp'),2,
+    'shared descriptors must be refreshed on the next committed turn');
 
   const ministrySource=fs.readFileSync(new URL('../ministry_engine.js',import.meta.url),'utf8');
   const databaseOffset=ministrySource.indexOf('ministriesDatabase:');
