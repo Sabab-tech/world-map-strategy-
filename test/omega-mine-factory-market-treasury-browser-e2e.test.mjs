@@ -195,11 +195,17 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         /SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(treaty.status || treaty.stage || '').toUpperCase());
       // OpponentCountryRuntime owns the canonical relations.json dataset; not every
       // save eagerly copies all 197 country relation maps into Game.state.
-      const opponentRuntime = g.Omega?.OpponentCountryRuntime?.instance ||
-        g.OmegaOpponentCountryRuntime?.instance || null;
+      // Reuse the opponent runtime's existing dataset gateway. relations.json is
+      // optional and is not loaded by the countries-only bootstrap; load it once
+      // without a second deep copy, then index only its explicit relationship edges.
+      const opponentRuntime = g.Omega?.OpponentCountryRuntime ||
+        g.OmegaOpponentCountryRuntime || null;
       let canonicalRelationDataset = {};
       try {
-        canonicalRelationDataset = opponentRuntime?.gw?.get?.('relations') || {};
+        if (typeof opponentRuntime?.loadDataset === 'function')
+          await opponentRuntime.loadDataset('relations', {copy:false});
+        canonicalRelationDataset = opponentRuntime?.getDataset?.('relations') ||
+          opponentRuntime?.instance?.gw?.get?.('relations') || {};
       } catch (_) {}
       const fundedBalanceByCountry = new Map();
       for (const code of profileCodes) fundedBalanceByCountry.set(code, bankBalance(code));
