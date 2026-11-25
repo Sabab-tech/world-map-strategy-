@@ -463,7 +463,14 @@ test('playable mine extraction feeds a commissioned private factory through prod
   const uiExecution=g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__;
   assert.equal(uiExecution.siteId,site.siteId,'the player action must execute the same site ID that was clicked');
   assert.equal(uiExecution.result?.factoryBootstrapStatus,'EXISTING',
-    'normal gameplay must use the registered opening factory, not fabricate a site-specific factory');
+    'normal gameplay must use the registered opening factory, not fabricate a site-specific factory: '+JSON.stringify({
+      result:uiExecution.result||null,
+      openingFactory:{id:openingFactory.id,factoryType:openingFactory.factoryType,status:openingFactory.status,
+        productionEnabled:openingFactory.productionEnabled,ownerType:openingFactory.ownerType,
+        recipeMode:openingFactory.recipeMode,recipeId:openingFactory.recipeId,
+        processingResourceId:openingFactory.processingResourceId,resourceId:openingFactory.resourceId,
+        inputCoefficients:openingFactory.inputCoefficients}
+    }));
   assert.notEqual(uiExecution.result?.factoryBootstrap?.status,'CREATED_SIMULATION_ONLY',
     'the UI pipeline must not request test-only automatic factory commissioning');
   const run=uiExecution.result;
