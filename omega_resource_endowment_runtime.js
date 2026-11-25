@@ -245,7 +245,7 @@
     if(canonicalSiteIndexDirty||canonicalSiteIndexSource!==source){
       const next=new Map();
       for(const site of Object.values(source)){
-        if(site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||
+        if(!String(site?.siteId||'').trim()||site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||
            LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')])continue;
         const country=canonical(site?.countryId||site?.identity?.countryIso3||'');
         if(!country)continue;
@@ -2660,11 +2660,10 @@ function batchFromExtraction(x,record){
       const refs=g.__OmegaResourceIdentityRegistry?.listMineSiteReferences?.()||[];
       for(const row of refs)add(row?.countryId||row?.countryCode||row?.countryIso3);
     }catch(_){}
-    for(const site of Object.values(canonicalSiteCatalogMap||{})){
-      const siteId=String(site?.siteId||'').trim();
-      if(!siteId||site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||LEGACY_CANONICAL_ALIAS_IDS[siteId])continue;
-      add(site.countryId||site.identity?.countryIso3);
-    }
+    // Rebuild the global catalog index only after source mutation, then reuse
+    // its country keys on every simulation turn instead of rescanning every site.
+    canonicalSiteCandidates('');
+    for(const countryId of canonicalSitesByCountry.keys())add(countryId);
     const root=state()?.resource||{};
     for(const [countryId,row] of Object.entries(root)){
       if(!row||typeof row!=='object')continue;
@@ -3468,10 +3467,10 @@ function batchFromExtraction(x,record){
     },0)||Number(g.__OmegaResourceKnowledgeModel?.refCatalog?.allReferences?.length)||0;
     // Global registry count is authoritative even before every country's runtime state is materialized.
     // Alias/non-marker rows remain visible in source/model diagnostics but never count as physical map sites.
-    const canonicalSiteReferenceCount=Object.values(canonicalSiteCatalogMap||{}).filter(site=>{
-      const siteId=String(site?.siteId||'').trim();
-      return !!siteId&&site?.map?.markerEligible!==false&&!site?.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[siteId];
-    }).length;
+    // Read the already-built index: status snapshots must not enumerate the
+    // global catalog again when the UI asks for diagnostics.
+    canonicalSiteCandidates('');
+    const canonicalSiteReferenceCount=[...canonicalSitesByCountry.values()].reduce((sum,rows)=>sum+rows.length,0);
     const globalCanonicalSiteCount=canonicalSiteReferenceCount||mineSiteReferenceCount||modeledSiteReferenceCount;
     let profileDerivedExecutableAssetCount=0,profileDerivedActiveAssetCount=0,profileDerivedBlockedAssetCount=0;for(const c of countries()){const rs=state()?.resource?.[c]||{};const outs=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.values(rs.mineOutputs):[];const simOuts=outs.filter(x=>x?.simulationGenerated===true);profileDerivedExecutableAssetCount+=simOuts.length;profileDerivedActiveAssetCount+=simOuts.filter(x=>x?.status==='APPROVED'||x?.status==='PARTIALLY_APPROVED').length;profileDerivedBlockedAssetCount+=simOuts.filter(x=>String(x?.status||'').startsWith('BLOCKED')).length;} return{version:VERSION,unifiedAssetSchemaVersion:g.GSRSK_Part04?.UNIFIED_ASSET_SCHEMA_VERSION||'UNKNOWN',engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON + PER_SITE_SIMULATION_RESERVE_DATA',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,structuredMineCount,executableAssetCount,fieldAssetCount,mineSiteReferenceCount:globalCanonicalSiteCount,mineSiteControllerCount:globalCanonicalSiteCount,lastBootstrap:clone(g.__omegaResourceEndowmentLastBootstrap||null),materializedMineSiteReferenceCount:mineSiteReferenceCount,materializedMineSiteControllerCount:mineSiteControllerCount,modeledMineSiteReferenceCount:modeledSiteReferenceCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount,profileDerivedExecutableAssetCount,profileDerivedActiveAssetCount,profileDerivedBlockedAssetCount,siteReferenceRowIndex:{buildCount:siteReferenceRowIndexBuildCount,cacheHitCount:siteReferenceRowIndexHitCount,indexedReferenceCount:siteReferenceRowIndexIndexedCount,lookupCount:siteReferenceRowIndexLookupCount,selectedReferenceCount:siteReferenceRowIndexSelectedCount},siteReferenceSourceIndex:{canonicalCatalogBuildCount:canonicalSiteIndexBuildCount,canonicalIndexedCountryCount:canonicalSitesByCountry.size,knowledgeReferenceBuildCount:knowledgeReferenceCountryIndexBuildCount,knowledgeReferenceIndexedRowCount:knowledgeReferenceCountryIndexRowCount},fullEffortPolicy:'MODEL_DRIVEN'};
   }

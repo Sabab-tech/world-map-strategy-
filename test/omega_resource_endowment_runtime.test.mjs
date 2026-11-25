@@ -968,8 +968,8 @@ assert.equal(oneTapRegistration.status,'REGISTERED',JSON.stringify(oneTapRegistr
 const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowment_runtime.js',import.meta.url),'utf8');
 assert.doesNotMatch(endowmentRuntimeSource,/const gameplaySiteIds=new Set\(Object\.values\(canonicalSiteCatalogMap/);
 assert.match(endowmentRuntimeSource,/const canonicalDepositKeys=new Set/);
-assert.doesNotMatch(endowmentRuntimeSource,/Object\.values\(canonicalSiteCatalogMap\|\|\{\}\)\.filter/,
-  'country hydration must not filter the full canonical catalog separately for every country');
+assert.doesNotMatch(endowmentRuntimeSource,/Object\.values\(canonicalSiteCatalogMap\|\|\{\}\)/,
+  'country hydration, per-turn scheduling and diagnostics must not enumerate the full canonical catalog repeatedly');
 assert.match(endowmentRuntimeSource,/const catalogSites=canonicalSiteCandidates\(wanted\);/,
   'country hydration must reuse the prebuilt canonical country index');
 const siteReferenceSourceIndexDiagnostics=runtime.diagnostics().siteReferenceSourceIndex;
