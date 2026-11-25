@@ -1017,3 +1017,29 @@ test('generic finance commands cannot use procurement cross-domain capabilities'
     trade:s.state.trade[s.countryA]
   }),before,'rejected cross-domain command must roll back all staged finance writes');
 });
+
+
+test('compact transactions can transfer handler-owned snapshots without a second deep clone',()=>{
+  const s=createSandbox();
+  s.state.resource[s.countryA].largeLedger={
+    rows:Array.from({length:1200},(_,index)=>({index,payload:'X'.repeat(256)}))
+  };
+  const tx=s.sandbox.OmegaMinistryStateTransaction.create(
+    'resource',s.countryA,9,'OWNED-SNAPSHOT-TRANSFER',s.state,{includeOperationValues:false}
+  );
+  const owned=tx.get('resource.largeLedger');
+  owned.rows[0].payload='UPDATED';
+  tx.setOwned('resource.largeLedger',owned);
+  const committed=tx.commit();
+  assert.equal(s.state.resource[s.countryA].largeLedger,owned,
+    'compact commit transfers the transaction-owned snapshot directly into authoritative state');
+  assert.equal(s.state.resource[s.countryA].largeLedger.rows[0].payload,'UPDATED');
+  assert.deepEqual(committed.operations,[{op:'SET',path:'resource.largeLedger'}]);
+  assert.equal(tx.writeBaseline.size,0);
+  assert.throws(()=>{
+    const detailed=s.sandbox.OmegaMinistryStateTransaction.create(
+      'resource',s.countryA,10,'OWNED-SNAPSHOT-REJECTED',s.state
+    );
+    detailed.setOwned('resource.largeLedger',{rows:[]});
+  },/STATE_TRANSACTION_SET_OWNED_REQUIRES_COMPACT_MODE/);
+});
