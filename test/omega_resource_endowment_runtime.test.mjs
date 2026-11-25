@@ -968,6 +968,15 @@ assert.equal(oneTapRegistration.status,'REGISTERED',JSON.stringify(oneTapRegistr
 const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowment_runtime.js',import.meta.url),'utf8');
 assert.doesNotMatch(endowmentRuntimeSource,/const gameplaySiteIds=new Set\(Object\.values\(canonicalSiteCatalogMap/);
 assert.match(endowmentRuntimeSource,/const canonicalDepositKeys=new Set/);
+assert.doesNotMatch(endowmentRuntimeSource,/Object\.values\(canonicalSiteCatalogMap\|\|\{\}\)\.filter/,
+  'country hydration must not filter the full canonical catalog separately for every country');
+assert.match(endowmentRuntimeSource,/const catalogSites=canonicalSiteCandidates\(wanted\);/,
+  'country hydration must reuse the prebuilt canonical country index');
+const siteReferenceSourceIndexDiagnostics=runtime.diagnostics().siteReferenceSourceIndex;
+assert.ok(Number(siteReferenceSourceIndexDiagnostics?.canonicalCatalogBuildCount)>0,
+  'the canonical catalog must publish a reusable country-index build count');
+assert.ok(Number(siteReferenceSourceIndexDiagnostics?.canonicalIndexedCountryCount)>0,
+  'the canonical catalog country index must contain indexed country rows');
 assert.match(endowmentRuntimeSource,/const controllerKeyBySiteId=new Map/);
 assert.match(endowmentRuntimeSource,/PLAYER_COUNTRY_SCOPE_VIOLATION/);
 globalThis.Game.state.simulation.playerCountryId='BGD';
