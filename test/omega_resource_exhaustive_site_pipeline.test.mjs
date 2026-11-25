@@ -393,11 +393,21 @@ function provisionSimulationInfrastructure(countryId){
     rootState.transport=rootState.transport||{};
     const t=rootState.transport[countryId]||(rootState.transport[countryId]={});
     t.infrastructure=t.infrastructure||{};
-    t.infrastructure.roads=t.infrastructure.roads||{capacityPerDay:50000,quality:.9};
-    t.infrastructure.rail=t.infrastructure.rail||{capacityPerDay:120000,quality:.8};
-    t.infrastructure.ports=t.infrastructure.ports||{capacityPerDay:200000,quality:.9};
-    t.infrastructure.bridges=t.infrastructure.bridges||{capacityPerDay:50000,quality:.8};
-    t.infrastructure.pipelines=t.infrastructure.pipelines||{capacityPerDay:400000,quality:.8};
+    const ensureMinimumTransportCapacity=(key,capacityPerDay,quality)=>{
+      const row=t.infrastructure[key]&&typeof t.infrastructure[key]==='object'
+        ?t.infrastructure[key]:(t.infrastructure[key]={});
+      const existingCapacity=Number(row.capacityPerDay);
+      const existingQuality=Number(row.quality);
+      row.capacityPerDay=Math.max(Number.isFinite(existingCapacity)?existingCapacity:0,capacityPerDay);
+      row.quality=Math.max(Number.isFinite(existingQuality)?existingQuality:0,quality);
+      row.authority=row.authority||'EXHAUSTIVE_TEST_FIXTURE';
+      row.simulationOnly=true;
+    };
+    ensureMinimumTransportCapacity('roads',50000,.9);
+    ensureMinimumTransportCapacity('rail',120000,.8);
+    ensureMinimumTransportCapacity('ports',200000,.9);
+    ensureMinimumTransportCapacity('bridges',50000,.8);
+    ensureMinimumTransportCapacity('pipelines',400000,.8);
     t.infrastructure.utilitySupply={electricityMWhPerDay:1000000,waterM3PerDay:1000000,
       authority:'EXHAUSTIVE_TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]};
     rootState.economy=rootState.economy||{};
