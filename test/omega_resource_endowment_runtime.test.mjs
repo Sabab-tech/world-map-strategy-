@@ -992,6 +992,34 @@ assert.equal(oneTapLedgerAfter.length,oneTapLedgerBefore.length,
 assert.equal(oneTapLedgerAfter.reduce((sum,row)=>sum+Number(row.quantity||0),0),successfulQuantityBefore,
   'a repeat one-tap action must not duplicate successful production quantities');
 
+// Selected-occurrence fallback must index the country reference array once, then
+// resolve only the requested site ID on every subsequent slice. This prevents a
+// one-occurrence command from enumerating hundreds of unrelated country references.
+const selectedIndexBucket=globalThis.Game.state.resource.BGD;
+selectedIndexBucket.mineStates=selectedIndexBucket.mineStates&&typeof selectedIndexBucket.mineStates==='object'
+  ?selectedIndexBucket.mineStates:{};
+const selectedIndexProbeKey='TEST_ONLY_NONCANONICAL_SELECTED_OCCURRENCE';
+const previousSelectedIndexProbe=selectedIndexBucket.mineStates[selectedIndexProbeKey];
+selectedIndexBucket.mineStates[selectedIndexProbeKey]={
+  occurrenceKey:selectedIndexProbeKey,siteReferenceKey:oneTapSite.siteId,siteId:oneTapSite.siteId,
+  resourceId:'limestone',countryId:'BGD',simulationOnly:true
+};
+const selectedIndexBefore=runtime.diagnostics().siteReferenceRowIndex;
+await runtime.extractCountry('BGD',[selectedIndexProbeKey]);
+const selectedIndexAfterFirst=runtime.diagnostics().siteReferenceRowIndex;
+await runtime.extractCountry('BGD',[selectedIndexProbeKey]);
+const selectedIndexAfterSecond=runtime.diagnostics().siteReferenceRowIndex;
+assert.equal(selectedIndexAfterSecond.buildCount,selectedIndexAfterFirst.buildCount,
+  'repeated selected-site extraction must reuse the same site-reference index, not rebuild or rescan the country array');
+assert.equal(selectedIndexAfterSecond.cacheHitCount,selectedIndexAfterFirst.cacheHitCount+1,
+  'the second selected-site slice must use the cached reference index');
+assert.ok(selectedIndexAfterSecond.lookupCount>selectedIndexAfterFirst.lookupCount,
+  'selected-site slices must perform keyed lookups instead of whole-array filtering');
+assert.ok(selectedIndexAfterSecond.selectedReferenceCount>=selectedIndexAfterFirst.selectedReferenceCount,
+  'selected-site index results must remain bounded to matching reference rows');
+if(previousSelectedIndexProbe===undefined)delete selectedIndexBucket.mineStates[selectedIndexProbeKey];
+else selectedIndexBucket.mineStates[selectedIndexProbeKey]=previousSelectedIndexProbe;
+
 // Part 6 integration proof: the mine haul must be receipted at the sovereign
 // warehouse before the existing warehouse-to-factory shipment can be dispatched.
 const part6CopperSite=part6Data.records.find(site=>site.siteId==='SITE_CHL_collahuasi_copper_mine');
