@@ -335,6 +335,7 @@
       siteReferenceCount:siteReferences.length,
       getOccurrencesByCountry:function(countryId){return clone(byCountry.get(canonicalCountry(countryId))||[]);},
       getMineSiteReferencesByCountry:function(countryId){return clone(siteRefsByCountry.get(canonicalCountry(countryId))||[]);},
+      listMineSiteReferenceCountryIds:function(){return [...siteRefsByCountry.keys()];},
       listMineSiteReferences:function(){return clone(siteReferences);},
       getDeposit:function(depositKey){
         const hit=byDeposit.get(String(depositKey||'').trim());

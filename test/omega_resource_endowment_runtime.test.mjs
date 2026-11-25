@@ -966,6 +966,11 @@ const oneTapRegistration=runtime.registerCanonicalSiteSimulationRecord(oneTapSit
 assert.equal(oneTapRegistration.status,'REGISTERED',JSON.stringify(oneTapRegistration));
 // Production slices stay inside one country and avoid repeated world-catalog scans.
 const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowment_runtime.js',import.meta.url),'utf8');
+const identityRuntimeSource=fs.readFileSync(new URL('../omega_resource_part04_identity_runtime.js',import.meta.url),'utf8');
+assert.match(identityRuntimeSource,/listMineSiteReferenceCountryIds:function\(\)\{return \[\.\.\.siteRefsByCountry\.keys\(\)\];\}/,'identity registry must expose country keys from its pre-grouped index');
+assert.match(endowmentRuntimeSource,/listMineSiteReferenceCountryIds\?\.\(\)/,'work-country discovery must use country keys rather than full site rows');
+assert.doesNotMatch(endowmentRuntimeSource,/listMineSiteReferences\?\.\(\)/,'work-country discovery must never clone and enumerate every site-reference row');
+assert.match(endowmentRuntimeSource,/function resourceExtractionSourceCountryIndex\(\)/,'profile and deposit work-country keys must be indexed once per source snapshot');
 assert.doesNotMatch(endowmentRuntimeSource,/const gameplaySiteIds=new Set\(Object\.values\(canonicalSiteCatalogMap/);
 assert.match(endowmentRuntimeSource,/const canonicalDepositKeys=new Set/);
 assert.doesNotMatch(endowmentRuntimeSource,/Object\.values\(canonicalSiteCatalogMap\|\|\{\}\)/,
