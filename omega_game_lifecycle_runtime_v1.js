@@ -279,9 +279,11 @@
     if (!g.document) return;
     var sim = runtime();
     var clock = sim && sim.clock;
-    var stepDurationMs = Math.max(1, number(clock && clock.stepDurationMs) || 15000);
-    var elapsed = Math.max(0, Math.min(stepDurationMs, number(clock && clock.accumulatorMs) || 0));
-    var percent = Math.floor((elapsed / stepDurationMs) * 100);
+    // accumulatorMs is accumulated real-time, not the in-game day duration.
+    // The authoritative Simulation Clock commits one day per 15-second real-time interval.
+    var realTimeStepMs = 15000;
+    var elapsed = Math.max(0, Math.min(realTimeStepMs, number(clock && clock.accumulatorMs) || 0));
+    var percent = Math.floor((elapsed / realTimeStepMs) * 100);
     var status = String(sim && sim.status || 'READY').toUpperCase();
     var running = status === 'RUNNING' && !(clock && clock.paused);
     var bar = g.document.querySelector('[data-omega-clock-progress]');

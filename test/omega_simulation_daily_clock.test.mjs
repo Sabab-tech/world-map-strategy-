@@ -346,8 +346,11 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(index, /data-omega-speed-readout/);
   assert.match(index, /data-omega-treasury-readout/);
   assert.match(index, /<details class="ogth-advanced"/);
-  assert.match(lifecycle, /stepDurationMs = Math\.max\(1, number\(clock && clock\.stepDurationMs\) \|\| 15000\)/,
-    'clock progress must use the configured game-day duration rather than another scheduler constant');
+  assert.match(lifecycle, /realTimeStepMs = 15000/,
+    'clock progress must use the canonical real-time step, not the 24-hour in-game simulation duration');
+  assert.doesNotMatch(lifecycle.slice(lifecycle.indexOf('function updateClockProgress'), lifecycle.indexOf('function updateHud')),
+    /clock\.stepDurationMs/,
+    'real-time accumulator progress must not be divided by the in-game day duration');
   assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/,
     'bursty lifecycle events must share one animation-frame HUD refresh');
   assert.match(coordinator, /OMEGA_SIMULATION_CLOCK_TICK/);
