@@ -506,6 +506,21 @@
     return Number.isFinite(n)?n:fallback;
   }
 
+  function monotonicNow(){
+    try{
+      const now=global.performance&&global.performance.now;
+      if(typeof now==='function'){
+        const value=Number(now.call(global.performance));
+        if(Number.isFinite(value))return value;
+      }
+    }catch(_){}
+    return Date.now();
+  }
+
+  function elapsedMilliseconds(startedAt){
+    return Math.max(0,Math.round((monotonicNow()-startedAt)*100)/100);
+  }
+
   function yieldToBrowser(){
     return new Promise(resolve=>{
       if(typeof global.setTimeout==='function'){
@@ -856,6 +871,7 @@
       try{
       for(const entry of rows){
         if(this.turnParticipants.get(entry.id)!==entry)continue;
+        const participantStartedAt=monotonicNow();
         try{
           const value=await entry.handler.call(global,browserEvent,{
             turn,
@@ -867,11 +883,13 @@
             clock:this.clock,
             simulation:this
           });
+          const durationMs=elapsedMilliseconds(participantStartedAt);
           this.world.state.simulation.subsystemTurns=this.world.state.simulation.subsystemTurns||{};
           this.world.state.simulation.subsystemTurns[entry.id]=turn;
-          results.push({id:entry.id,turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
+          results.push({id:entry.id,turn,status:'COMPLETED',durationMs,result:value===undefined?null:clone(value)});
         }catch(error){
-          const failure={id:entry.id,turn,status:'FAILED',error:String(error?.message||error)};
+          const failure={id:entry.id,turn,status:'FAILED',durationMs:elapsedMilliseconds(participantStartedAt),
+            error:String(error?.message||error)};
           results.push(failure);
           // Stop the world immediately rather than silently let one sector miss a day.
           this.status='ERROR';

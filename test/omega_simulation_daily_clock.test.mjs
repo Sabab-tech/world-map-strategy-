@@ -561,8 +561,10 @@ test('a subsystem registered during a turn starts on the next turn, not halfway 
   assert.deepEqual(order, ['existing:1', 'existing:2', 'future:2']);
 });
 
-test('a failed sector stops future days and exposes the exact failed participant', async () => {
+test('a failed sector stops future days and exposes timed participant diagnostics without persisting them', async () => {
   const { win, sim } = createRuntime();
+  let performanceTime = 0;
+  win.performance = { now() { performanceTime += 7; return performanceTime; } };
   const order = [];
   sim.registerTurnParticipant('test.failing-sector', async () => {
     order.push('failed-sector');
@@ -579,8 +581,20 @@ test('a failed sector stops future days and exposes the exact failed participant
   assert.equal(sim.clock.paused, true);
   assert.equal(sim.clock.turn, 1);
   assert.deepEqual(order, ['failed-sector', 'later-sector:1']);
-  assert.ok(sim.diagnostics().lastTurnParticipantResults.some(row =>
-    row.id === 'test.failing-sector' && row.status === 'FAILED' && row.error.includes('SYNTHETIC_SECTOR_FAILURE')));
+  const participantRows = sim.diagnostics().lastTurnParticipantResults;
+  const failedRow = participantRows.find(row => row.id === 'test.failing-sector');
+  const completedRow = participantRows.find(row => row.id === 'test.after-failure');
+  assert.ok(failedRow && failedRow.status === 'FAILED' && failedRow.error.includes('SYNTHETIC_SECTOR_FAILURE'));
+  assert.equal(failedRow.durationMs, 7, 'failed participants must expose their measured execution time');
+  assert.equal(completedRow.durationMs, 7, 'completed participants must expose their measured execution time');
+
+  const persistedRows = sim.world.state.simulation.lastTurnParticipantResults;
+  const persistedFailure = persistedRows.find(row => row.id === 'test.failing-sector');
+  const persistedComplete = persistedRows.find(row => row.id === 'test.after-failure');
+  assert.equal(Object.prototype.hasOwnProperty.call(persistedFailure, 'durationMs'), false,
+    'timing diagnostics must not increase the saved world-state ledger');
+  assert.equal(Object.prototype.hasOwnProperty.call(persistedComplete, 'durationMs'), false,
+    'timing diagnostics must remain outside the compact persisted trace');
 });
 
 test('boot and app-background transitions stop every automatic game turn until Play is explicitly pressed', async () => {
@@ -938,7 +952,7 @@ test('compact gameplay clock dock exposes only play and pause actions', () => {
   assert.match(hudCss, /button\[data-omega-speed\] \{\s*display: none !important;/);
   assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
   assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v151/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v152/);
   assert.match(lifecycle, /function queueHudUpdate\(\)/);
   assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
   assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
