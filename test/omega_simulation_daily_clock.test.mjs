@@ -938,7 +938,7 @@ test('compact gameplay clock dock exposes only play and pause actions', () => {
   assert.match(hudCss, /button\[data-omega-speed\] \{\s*display: none !important;/);
   assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
   assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v150/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v151/);
   assert.match(lifecycle, /function queueHudUpdate\(\)/);
   assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
   assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
@@ -1042,4 +1042,32 @@ test('the game-time HUD updates budget balance and macro stability only from com
   assert.match(economyNode.textContent,/Budget balance \$275K/);
   assert.match(economyNode.textContent,/Stability 74\.2\/100/);
   assert.match(economyNode.textContent,/STABLE/);
+});
+
+
+test('sub-day clock frames skip compatibility hydration until a real day commits', async () => {
+  const { sim, gameState } = createRuntime();
+  sim.startSession({ playerCountryId: 'BGD' });
+
+  const originalHydrate = sim.world.hydrateCompatibility.bind(sim.world);
+  let hydrationCalls = 0;
+  sim.world.hydrateCompatibility = function () {
+    hydrationCalls += 1;
+    return originalHydrate();
+  };
+
+  for (let frame = 0; frame < 29; frame += 1) {
+    const result = await sim.frame(500);
+    assert.equal(result.steps, 0, 'the first 29 half-second frames must not commit a day');
+  }
+  assert.equal(hydrationCalls, 0,
+    'sub-day frames must not repeatedly inspect population/economy compatibility roots');
+  assert.equal(sim.clock.turn, 0);
+
+  const committed = await sim.frame(500);
+  assert.equal(committed.steps, 1, 'the 30th half-second frame commits one authoritative day');
+  assert.equal(hydrationCalls, 1,
+    'the real day step must still hydrate compatibility state exactly once');
+  assert.equal(sim.clock.turn, 1);
+  assert.equal(gameState.simulation.date, '2015-01-02T00:00:00.000Z');
 });
