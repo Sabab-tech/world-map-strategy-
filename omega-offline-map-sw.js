@@ -3,7 +3,7 @@
  */
 "use strict";
 // The install handler refreshes cached core assets with fetch({ cache: "reload" }); keep the stable shell namespace.
-const CACHE_NAME = "omega-offline-atlas-shell-v149";
+const CACHE_NAME = "omega-offline-atlas-shell-v150";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
@@ -55,7 +55,7 @@ const CORE_ASSETS = [
   "./omega_home_ministry_police_operations_ui_v1.js", "./omega_home_ministry_police_capability_runtime_v1.js",
   "./omega_home_ministry_police_capability_recommendations_v1.json", "./omega_home_ministry_police_capability_material_requirements_v1.json", "./omega_home_ministry_country_police_baseline_v1.json",
   "./omega_battlefield_command_runtime_v1.js", "./military_command_catalog_v1.json", "./resource_industrial_catalog_v1.json",
-  "./omega_factory_visual_catalog_v1.js", "./omega_country_factory_starting_baseline_v1.js", "./country_factory_starting_baseline_v1.json", "./omega_private_enterprise_registry_v1.js", "./country_private_factory_starting_baseline_v1.json", "./omega_private_enterprise_lifecycle_v1.js", "./omega_private_company_capital_runtime_v1.js", "./omega_private_international_investment_runtime_v1.js", "./omega_government_international_investment_runtime_v1.js", "./omega_government_international_investment_ui_v1.js", "./omega_autonomous_private_investment_decision_engine_v1.js", "./omega_autonomous_private_investment_rules_v1.json", "./omega_global_market_system.js", "./omega_global_trade_system.js", "./omega_bilateral_trade_agreement_system_v1.js", "./omega_resource_part04_identity_runtime.js", "./omega_resource_research_runtime_v1.js", "./omega_autonomous_national_trade_decision_engine_v1.js", "./omega_autonomous_national_trade_decision_rules_v1.json",
+  "./omega_factory_visual_catalog_v1.js", "./omega_country_factory_starting_baseline_v1.js", "./country_factory_starting_baseline_v1.json", "./omega_private_enterprise_registry_v1.js", "./country_private_factory_starting_baseline_v1.json", "./omega_private_enterprise_lifecycle_v1.js", "./omega_private_company_capital_runtime_v1.js", "./omega_private_international_investment_runtime_v1.js", "./omega_government_international_investment_runtime_v1.js", "./omega_government_international_investment_ui_v1.js", "./omega_autonomous_private_investment_decision_engine_v1.js", "./omega_autonomous_private_investment_rules_v1.json", "./omega_global_market_system.js", "./omega_global_trade_system.js", "./omega_bilateral_trade_agreement_system_v1.js", "./omega_phase6_national_population_capacity_runtime_v1.js", "./omega_resource_part04_identity_runtime.js", "./omega_resource_research_runtime_v1.js", "./omega_autonomous_national_trade_decision_engine_v1.js", "./omega_autonomous_national_trade_decision_rules_v1.json",
   "./omega_global_commercial_baseline_v1.json",
   "./omega_global_commercial_baseline_v1_part_01.json",
   "./omega_global_commercial_baseline_v1_part_02.json",

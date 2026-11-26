@@ -99,16 +99,40 @@
                         ministryRuntime: ministryRuntimeController,
                         ministryPump: ({ turn, stepDurationMs }) => {
                             const results = [];
-                            MINISTRIES.forEach(id => {
-                                if (typeof kernel.pumpOrchestratedPipelineTick !== "function") return;
-                                const result = kernel.pumpOrchestratedPipelineTick(id, stepDurationMs, turn, {
-                                    onMessage: (message) => ministryRuntimeController?.handleMessage?.(id, message),
-                                    onMinistryTick: (tickDt, currentTurn, store, blackboard) => {
-                                        ministryRuntimeController?.tick?.(id, tickDt, currentTurn, store, blackboard);
-                                    }
-                                });
-                                results.push({ id, result: result ?? null });
+                            if (typeof kernel.pumpOrchestratedPipelineTick !== "function") return results;
+
+                            // Ministry domain work is view-driven: only the ministry currently
+                            // open in the player UI receives a per-turn engine tick.
+                            const view = window.OmegaUIV2App?.getActiveContext?.() || null;
+                            const legacyViewId = window.OmegaLayerManager?.activeMinistryId || null;
+                            let viewId = view ? view.ministryId : legacyViewId;
+                            if (view && !viewId) {
+                                if (view.route === "economy") viewId = "treasury_finance";
+                                else if (view.route === "industry") viewId = "production";
+                                else if (view.route === "resources") viewId = "energy_mining";
+                                else if (view.route === "home-affairs") viewId = "interior_security";
+                                else if (view.route === "government" && view.governmentView !== "all-ministries") viewId = "cabinet_council";
+                            }
+                            const viewToRuntimeId = {
+                                cabinet_council:"cabinet", defense:"defense", military:"military",
+                                treasury_finance:"finance", production:"economy", trade:"trade",
+                                foreign_affairs:"foreign", intelligence_cyber:"intelligence",
+                                interior_security:"interior", infrastructure:"transport",
+                                energy_mining:"resource", health_welfare:"health",
+                                education:"education", science_research:"technology",
+                                mega_projects:"projects", culture:"culture", statistics:"statistics"
+                            };
+                            const key = String(viewId || "").trim().toLowerCase();
+                            const id = viewToRuntimeId[key] || (MINISTRIES.indexOf(key) >= 0 ? key : null);
+                            if (!id) return results;
+
+                            const result = kernel.pumpOrchestratedPipelineTick(id, stepDurationMs, turn, {
+                                onMessage: (message) => ministryRuntimeController?.handleMessage?.(id, message),
+                                onMinistryTick: (tickDt, currentTurn, store, blackboard) => {
+                                    ministryRuntimeController?.tick?.(id, tickDt, currentTurn, store, blackboard);
+                                }
                             });
+                            results.push({ id, result: result ?? null });
                             return results;
                         }
                     });
