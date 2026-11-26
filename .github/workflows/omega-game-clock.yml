@@ -23,6 +23,8 @@ on:
       - 'omega_enterprise_composition_root_v10.js'
       - 'omega_game_lifecycle_runtime_v1.js'
       - 'omega_game_lifecycle_runtime_v1.css'
+      - 'omega_ui_v2/app.js'
+      - 'test/omega_active_ministry_tick_gate.test.mjs'
       - 'omega_finance_ministry_runtime_v1.js'
       - 'finance_runtime_rules_v1.json'
       - 'financial_transmission_rules_v1.json'
@@ -102,4 +104,4 @@ jobs:
           node --check test/omega_resource_economy_runtime_v2.test.mjs
           node --check test/omega_selected_country_background_scope.test.mjs
       - name: Test shared daily clock, saves and lifecycle wiring
-        run: node --test test/omega_simulation_daily_clock.test.mjs test/omega_simulation_runtime.test.js test/omega_resource_industrial_network_v1.test.mjs test/omega_world_simulation_scheduler_v1.test.mjs test/opponent_country_rules_runtime.test.js test/omega_offline_data_cache.test.mjs test/omega_country_general_data_runtime_v1.test.mjs test/omega_resource_economy_runtime_v2.test.mjs test/omega_selected_country_background_scope.test.mjs
+        run: node --test test/omega_active_ministry_tick_gate.test.mjs test/omega_simulation_daily_clock.test.mjs test/omega_simulation_runtime.test.js test/omega_resource_industrial_network_v1.test.mjs test/omega_world_simulation_scheduler_v1.test.mjs test/opponent_country_rules_runtime.test.js test/omega_offline_data_cache.test.mjs test/omega_country_general_data_runtime_v1.test.mjs test/omega_resource_economy_runtime_v2.test.mjs test/omega_selected_country_background_scope.test.mjs

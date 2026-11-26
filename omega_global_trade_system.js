@@ -674,6 +674,8 @@ function captureStockFlowPeriod(stateTransaction) {
         num(duplicate.quantity)===quantity&&num(duplicate.unitPrice)===unitPrice&&
         String(duplicate.currency||currencyOf(buyer)||'').toUpperCase()===String(p.currency||currencyOf(buyer)||'').toUpperCase()&&
         String(duplicate.governmentContractId||'')===String(p.governmentContractId||'')&&
+        String(duplicate.transportMode||'')===String(p.transportMode||p.shippingMode||p.routeMode||'')&&
+        String(duplicate.routeId||'')===String(p.routeId||'')&&
         String(duplicate.blackMarketDealId||'')===blackMarketDealId&&String(duplicate.blackMarketPermitId||'')===String(p.blackMarketPermitId||'')&&
         String(duplicate.buyerCompanyId||'')===buyerCompanyId&&String(duplicate.sellerCompanyId||'')===sellerCompanyId;
       return same?{accepted:true,duplicate:true,request:clone(duplicate)}:{accepted:false,reason:'TRADE_REQUEST_ID_CONFLICT'};
@@ -693,6 +695,8 @@ function captureStockFlowPeriod(stateTransaction) {
       blackMarketDealId:blackMarketDeal?.dealId||null,blackMarketPermitId:blackMarketDeal?.permitId||null,
       ...(blackMarketDeal?{importTariffPct:0}:(p.importTariffPct===undefined?{}:{importTariffPct:p.importTariffPct})),
       governmentContractId:String(p.governmentContractId||p.contractId||'').trim()||null,
+      transportMode:String(p.transportMode||p.shippingMode||p.routeMode||'').trim()||null,
+      routeId:String(p.routeId||'').trim()||null,
       buyerCompanyId:buyerCompanyId||null,sellerCompanyId:sellerCompanyId||null,
       marketPriceEvidence:privateCompanyPurchase?clone(marketPriceEvidence):null,
       procurementType:privateCompanyPurchase?'PRIVATE_COMPANY_TO_COMPANY':'COUNTRY_TRADE'
@@ -1915,7 +1919,9 @@ function captureStockFlowPeriod(stateTransaction) {
       estimatedArrivalTime:null,etaTurn:null,etaStatus:'NOT_ESTIMATED_ROUTE_TRAVEL_TIME_NOT_MODELED',
       arrivalTime:new Date().toISOString(),arrivalTurn:turn(),status:'ARRIVED',arrivalStatus:'RECEIVED',settlementStatus:'SETTLED',
       sourceBatchIds:shipmentSourceBatchIds,createdBatchIds:createdBatchIds,batchTransfers:batchTransfers,
-      tradeMode:req.source||'GENERAL_TRADE',transportMode:null,routeId:null,routeEvidenceStatus:'UNKNOWN'
+      tradeMode:req.source||'GENERAL_TRADE',
+      transportMode:req.transportMode||req.routeMode||null,routeId:req.routeId||null,
+      routeEvidenceStatus:(req.transportMode||req.routeId)?'REQUEST_ROUTE_METADATA':'UNKNOWN'
     };
     if(useBank){
       const bankCommit=bank.commitTradeSettlement({
