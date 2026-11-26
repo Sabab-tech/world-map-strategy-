@@ -30,8 +30,12 @@ test('period reconciliation requires exact finished-goods ledger, processed-ware
     'productionPeriodId','inventoryLedger','storedBatchIds','inventoryLots',
     'INDUSTRIAL_PERIOD_LEDGER_RECEIPT_COUNT_MISMATCH',
     'INDUSTRIAL_PERIOD_BATCH_WAREHOUSE_STATE_MISMATCH',
-    'INDUSTRIAL_PERIOD_LEDGER_RECEIPT_QUANTITY_MISMATCH','markProductionPeriodRecovery'
+    'INDUSTRIAL_PERIOD_LEDGER_RECEIPT_QUANTITY_MISMATCH'
   ]) assert.ok(reconciler.includes(token),'missing reconciliation contract: '+token);
+  const recovery=industrial.slice(industrial.indexOf('function markProductionPeriodRecovery'),
+    industrial.indexOf('function reconcileProductionPeriod'));
+  assert.ok(recovery.includes("status:'RECOVERY_REQUIRED'"),
+    'reconciliation failures must persist a retryable industrial journal state');
 });
 
 test('factory construction progress is guarded once per stable industrial production period',()=>{
