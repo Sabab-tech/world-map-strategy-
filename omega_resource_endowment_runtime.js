@@ -2233,7 +2233,7 @@ function batchFromExtraction(x,record){
         destinationCountryId:c,warehouseId:batch.warehouseId,quantity:q,remainingQuantity:q,
         stage:'RAW_INVENTORY',purity:batch.purity,gradePercent:batch.grade,qualityState:clone(batch.qualityState),
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,pathId,
-        extractionReference:record.extractionId,simulationTurn:productionPeriodTurn,status:'AVAILABLE'
+        extractionReference:record.extractionId,simulationTurn:productionPeriodTurn,productionPeriodId,status:'AVAILABLE'
       };
       existingPath.stages.push({stage:'BATCH_CREATED',turn:productionPeriodTurn,batchId:batch.batchId,quantity:q});
       existingPath.batchIds.push(batch.batchId);
