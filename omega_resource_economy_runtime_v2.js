@@ -54,6 +54,31 @@
     }
     return out;
   }
+  // Copy only the collection boundary for transaction handlers that replace rows
+  // rather than mutate existing row objects. Nested lots/ledger rows stay read-only
+  // until an individual row is copied immediately before a write.
+  function copyMapShallow(value){
+    if(!value||typeof value!=='object'||Array.isArray(value))return{};
+    var out={},keys=Object.keys(value);
+    for(var i=0;i<keys.length;i++){
+      var key=keys[i];
+      if(key==='__proto__'||key==='constructor')continue;
+      var item=value[key];
+      if(typeof item==='function'||item===undefined)continue;
+      out[key]=item;
+    }
+    return out;
+  }
+  // Warehouses mutate only the resource-quantity book and the receipt/batch-ID
+  // arrays in these handlers. Keep all other nested metadata read-only by reference.
+  function cloneWarehouseForMutation(value,fallback){
+    var source=value&&typeof value==='object'?value:(fallback||{}),out=copyMapShallow(source);
+    if(source.availableByResource&&typeof source.availableByResource==='object')
+      out.availableByResource=cloneInventoryQuantities(source.availableByResource);
+    if(Array.isArray(source.storedBatchIds))out.storedBatchIds=source.storedBatchIds.slice();
+    if(Array.isArray(source.receipts))out.receipts=source.receipts.slice();
+    return out;
+  }
   function num(v){if(v===null||v===undefined||v===''||typeof v==='boolean')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
   function id(v){return String(v==null?'':v).trim().toUpperCase();}
   function tok(v){return String(v==null?'':v).normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
