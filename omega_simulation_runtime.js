@@ -1653,9 +1653,11 @@
     const root=simulation.world.state;
     if(!root.simulation||typeof root.simulation!=='object'||Array.isArray(root.simulation))root.simulation={};
     let store=root.simulation.economyPhaseArchitectureV1;
-    if(!store||typeof store!=='object'||Array.isArray(store)||Number(store.schemaVersion)!==ECONOMY_PHASE_CHECKPOINT_SCHEMA){
+    if(!store){
       store={schemaVersion:ECONOMY_PHASE_CHECKPOINT_SCHEMA,checkpoints:{},mutations:{}};
       root.simulation.economyPhaseArchitectureV1=store;
+    }else if(typeof store!=='object'||Array.isArray(store)||Number(store.schemaVersion)!==ECONOMY_PHASE_CHECKPOINT_SCHEMA){
+      throw new Error('ECONOMY_PHASE_CHECKPOINT_SCHEMA_UNSUPPORTED');
     }
     if(!store.checkpoints||typeof store.checkpoints!=='object'||Array.isArray(store.checkpoints))store.checkpoints={};
     if(!store.mutations||typeof store.mutations!=='object'||Array.isArray(store.mutations))store.mutations={};
@@ -1812,7 +1814,7 @@
     const store=economyPhaseState();
     return Object.keys(store.checkpoints).map(key=>store.checkpoints[key])
       .filter(row=>row&&row.status!=='READY'&&row.status!=='COMPLETED')
-      .map(clone);
+      .map(row=>clone(row));
   }
   const EconomyPhaseCheckpointAPI=Object.freeze({
     VERSION:'1.0.0',SCHEMA_VERSION:ECONOMY_PHASE_CHECKPOINT_SCHEMA,
@@ -1830,6 +1832,7 @@
   });
 
   global.Omega=global.Omega||{};
+  global.Omega.EconomyPhaseCheckpoints=EconomyPhaseCheckpointAPI;
   global.Omega.SimulationRuntime=simulation;
   global.Omega.Simulation=simulation;
   global.Omega.GameSession=simulation;
