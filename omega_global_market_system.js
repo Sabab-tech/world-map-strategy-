@@ -329,9 +329,9 @@
 
   function pushOrder(book,order){if(!order.resourceId||order.quantity<=0||order.price===null)return;const key=String(order.resourceId);if(!book[key])book[key]={bids:[],asks:[]};book[key][order.side].push(order);}
   function* collectOrdersWork(rid,countryRows){
-    const book={bids:[],asks:[]},product=describeProduct(rid),rows=Array.isArray(countryRows)?countryRows:countries();
-    for(let countryIndex=0;countryIndex<rows.length;countryIndex++){
-      const c=rows[countryIndex];
+    const book={bids:[],asks:[]},product=describeProduct(rid),countryRowsForRefresh=Array.isArray(countryRows)?countryRows:countries();
+    for(let countryIndex=0;countryIndex<countryRowsForRefresh.length;countryIndex++){
+      const c=countryRowsForRefresh[countryIndex];
       const reqs=countryValue(c,'trade.importRequests');
       if(Array.isArray(reqs))for(const q of reqs.slice(-256)){
         if(token(q?.resourceId)!==token(rid)||!['SENT','COUNTER_OFFERED','ACCEPTED'].includes(id(q?.status)))continue;
