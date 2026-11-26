@@ -209,3 +209,34 @@ test("UI v2 navigation and deferred section refresh use the shared action progre
   assert.ok(app.includes("disposeCurrentScreen(root, state);"),
     "unmount must also dispose active-screen subscriptions and timers");
 });
+
+
+test("UI v2 screen renderers are lazy-loaded while remaining available in the offline shell", () => {
+  const html = read("index.html");
+  const worker = read("omega-offline-map-sw.js");
+  const loaderPath = "omega_ui_v2/module-loader.js";
+  const lazyScreens = [
+    "omega_ui_v2/screens/government.js",
+    "omega_ui_v2/screens/ministry-detail.js",
+    "omega_ui_v2/screens/economy.js",
+    "omega_ui_v2/screens/resource-ministry.js",
+    "omega_ui_v2/screens/mine-detail.js",
+    "omega_ui_v2/screens/industry.js",
+    "omega_ui_v2/screens/home-affairs.js",
+    "omega_ui_v2/screens/police-fleet.js",
+    "omega_ui_v2/screens/reports.js",
+    "omega_ui_v2/screens/autonomous-development.js",
+  ];
+  assert.ok(html.includes('<script src="' + loaderPath + '" defer></script>'),
+    "the screen loader must be available before UI v2 mounts");
+  assert.ok(html.indexOf(loaderPath) < html.indexOf("omega_ui_v2/app.js"),
+    "the loader must execute before the UI host");
+  for (const file of lazyScreens) {
+    assert.equal(html.includes('src="' + file + '"'), false,
+      file + " must not execute from the initial HTML shell");
+    assert.ok(worker.includes('"./' + file + '"'),
+      file + " must remain available from the offline shell cache");
+  }
+  const core = worker.slice(worker.indexOf("const CORE_ASSETS"), worker.indexOf("];", worker.indexOf("const CORE_ASSETS")));
+  assert.ok(core.includes('"./' + loaderPath + '"'), "the loader itself must be cached offline");
+});

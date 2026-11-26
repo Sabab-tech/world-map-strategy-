@@ -590,26 +590,36 @@
     function isCurrent() {
       return stateFor(root) === state && state.navigationGeneration === generation;
     }
+    function finish() {
+      if (stateFor(root) !== state) return;
+      state.navigationPending = false;
+      if (root.removeAttribute) root.removeAttribute('data-omega-v2-navigation-pending');
+      var main = root.querySelector && root.querySelector('[data-omega-v2-main]');
+      if (main && main.removeAttribute) main.removeAttribute('aria-busy');
+      syncNavigationChrome(root, state);
+    }
     var first = requestFrame(function () {
       state.pendingFrames = [];
       if (!isCurrent()) return;
       var second = requestIdleFrame(function () {
         state.pendingFrames = [];
         if (!isCurrent()) return;
+        var output;
         try {
-          callback();
+          output = callback();
         } catch (error) {
           recordRenderFailure(state.route, error);
-          renderCurrentScreen(root, state, true);
-        } finally {
-          if (stateFor(root) === state) {
-            state.navigationPending = false;
-            if (root.removeAttribute) root.removeAttribute('data-omega-v2-navigation-pending');
-            var main = root.querySelector && root.querySelector('[data-omega-v2-main]');
-            if (main && main.removeAttribute) main.removeAttribute('aria-busy');
-            syncNavigationChrome(root, state);
-          }
+          var failedMain = root.querySelector && root.querySelector('[data-omega-v2-main]');
+          if (failedMain) failedMain.innerHTML = renderFailureMarkup();
+          finish();
+          return;
         }
+        Promise.resolve(output).catch(function (error) {
+          if (!isCurrent()) return;
+          recordRenderFailure(state.route, error);
+          var failedMain = root.querySelector && root.querySelector('[data-omega-v2-main]');
+          if (failedMain) failedMain.innerHTML = renderFailureMarkup();
+        }).finally(finish);
       });
       state.pendingFrames = [second];
     });
@@ -661,24 +671,33 @@
       : null;
     state.navigationProgressHandle = progressHandle;
     queueAfterPaint(root, state, generation, function () {
-      try {
-        var result = callback();
+      var loader = g.OmegaUIV2ModuleLoader;
+      var load = loader && typeof loader.loadForContext === 'function'
+        ? loader.loadForContext(state) : Promise.resolve();
+      return Promise.resolve(load).then(function () {
+        if (stateFor(root) !== state || state.navigationGeneration !== generation) {
+          return { ok:false, code:'UI_V2_NAVIGATION_SUPERSEDED' };
+        }
+        return callback();
+      }).then(function (result) {
         if (stateFor(root) === state && state.navigationProgressHandle === progressHandle && progressHandle) {
           state.navigationProgressHandle = null;
           if (result && result.code === 'SCREEN_RENDER_FAILED') {
             progressHandle.fail(result.message || result.code, 'The screen could not finish rendering. Its recovery view is shown.');
+          } else if (result && result.code === 'UI_V2_NAVIGATION_SUPERSEDED') {
+            // A newer destination owns the active progress state.
           } else {
             progressHandle.complete('Screen ready.', label || ('Opened ' + navigationLabel(state)));
           }
         }
         return result;
-      } catch (error) {
+      }).catch(function (error) {
         if (stateFor(root) === state && state.navigationProgressHandle === progressHandle && progressHandle) {
           state.navigationProgressHandle = null;
           progressHandle.fail(error, 'The screen could not finish rendering.');
         }
         throw error;
-      }
+      });
     });
     return true;
   }
@@ -745,6 +764,12 @@
   function render(root) {
     var state = stateFor(root);
     if (!root || !state) return { ok:false, code:'UI_V2_NOT_MOUNTED' };
+    var moduleLoader = g.OmegaUIV2ModuleLoader;
+    if (moduleLoader && typeof moduleLoader.isLoadedForContext === 'function' &&
+        !moduleLoader.isLoadedForContext(state)) {
+      scheduleNavigationRender(root);
+      return { ok:true, code:'UI_V2_SCREEN_LOADING', route:state.route };
+    }
     releaseResourceScopeIfLeaving(root, state);
     invalidatePendingRender(state);
     if (state.shellMounted && state.lastRenderedScreenIdentity !== screenIdentity(state)) replaceMainForNavigation(root);
