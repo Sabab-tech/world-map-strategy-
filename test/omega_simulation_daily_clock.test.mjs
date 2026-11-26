@@ -343,7 +343,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(lifecycle, /function updateClockProgress\(\)/);
   assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
     'the compact two-button HUD must not repaint its hidden progress row on every paced clock frame');
-  assert.match(lifecycle, /function queueHudUpdate\(\)/,
+  assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/,
     'bursty lifecycle events must share one animation-frame HUD refresh');
   assert.match(coordinator, /OMEGA_SIMULATION_CLOCK_TICK/);
   const topHeaderStart = index.indexOf('id="top-status-bar"');
@@ -939,12 +939,12 @@ test('compact gameplay clock dock exposes only play and pause actions', () => {
   assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
   assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
   assert.match(serviceWorker, /omega-offline-atlas-shell-v151/);
-  assert.match(lifecycle, /function queueHudUpdate\(\)/);
+  assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/);
   assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
   assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
     'the hidden progress row must not trigger DOM writes twice per second');
-  const hudStart = lifecycle.indexOf('function updateHud()');
-  const hudEnd = lifecycle.indexOf('function queueHudUpdate()', hudStart);
+  const hudStart = lifecycle.indexOf('function updateHud(');
+  const hudEnd = lifecycle.indexOf('function queueHudUpdate(', hudStart);
   assert.ok(hudStart >= 0 && hudEnd > hudStart);
   assert.doesNotMatch(lifecycle.slice(hudStart, hudEnd), /updateClockProgress\(\)/,
     'a committed-turn HUD update must not repaint a hidden clock-progress row');
@@ -992,12 +992,21 @@ test('bursty finance, resource and turn events coalesce to one HUD refresh per a
   assert.equal(resourceHudUpdates, 1,
     'Finance updates during the same game turn must not rebuild the resource HUD');
 
+  event('RESOURCE_STATE_UPDATED');
+  event('OMEGA_RESOURCE_ECONOMY_UPDATED');
+  event('RESOURCE_STATE_UPDATED');
+  assert.equal(queuedFrames.length, 1,
+    'same-turn resource change events must share one scheduled HUD refresh');
+  queuedFrames.shift()();
+  assert.equal(resourceHudUpdates, 2,
+    'a real resource change must refresh the resource HUD without waiting for the next game day');
+
   sim.clock.turn = 2;
   gameState.simulation.turn = 2;
   event('OMEGA_SIMULATION_TURN_COMMITTED');
   assert.equal(queuedFrames.length, 1);
   queuedFrames.shift()();
-  assert.equal(resourceHudUpdates, 2,
+  assert.equal(resourceHudUpdates, 3,
     'the resource HUD may refresh again after the authoritative game day changes');
 });
 

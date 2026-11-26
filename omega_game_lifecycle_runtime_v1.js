@@ -39,6 +39,7 @@
   var manualCommandInFlight = false;
   var hudUpdateFrame = null;
   var hudUpdateTimer = null;
+  var pendingResourceHudRefresh = false;
   var lastResourceHudCountry = null;
   var lastResourceHudTurn = -1;
   var saveStatus = 'AUTOSAVE READY';
@@ -266,7 +267,7 @@
     }
   }
 
-  function updateHud() {
+  function updateHud(forceResourceHudRefresh) {
     var sim = runtime();
     if (!sim || !sim.clock || !g.document) return;
     var root = rootState();
@@ -280,7 +281,8 @@
     updateControls(sim);
 
     var country = playerCountry(sim);
-    var refreshCountryResources = (country || null) !== lastResourceHudCountry || turn !== lastResourceHudTurn;
+    var refreshCountryResources = forceResourceHudRefresh === true ||
+      (country || null) !== lastResourceHudCountry || turn !== lastResourceHudTurn;
     if (refreshCountryResources && country && typeof g.updateGlobalResourceHUD === 'function') {
       try { g.updateGlobalResourceHUD(country); } catch (_) {}
     }
@@ -349,12 +351,15 @@
   }
   // Finance, resource and turn events can arrive in bursts during one day.
   // Coalesce their presentation work to one refresh per browser frame.
-  function queueHudUpdate() {
+  function queueHudUpdate(forceResourceHudRefresh) {
+    if (forceResourceHudRefresh === true) pendingResourceHudRefresh = true;
     if (hudUpdateFrame !== null || hudUpdateTimer !== null) return;
     var flush = function () {
       hudUpdateFrame = null;
       hudUpdateTimer = null;
-      updateHud();
+      var refreshResources = pendingResourceHudRefresh;
+      pendingResourceHudRefresh = false;
+      updateHud(refreshResources);
     };
     if (typeof g.requestAnimationFrame === 'function') {
       hudUpdateFrame = g.requestAnimationFrame(flush);
@@ -364,7 +369,9 @@
       hudUpdateTimer = g.setTimeout(flush, 0);
       return;
     }
-    updateHud();
+    var refreshResources = pendingResourceHudRefresh;
+    pendingResourceHudRefresh = false;
+    updateHud(refreshResources);
   }
 
   function openDb() {
@@ -1088,10 +1095,19 @@
     ].forEach(function (type) {
       g.addEventListener && g.addEventListener(type, scheduleStateSave);
     });
-    ['COUNTRY_SELECTED', 'COUNTRY_CHANGED', 'OMEGA_COUNTRY_SELECTED', 'OMEGA_PLAYER_COUNTRY_CHANGED', 'MINISTRY_SELECTED'].forEach(function (type) {
-      g.addEventListener && g.addEventListener(type, function () { queueHudUpdate(); scheduleStateSave(); });
+    ['COUNTRY_SELECTED', 'COUNTRY_CHANGED', 'OMEGA_COUNTRY_SELECTED', 'OMEGA_PLAYER_COUNTRY_CHANGED'].forEach(function (type) {
+      g.addEventListener && g.addEventListener(type, function () { queueHudUpdate(true); scheduleStateSave(); });
     });
-    g.addEventListener && g.addEventListener('RESOURCE_STATE_UPDATED', queueHudUpdate);
+    g.addEventListener && g.addEventListener('MINISTRY_SELECTED', function () { queueHudUpdate(); scheduleStateSave(); });
+    [
+      'RESOURCE_STATE_UPDATED', 'OMEGA_RESOURCE_ECONOMY_UPDATED',
+      'OMEGA_RESOURCE_INVENTORY_CHANGED', 'OMEGA_RESOURCE_EXTRACTION_COMPLETED',
+      'OMEGA_RESOURCE_IMPORT_COMPLETED', 'OMEGA_RESOURCE_EXPORT_COMPLETED',
+      'OMEGA_RESOURCE_CONSUMPTION_COMPLETED', 'OMEGA_RESOURCE_PROCESSING_COMPLETED',
+      'OMEGA_TRADE_SETTLEMENT_COMPLETED'
+    ].forEach(function (type) {
+      g.addEventListener && g.addEventListener(type, function () { queueHudUpdate(true); });
+    });
     g.addEventListener && g.addEventListener('OMEGA_READY', function () {
       restoreOnReady().catch(function () {
         restoreFailed = true;
