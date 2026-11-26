@@ -938,7 +938,7 @@ test('compact gameplay clock dock exposes only play and pause actions', () => {
   assert.match(hudCss, /button\[data-omega-speed\] \{\s*display: none !important;/);
   assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
   assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v153/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v154/);
   assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/);
   assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
   assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
@@ -1290,4 +1290,66 @@ test('repainting the active resource chapter does not replay tab-scroll animatio
   assert.equal(scrollCalls, 3);
   assert.equal(resourceRenders, 3);
   assert.equal(advisorUpdates, 3);
+});
+
+
+test('Country IOS resolves only the domain records required by the selected chapter', () => {
+  const countryIosSource = fs.readFileSync(path.join(root, 'country-ios.js'), 'utf8');
+  const reads = { economy:0, population:0, relations:0, identity:0, economyRecord:0, populationRecord:0 };
+  const gameState = {};
+  Object.defineProperties(gameState, {
+    economy: { enumerable:true, get() { reads.economy += 1; return { BGD:{} }; } },
+    population: { enumerable:true, get() { reads.population += 1; return { BGD:{} }; } },
+    relations: { enumerable:true, get() { reads.relations += 1; return { BGD:{} }; } }
+  });
+  const tabs = [1,5].map(chapter => ({
+    classList:{ add(){}, remove(){} },
+    getAttribute(name) { return name === 'data-chapter' ? String(chapter) : null; },
+    scrollIntoView(){}
+  }));
+  const stage = { innerHTML:'' };
+  const document = {
+    addEventListener(){},
+    querySelectorAll(selector) { return selector === '.chapter-tab' ? tabs : []; },
+    getElementById(id) { return id === 'ios-chapter-stage' ? stage : null; }
+  };
+  const win = {
+    Game:{ state:gameState },
+    OmegaCountryRuntimeData:{
+      resolveCountry(countryId) {
+        reads.identity += 1;
+        return { countryCode:countryId, iso3:'BGD', name:'Bangladesh', economyKey:'BGD', populationKey:'BGD' };
+      },
+      getRecord(domain) {
+        if (domain === 'economy') reads.economyRecord += 1;
+        if (domain === 'population') reads.populationRecord += 1;
+        return null;
+      }
+    },
+    addEventListener(){}
+  };
+  win.window = win;
+  const context = vm.createContext({ window:win, document, console, Number, String, Math, Object, Array, Set, Promise, Intl });
+  vm.runInContext(countryIosSource, context, { filename:'country-ios.js' });
+
+  const ios = win.CountryIOS;
+  ios.activeCountry = 'BGD';
+  ios.activeChapter = 1;
+  ios.renderChapter5_Resources = () => '<resource-view>';
+  ios.renderChapter1_Overview = () => '<overview-view>';
+  ios.bindQuickActions = () => {};
+  ios.updateAdvisor = () => {};
+
+  ios.switchChapter(5);
+  assert.deepEqual(reads, {
+    economy:0, population:0, relations:0, identity:0, economyRecord:0, populationRecord:0
+  }, 'Resource Chapter 5 only needs the selected country identity');
+
+  ios.switchChapter(1);
+  assert.equal(reads.economy, 1, 'Overview still reads economy records');
+  assert.equal(reads.population, 1, 'Overview still reads population records');
+  assert.equal(reads.relations, 1, 'Overview still reads relationship records');
+  assert.equal(reads.identity, 1, 'Overview still resolves the canonical country identity');
+  assert.equal(reads.economyRecord, 1);
+  assert.equal(reads.populationRecord, 1);
 });
