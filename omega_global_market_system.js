@@ -428,7 +428,10 @@
       bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.filter(x=>x.referenceOnly!==true).reduce((s,x)=>s+(n(x.quantity)||0),0),referenceAskDepth:asks.filter(x=>x.referenceOnly===true).reduce((s,x)=>s+(n(x.quantity)||0),0),
       priceDiscovery:clearing!==null?'ORDER_BOOK_CROSSING':(bestBid!==null&&bestAsk!==null?'NEGOTIATION_RANGE':ref?'REFERENCE_ONLY':'UNAVAILABLE'),
       referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,vwapUsd:vwap,spreadUsd:spread,volatilityUsd,
-      microstructure:{bidCount:bids.length,askCount:asks.filter(x=>x.referenceOnly!==true).length,referenceAskCount:asks.filter(x  function clearResource(rid,orders,history=[]){return drainMarketWorkSync(clearResourceWork(rid,orders,history));}
+      microstructure:{bidCount:bids.length,askCount:asks.filter(x=>x.referenceOnly!==true).length,referenceAskCount:asks.filter(x=>x.referenceOnly===true).length},
+      generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.filter(x=>x.referenceOnly!==true).length,referenceAsks:asks.filter(x=>x.referenceOnly===true).length}};
+  }
+  function clearResource(rid,orders,history=[]){return drainMarketWorkSync(clearResourceWork(rid,orders,history));}
   async function rebuildCooperatively(){
     const previousSnapshot=activeMarketSnapshot,previousProductIndex=activeProductIndex;
     const startedAt=marketNow(),pacing={sliceStartedAt:startedAt,yieldCount:0,maxSliceMs:0};
