@@ -164,7 +164,7 @@ This addendum supersedes the earlier statement that industrial phase separation 
 - The initial script list changes from 153 references to 144. The referenced JavaScript source estimate changes from 10,132,428 bytes to 9,309,447 bytes (822,981 fewer bytes, approximately 8.12%).
 - Simulation, resource, economy, industrial, trade, country-data, save and compatibility scripts remain in their existing static order.
 - Concurrent requests are coalesced; loaded renderers are reused; dependencies are loaded in order; failed loads can be retried; stale navigation generations cannot render over a newer route.
-- The loader is part of the offline shell. Route renderers are cached when first requested, and copies already present in the previous shell cache are migrated during an app update. A route never visited online before an offline session may not yet have a local renderer copy; its first offline request receives the normal asset-unavailable fallback rather than pretending the module exists.
+- All ten route renderers remain in the service-worker offline precache, but are not referenced by the initial HTML and are not evaluated until their route is opened. Existing cached copies are migrated during app updates.
 
 ### M2 — Active Industry screen freshness
 
