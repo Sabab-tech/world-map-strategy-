@@ -1475,7 +1475,7 @@ function batchFromExtraction(x,record){
     const periodTurn=n(record?.simulationTurn)??turn(),productionPeriodId=String(record?.productionPeriodId||('GAME_DAY_'+periodTurn));
     const pa=String(record?.provenance?.productionAuthority||record?.provenance?.quantityAuthority||x?.capacity?.authority||'').toUpperCase();
     const simulatedQuantity=pa==='SIMULATED'||pa==='SIMULATION_RULESET'||x?.capacity?.stateAuthority==='SIMULATED';
-    const batchId=String(base?.batchId||('BATCH_EXT_'+periodTurn+'_'+canonical(x.countryId)+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')));
+    const batchId=String(base?.batchId||('BATCH_EXT_'+periodTurn+'_'+productionPeriodId.replace(/[^A-Z0-9:_-]/gi,'')+'_'+canonical(x.countryId)+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')));
     const c=canonical(x.countryId);
     const local={
       batchId,resourceId:x.resourceId,materialIdentity:'RES_TYPE:'+x.resourceId,resourceIdentityKey:'RES_TYPE:'+x.resourceId,
