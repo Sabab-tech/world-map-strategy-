@@ -222,6 +222,10 @@ test('resource extraction phase catches up one stable game-day at a time and rec
     'each period must preserve the existing P5 capacity calculation while receiving a distinct tick');
   assert.match(economySource,/RESOURCE_PERIOD_LEDGER_RECEIPT_QUANTITY_MISMATCH/,
     'a period cannot reconcile when its mine ledger quantity differs from the raw warehouse receipt');
+  assert.match(endowmentSource,/extractionReference:record\.extractionId,simulationTurn:productionPeriodTurn,productionPeriodId,status:'AVAILABLE'/,
+    'inventory lots must retain the same extraction period identity');
+  assert.match(economySource,/String\(batch\?\.productionPeriodId\|\|'\'\)!==periodId\|\|String\(lot\?\.productionPeriodId\|\|'\'\)!==periodId/,
+    'batch and inventory lot period IDs must agree before the checkpoint is committed');
   assert.match(economySource,/RESOURCE_PERIOD_BATCH_WAREHOUSE_STATE_MISMATCH/,
     'a period must verify its batch, inventory lot and warehouse stored-batch identity');
   assert.match(economySource,/if\(!reconciliation\.ok\)\{\s*api\.fail\(/,
