@@ -309,10 +309,16 @@ test('the Global Commodity Market is moved into the Trade & Commerce ministry', 
   assert.ok(tradeMinistryUi.includes('data-omega-v2-trade-market-host'));
   assert.ok(tradeMinistryUi.includes('renderMarketDashboard(marketHost, country'));
   assert.ok(tradeMinistryUi.includes("section === 'market'"));
+  const moduleLoader = fs.readFileSync('omega_ui_v2/module-loader.js', 'utf8');
+  const serviceWorker = fs.readFileSync('omega-offline-map-sw.js', 'utf8');
   assert.ok(html.indexOf('omega_resource_command_center_ui_v1.js') >= 0);
-  assert.ok(html.indexOf('omega_resource_command_center_ui_v1.js') < html.indexOf('omega_ui_v2/screens/ministry-detail.js'),
-    'the shared market renderer must load before the Trade & Commerce ministry screen');
-  assert.ok(html.includes('omega_ui_v2/screens/ministry-detail.js'));
+  assert.ok(html.indexOf('omega_resource_command_center_ui_v1.js') < html.indexOf('omega_ui_v2/module-loader.js'),
+    'the shared market renderer must load before the route loader');
+  assert.ok(moduleLoader.includes('omega_ui_v2/screens/ministry-detail.js'),
+    'Trade & Commerce ministry detail must be registered for on-demand loading');
+  assert.ok(moduleLoader.includes('OmegaUIV2MinistryDetail'));
+  assert.ok(serviceWorker.includes('./omega_ui_v2/screens/ministry-detail.js'),
+    'the Trade & Commerce renderer must remain available offline');
 });
 
 test('integrated Production Line panel unifies existing resource, factory, private enterprise, warehouse, route and market controls', () => {

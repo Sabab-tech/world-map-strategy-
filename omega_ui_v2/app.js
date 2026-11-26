@@ -614,12 +614,16 @@
           finish();
           return;
         }
-        Promise.resolve(output).catch(function (error) {
-          if (!isCurrent()) return;
-          recordRenderFailure(state.route, error);
-          var failedMain = root.querySelector && root.querySelector('[data-omega-v2-main]');
-          if (failedMain) failedMain.innerHTML = renderFailureMarkup();
-        }).finally(finish);
+        if (output && typeof output.then === 'function') {
+          Promise.resolve(output).catch(function (error) {
+            if (!isCurrent()) return;
+            recordRenderFailure(state.route, error);
+            var failedMain = root.querySelector && root.querySelector('[data-omega-v2-main]');
+            if (failedMain) failedMain.innerHTML = renderFailureMarkup();
+          }).finally(finish);
+        } else {
+          finish();
+        }
       });
       state.pendingFrames = [second];
     });
@@ -670,34 +674,44 @@
         })
       : null;
     state.navigationProgressHandle = progressHandle;
+    function completeProgress(result) {
+      if (stateFor(root) === state && state.navigationProgressHandle === progressHandle && progressHandle) {
+        state.navigationProgressHandle = null;
+        if (result && result.code === 'SCREEN_RENDER_FAILED') {
+          progressHandle.fail(result.message || result.code, 'The screen could not finish rendering. Its recovery view is shown.');
+        } else if (!(result && result.code === 'UI_V2_NAVIGATION_SUPERSEDED')) {
+          progressHandle.complete('Screen ready.', label || ('Opened ' + navigationLabel(state)));
+        }
+      }
+      return result;
+    }
+    function failProgress(error) {
+      if (stateFor(root) === state && state.navigationProgressHandle === progressHandle && progressHandle) {
+        state.navigationProgressHandle = null;
+        progressHandle.fail(error, 'The screen could not finish rendering.');
+      }
+      throw error;
+    }
+    function runCurrentDestination() {
+      if (stateFor(root) !== state || state.navigationGeneration !== generation) {
+        return { ok:false, code:'UI_V2_NAVIGATION_SUPERSEDED' };
+      }
+      return callback();
+    }
     queueAfterPaint(root, state, generation, function () {
       var loader = g.OmegaUIV2ModuleLoader;
-      var load = loader && typeof loader.loadForContext === 'function'
-        ? loader.loadForContext(state) : Promise.resolve();
-      return Promise.resolve(load).then(function () {
-        if (stateFor(root) !== state || state.navigationGeneration !== generation) {
-          return { ok:false, code:'UI_V2_NAVIGATION_SUPERSEDED' };
+      // Keep the established synchronous transition path for legacy hosts and
+      // already-loaded screen modules. Only a missing route module makes this
+      // navigation asynchronous.
+      if (!loader || typeof loader.loadForContext !== 'function' ||
+          (typeof loader.isLoadedForContext === 'function' && loader.isLoadedForContext(state))) {
+        try {
+          return completeProgress(runCurrentDestination());
+        } catch (error) {
+          return failProgress(error);
         }
-        return callback();
-      }).then(function (result) {
-        if (stateFor(root) === state && state.navigationProgressHandle === progressHandle && progressHandle) {
-          state.navigationProgressHandle = null;
-          if (result && result.code === 'SCREEN_RENDER_FAILED') {
-            progressHandle.fail(result.message || result.code, 'The screen could not finish rendering. Its recovery view is shown.');
-          } else if (result && result.code === 'UI_V2_NAVIGATION_SUPERSEDED') {
-            // A newer destination owns the active progress state.
-          } else {
-            progressHandle.complete('Screen ready.', label || ('Opened ' + navigationLabel(state)));
-          }
-        }
-        return result;
-      }).catch(function (error) {
-        if (stateFor(root) === state && state.navigationProgressHandle === progressHandle && progressHandle) {
-          state.navigationProgressHandle = null;
-          progressHandle.fail(error, 'The screen could not finish rendering.');
-        }
-        throw error;
-      });
+      }
+      return loader.loadForContext(state).then(runCurrentDestination).then(completeProgress, failProgress);
     });
     return true;
   }

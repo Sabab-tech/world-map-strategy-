@@ -1603,16 +1603,30 @@ test('production shell loads UI v2 and excludes retired UI controllers from the 
   const entry = readFileSync(new URL('../omega_ministry_entry_v3.js', import.meta.url), 'utf8');
   const modules = [
     'omega_ui_v2/omega-ui-v2.css','omega_ui_v2/navigation-registry.js',
-    'omega_ui_v2/screens/government.js','omega_ui_v2/screens/ministry-detail.js',
-    'omega_ui_v2/screens/economy.js','omega_ui_v2/screens/resource-ministry.js',
-    'omega_ui_v2/screens/mine-detail.js','omega_ui_v2/screens/industry.js',
-    'omega_ui_v2/screens/home-affairs.js','omega_ui_v2/screens/police-fleet.js',
-    'omega_ui_v2/screens/reports.js','omega_ui_v2/app.js',
+    'omega_ui_v2/module-loader.js','omega_ui_v2/app.js',
     'omega_ui_v2/integration.js','omega_ui_v2/world-command-dock.js'
   ];
   for (const modulePath of modules) {
     assert.ok(index.includes(modulePath), 'index.html must load ' + modulePath);
     assert.ok(sw.includes(modulePath), 'offline service worker must pre-cache ' + modulePath);
+  }
+  const lazyModules = [
+    'omega_ui_v2/screens/government.js','omega_ui_v2/screens/ministry-detail.js',
+    'omega_ui_v2/screens/economy.js','omega_ui_v2/screens/resource-ministry.js',
+    'omega_ui_v2/screens/mine-detail.js','omega_ui_v2/screens/industry.js',
+    'omega_ui_v2/screens/home-affairs.js','omega_ui_v2/screens/police-fleet.js',
+    'omega_ui_v2/screens/reports.js','omega_ui_v2/screens/autonomous-development.js'
+  ];
+  const loader = readFileSync(new URL('../omega_ui_v2/module-loader.js', import.meta.url), 'utf8');
+  const appPosition = index.indexOf('omega_ui_v2/app.js');
+  const loaderPosition = index.indexOf('omega_ui_v2/module-loader.js');
+  assert.ok(loaderPosition >= 0 && loaderPosition < appPosition,
+    'the module loader must execute before UI v2 mounts');
+  for (const modulePath of lazyModules) {
+    assert.equal(index.includes('src="' + modulePath + '"'), false,
+      modulePath + ' must not execute from the initial HTML shell');
+    assert.ok(loader.includes(modulePath), modulePath + ' must be registered in the route loader');
+    assert.ok(sw.includes('./' + modulePath), modulePath + ' must remain available offline');
   }
   assert.match(sw, /omega-offline-atlas-shell-v\d+/);
   assert.ok(entry.includes('OmegaUIV2Integration'));
