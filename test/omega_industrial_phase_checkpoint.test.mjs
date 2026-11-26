@@ -15,7 +15,10 @@ test('industrial period execution is idempotent and cannot replay a completed pr
   assert.match(periodRunner,/status:'RECOVERY_REQUIRED'/);
   assert.match(periodRunner,/countryTurnRuns\.delete\(key\)/);
   assert.match(periodRunner,/activeIndustrialProductionPeriod=periodExecution/);
-  assert.match(periodRunner,/finally\{\s*activeIndustrialProductionPeriod=previousContext/);
+  assert.ok(periodRunner.indexOf('try{') < periodRunner.indexOf('network=netState(cid)'),
+    'journal setup must be covered by the period-context cleanup');
+  assert.ok(periodRunner.includes('finally{'));
+  assert.ok(periodRunner.includes('activeIndustrialProductionPeriod=previousContext;'));
 });
 
 test('period reconciliation requires exact finished-goods ledger, processed-warehouse receipt, batch and inventory lot agreement',()=>{
