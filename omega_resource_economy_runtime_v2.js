@@ -2991,15 +2991,18 @@
     var session=root.simulation?.session||state()?.simulation?.session||{};
     var api=g.Omega?.EconomyPhaseCheckpoints;
     var sessionId=String(session.sessionId||'').trim();
-    // Preserve legacy/test hosts without a canonical Simulation session; the real
-    // application enters the checkpoint path only with the active session identity.
+    // Only hosts without the canonical Simulation runtime may use the legacy
+    // direct runner. A live game must never bypass its durable industrial checkpoint.
+    if(!simulation)return industrial.runCountryTurn(cid);
     if(!api||typeof api.get!=='function'||typeof api.seed!=='function'||
-       typeof api.begin!=='function'||typeof api.commit!=='function'||
+       typeof api.begin!=='function'||typeof api.fail!=='function'||
+       typeof api.resume!=='function'||typeof api.commit!=='function'||
        typeof industrial.reconcileProductionPeriod!=='function'||
-       typeof industrial.markProductionPeriodRecovery!=='function'||
-       !sessionId||!session.playerCountryId||canonical(session.playerCountryId)!==cid){
-      return industrial.runCountryTurn(cid);
-    }
+       typeof industrial.markProductionPeriodRecovery!=='function')
+      return{status:'FAILED',reason:'INDUSTRIAL_PHASE_CHECKPOINT_API_UNAVAILABLE'};
+    if(!sessionId||!session.playerCountryId||canonical(session.playerCountryId)!==cid)
+      return{status:'FAILED',reason:'INDUSTRIAL_PHASE_ACTIVE_SESSION_IDENTITY_MISMATCH',
+        countryId:cid,sessionCountryId:session.playerCountryId||null};
     var scope={domain:'industrial',countryId:cid,sessionId};
     var fetched=api.get(scope);
     if(fetched?.status!=='OK')
@@ -3172,14 +3175,22 @@
     var session=root.simulation?.session||state()?.simulation?.session||{};
     var api=g.Omega?.EconomyPhaseCheckpoints;
     var sessionId=String(session.sessionId||'').trim();
-    if(!api||typeof api.get!=='function'||typeof api.seed!=='function'||
-       typeof api.begin!=='function'||typeof api.commit!=='function'||
-       !sessionId||!session.playerCountryId||canonical(session.playerCountryId)!==cid){
+    // Legacy standalone hosts can still use the pre-checkpoint extraction API.
+    // A running canonical Simulation must fail closed rather than minting output
+    // outside the active session/country checkpoint.
+    if(!simulation){
       if(typeof endowment.startCountryProduction==='function')
         return endowment.startCountryProduction(cid,null,{skipHydrationIfReady:true});
       if(typeof endowment.extractCountry==='function')return endowment.extractCountry(cid);
       return{status:'NOT_AVAILABLE',reason:'COUNTRY_SCOPED_EXTRACTION_UNAVAILABLE'};
     }
+    if(!api||typeof api.get!=='function'||typeof api.seed!=='function'||
+       typeof api.begin!=='function'||typeof api.fail!=='function'||
+       typeof api.resume!=='function'||typeof api.commit!=='function')
+      return{status:'FAILED',reason:'RESOURCE_PHASE_CHECKPOINT_API_UNAVAILABLE'};
+    if(!sessionId||!session.playerCountryId||canonical(session.playerCountryId)!==cid)
+      return{status:'FAILED',reason:'RESOURCE_PHASE_ACTIVE_SESSION_IDENTITY_MISMATCH',
+        countryId:cid,sessionCountryId:session.playerCountryId||null};
     var scope={domain:'resources',countryId:cid,sessionId};
     var fetched=api.get(scope);
     if(fetched?.status!=='OK')return{status:'FAILED',reason:fetched?.reason||'RESOURCE_PHASE_CHECKPOINT_UNAVAILABLE'};
