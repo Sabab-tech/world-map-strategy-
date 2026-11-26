@@ -1643,6 +1643,185 @@
     }
   }
 
+  // Durable, domain-scoped checkpoints live inside the existing authoritative
+  // Simulation state so the existing save envelope persists them automatically.
+  // This foundation does not schedule or execute any economy phase by itself.
+  const ECONOMY_PHASE_CHECKPOINT_SCHEMA=1;
+  const ECONOMY_PHASE_MUTATION_LIMIT=8192;
+  const ECONOMY_PHASE_DOMAINS=new Set(['resources','industrial','fiscal']);
+  function economyPhaseState(){
+    const root=simulation.world.state;
+    if(!root.simulation||typeof root.simulation!=='object'||Array.isArray(root.simulation))root.simulation={};
+    let store=root.simulation.economyPhaseArchitectureV1;
+    if(!store||typeof store!=='object'||Array.isArray(store)||Number(store.schemaVersion)!==ECONOMY_PHASE_CHECKPOINT_SCHEMA){
+      store={schemaVersion:ECONOMY_PHASE_CHECKPOINT_SCHEMA,checkpoints:{},mutations:{}};
+      root.simulation.economyPhaseArchitectureV1=store;
+    }
+    if(!store.checkpoints||typeof store.checkpoints!=='object'||Array.isArray(store.checkpoints))store.checkpoints={};
+    if(!store.mutations||typeof store.mutations!=='object'||Array.isArray(store.mutations))store.mutations={};
+    return store;
+  }
+  function economyPhaseScope(input={}){
+    const domain=String(input.domain||'').trim().toLowerCase();
+    const countryId=String(input.countryId||'').trim().toUpperCase();
+    const session=rootSession();
+    const sessionId=String(input.sessionId||'').trim();
+    if(!ECONOMY_PHASE_DOMAINS.has(domain))return{error:domain==='food'?'DOMAIN_NOT_ENABLED':'INVALID_DOMAIN'};
+    if(!/^[A-Z0-9]{2,12}$/.test(countryId))return{error:'CANONICAL_COUNTRY_ID_REQUIRED'};
+    if(!sessionId)return{error:'SESSION_ID_REQUIRED'};
+    if(domain==='resources'||domain==='industrial'){
+      if(!session||!session.sessionId||!session.playerCountryId)return{error:'ACTIVE_PLAYER_SESSION_REQUIRED'};
+      if(countryId!==String(session.playerCountryId).trim().toUpperCase()||
+         sessionId!==String(session.sessionId).trim())return{error:'PLAYER_SESSION_IDENTITY_MISMATCH'};
+    }
+    return{domain,countryId,sessionId,key:[domain,countryId,sessionId].map(encodeURIComponent).join('|')};
+  }
+  function rootSession(){
+    return simulation.world.state?.simulation?.session||null;
+  }
+  function economyPhaseDefaultCheckpoint(scope){
+    return{schemaVersion:ECONOMY_PHASE_CHECKPOINT_SCHEMA,domain:scope.domain,countryId:scope.countryId,
+      sessionId:scope.sessionId,lastProcessedTurn:0,lastProcessedDate:null,pendingThroughTurn:0,
+      pendingElapsedDays:0,lastSuccessfulPhase:null,lastProcessedEventId:null,status:'READY',
+      activeExecution:null,lastExecution:null,revision:0};
+  }
+  function economyPhaseGetCheckpoint(input={}){
+    const scope=economyPhaseScope(input);if(scope.error)return{status:'INVALID',reason:scope.error};
+    const store=economyPhaseState(),row=store.checkpoints[scope.key];
+    return{status:'OK',checkpoint:clone(row||economyPhaseDefaultCheckpoint(scope))};
+  }
+  function economyPhaseBegin(input={}){
+    const scope=economyPhaseScope(input);if(scope.error)return{status:'INVALID',reason:scope.error};
+    const executionId=String(input.executionId||'').trim();
+    const targetTurn=finite(input.targetTurn);
+    if(!executionId)return{status:'INVALID',reason:'EXECUTION_ID_REQUIRED'};
+    if(targetTurn===null||targetTurn<0||Math.floor(targetTurn)!==targetTurn)return{status:'INVALID',reason:'TARGET_TURN_INVALID'};
+    const store=economyPhaseState(),row=store.checkpoints[scope.key]||(store.checkpoints[scope.key]=economyPhaseDefaultCheckpoint(scope));
+    if(row.activeExecution){
+      return{status:row.activeExecution.executionId===executionId?'RECOVERY_REQUIRED':'BUSY',
+        reason:row.activeExecution.executionId===executionId?'EXECUTION_REQUIRES_RECONCILIATION':'ANOTHER_EXECUTION_IS_ACTIVE',
+        checkpoint:clone(row)};
+    }
+    if(targetTurn<=Number(row.lastProcessedTurn||0)&&Number(row.pendingThroughTurn||0)<=Number(row.lastProcessedTurn||0))
+      return{status:'ALREADY_PROCESSED',checkpoint:clone(row)};
+    row.pendingThroughTurn=Math.max(Number(row.pendingThroughTurn||0),targetTurn);
+    row.pendingElapsedDays=Math.max(0,row.pendingThroughTurn-Number(row.lastProcessedTurn||0));
+    if(row.pendingElapsedDays<=0)return{status:'ALREADY_PROCESSED',checkpoint:clone(row)};
+    row.activeExecution={executionId,fromTurn:Number(row.lastProcessedTurn||0)+1,
+      throughTurn:row.pendingThroughTurn,requestedTurn:targetTurn,
+      pendingElapsedDays:row.pendingElapsedDays};
+    row.status='RUNNING';row.revision=Number(row.revision||0)+1;
+    return{status:'STARTED',execution:clone(row.activeExecution),checkpoint:clone(row)};
+  }
+  function economyPhaseResume(input={}){
+    const scope=economyPhaseScope(input);if(scope.error)return{status:'INVALID',reason:scope.error};
+    const store=economyPhaseState(),row=store.checkpoints[scope.key];
+    const executionId=String(input.executionId||'').trim(),evidence=input.reconciliation||{};
+    if(!row?.activeExecution||row.activeExecution.executionId!==executionId)
+      return{status:'NOT_FOUND',reason:'ACTIVE_EXECUTION_NOT_FOUND'};
+    if(evidence.status!=='RECONCILED'||!String(evidence.evidenceId||'').trim())
+      return{status:'RECONCILIATION_REQUIRED',reason:'RECOVERY_REQUIRES_LEDGER_EVIDENCE',checkpoint:clone(row)};
+    row.activeExecution.recoveryEvidenceId=String(evidence.evidenceId).trim();
+    row.status='RUNNING';row.lastRecoveryEvidenceId=row.activeExecution.recoveryEvidenceId;
+    row.revision=Number(row.revision||0)+1;
+    return{status:'RESUMED',execution:clone(row.activeExecution),checkpoint:clone(row)};
+  }
+  function economyPhaseCommit(input={}){
+    const scope=economyPhaseScope(input);if(scope.error)return{status:'INVALID',reason:scope.error};
+    const store=economyPhaseState(),row=store.checkpoints[scope.key];
+    const executionId=String(input.executionId||'').trim(),evidence=input.reconciliation||{};
+    if(!row?.activeExecution||row.activeExecution.executionId!==executionId)
+      return{status:'NOT_FOUND',reason:'ACTIVE_EXECUTION_NOT_FOUND'};
+    if(evidence.status!=='RECONCILED'||!String(evidence.evidenceId||'').trim())
+      return{status:'RECONCILIATION_REQUIRED',reason:'AUTHORITATIVE_LEDGER_RECONCILIATION_REQUIRED'};
+    const processedThroughTurn=finite(input.processedThroughTurn);
+    if(processedThroughTurn===null||Math.floor(processedThroughTurn)!==processedThroughTurn||
+       processedThroughTurn<=Number(row.lastProcessedTurn||0)||processedThroughTurn>Number(row.activeExecution.throughTurn))
+      return{status:'INVALID',reason:'PROCESSED_TURN_OUT_OF_RANGE'};
+    row.lastProcessedTurn=processedThroughTurn;
+    row.lastProcessedDate=input.processedDate==null?row.lastProcessedDate:String(input.processedDate);
+    row.pendingElapsedDays=Math.max(0,Number(row.pendingThroughTurn||0)-row.lastProcessedTurn);
+    row.lastSuccessfulPhase=String(input.phase||scope.domain.toUpperCase()).trim();
+    row.lastProcessedEventId=input.lastProcessedEventId==null?row.lastProcessedEventId:String(input.lastProcessedEventId);
+    row.lastReconciliationEvidenceId=String(evidence.evidenceId).trim();
+    row.lastExecution={executionId,status:'COMMITTED',processedThroughTurn,
+      reconciliationEvidenceId:row.lastReconciliationEvidenceId};
+    row.activeExecution=null;row.status=row.pendingElapsedDays>0?'CATCHING_UP':'READY';
+    row.revision=Number(row.revision||0)+1;
+    return{status:'COMMITTED',checkpoint:clone(row)};
+  }
+  function economyPhaseFail(input={}){
+    const scope=economyPhaseScope(input);if(scope.error)return{status:'INVALID',reason:scope.error};
+    const store=economyPhaseState(),row=store.checkpoints[scope.key];
+    const executionId=String(input.executionId||'').trim();
+    if(!row?.activeExecution||row.activeExecution.executionId!==executionId)
+      return{status:'NOT_FOUND',reason:'ACTIVE_EXECUTION_NOT_FOUND'};
+    row.status='FAILED';row.lastError=String(input.error||'PHASE_EXECUTION_FAILED');
+    row.revision=Number(row.revision||0)+1;
+    return{status:'FAILED',checkpoint:clone(row)};
+  }
+  function economyPhaseIdempotencyKey(input={}){
+    const scope=economyPhaseScope(input);if(scope.error)return{status:'INVALID',reason:scope.error};
+    const executionId=String(input.executionId||'').trim(),operationId=String(input.operationId||'').trim();
+    if(!executionId||!operationId)return{status:'INVALID',reason:'EXECUTION_AND_OPERATION_IDS_REQUIRED'};
+    return{status:'OK',key:['OMEGA-ECONOMY-PHASE-V1',scope.domain,scope.countryId,scope.sessionId,executionId,operationId]
+      .map(value=>encodeURIComponent(value)).join(':')};
+  }
+  function economyPhaseReserveMutation(input={}){
+    const key=String(input.key||'').trim(),scope=economyPhaseScope(input);
+    if(scope.error)return{status:'INVALID',reason:scope.error};
+    if(!key)return{status:'INVALID',reason:'IDEMPOTENCY_KEY_REQUIRED'};
+    const store=economyPhaseState(),existing=store.mutations[key];
+    if(existing?.status==='POSTED')return{status:'DUPLICATE',mutation:clone(existing)};
+    if(existing?.status==='PENDING')return{status:'RECONCILIATION_REQUIRED',mutation:clone(existing)};
+    if(existing?.status==='RETRYABLE'){
+      existing.status='PENDING';existing.retryCount=Number(existing.retryCount||0)+1;
+      return{status:'RETRY_ALLOWED',mutation:clone(existing)};
+    }
+    if(Object.keys(store.mutations).length>=ECONOMY_PHASE_MUTATION_LIMIT)
+      return{status:'CAPACITY_REACHED',reason:'MUTATION_JOURNAL_FULL_FAIL_CLOSED'};
+    const row={key,domain:scope.domain,countryId:scope.countryId,sessionId:scope.sessionId,
+      executionId:String(input.executionId||''),operationId:String(input.operationId||''),status:'PENDING',retryCount:0};
+    store.mutations[key]=row;
+    return{status:'RESERVED',mutation:clone(row)};
+  }
+  function economyPhaseCompleteMutation(input={}){
+    const key=String(input.key||'').trim(),evidence=input.evidence||{},store=economyPhaseState(),row=store.mutations[key];
+    if(!row)return{status:'NOT_FOUND'};
+    if(row.status==='POSTED')return{status:'DUPLICATE',mutation:clone(row)};
+    if(row.status!=='PENDING')return{status:'RECONCILIATION_REQUIRED',mutation:clone(row)};
+    if(evidence.status!=='POSTED'||!String(evidence.evidenceId||'').trim())
+      return{status:'EVIDENCE_REQUIRED',reason:'POSTED_LEDGER_EVIDENCE_REQUIRED'};
+    row.status='POSTED';row.evidenceId=String(evidence.evidenceId).trim();
+    return{status:'POSTED',mutation:clone(row)};
+  }
+  function economyPhaseReconcileMutation(input={}){
+    const key=String(input.key||'').trim(),evidence=input.evidence||{},store=economyPhaseState(),row=store.mutations[key];
+    if(!row)return{status:'NOT_FOUND'};
+    if(evidence.status==='POSTED'&&String(evidence.evidenceId||'').trim()){
+      row.status='POSTED';row.evidenceId=String(evidence.evidenceId).trim();
+      return{status:'POSTED',mutation:clone(row)};
+    }
+    if(evidence.status==='NOT_POSTED'&&String(evidence.evidenceId||'').trim()){
+      row.status='RETRYABLE';row.reconciliationEvidenceId=String(evidence.evidenceId).trim();
+      return{status:'RETRYABLE',mutation:clone(row)};
+    }
+    return{status:'RECONCILIATION_REQUIRED',reason:'AUTHORITATIVE_LEDGER_EVIDENCE_REQUIRED',mutation:clone(row)};
+  }
+  function economyPhasePending(){
+    const store=economyPhaseState();
+    return Object.keys(store.checkpoints).map(key=>store.checkpoints[key])
+      .filter(row=>row&&row.status!=='READY'&&row.status!=='COMPLETED')
+      .map(clone);
+  }
+  const EconomyPhaseCheckpointAPI=Object.freeze({
+    VERSION:'1.0.0',SCHEMA_VERSION:ECONOMY_PHASE_CHECKPOINT_SCHEMA,
+    get:economyPhaseGetCheckpoint,begin:economyPhaseBegin,resume:economyPhaseResume,
+    commit:economyPhaseCommit,fail:economyPhaseFail,pending:economyPhasePending,
+    idempotencyKey:economyPhaseIdempotencyKey,reserveMutation:economyPhaseReserveMutation,
+    completeMutation:economyPhaseCompleteMutation,reconcileMutation:economyPhaseReconcileMutation
+  });
+
   const simulation=new SimulationCoordinator({
     state:global.Game?.state||global.gameState||{},
     worldEngine:global.WorldEcosystemEngine||null,
