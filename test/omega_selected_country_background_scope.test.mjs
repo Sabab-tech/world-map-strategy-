@@ -51,7 +51,7 @@ test('resource economy and mine/action pipelines never call world-wide processin
     'checkpoint scope must remain bound to the active player country');
   assert.match(resourcePhase, /endowment\.startCountryProduction\(cid,null,\{skipHydrationIfReady:true\}\)/,
     'legacy runtime fallback must remain available when checkpoint APIs are absent');
-  assert.match(runTurnCore, /endowment\.extractCountry\(cid\)/, 'legacy endowment fallback remains available');
+  assert.match(resourcePhase, /endowment\.extractCountry\(cid\)/, 'legacy endowment fallback remains available when checkpoint APIs are absent');
   assert.doesNotMatch(runTurnCore, /extractAll\(\)|countries\(\)\.forEach|GlobalTrade\.processAll/);
   const runTurn = between(economy, 'function runTurn(){', 'var resourceUiRefreshPending=false;');
   assert.match(runTurn, /playerSimulationCountryId\(\)/);
