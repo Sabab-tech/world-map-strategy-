@@ -161,7 +161,7 @@ This addendum supersedes the earlier statement that industrial phase separation 
 ### M1 — Controlled UI screen loading
 
 - Ten UI v2 presentation renderers are removed from the initial HTML script list and loaded by `omega_ui_v2/module-loader.js` from the selected route manifest.
-- The initial script list changes from 153 references to 144. The referenced JavaScript source estimate changes from 10,132,428 bytes to 9,309,447 bytes (822,981 fewer bytes, approximately 8.12%).
+- The initial script list changes from 153 references to 144. The referenced JavaScript source estimate changes from 10,132,428 bytes to 9,318,315 bytes (814,113 fewer bytes, approximately 8.03%). These are raw repository source-size totals for referenced scripts, not measured transfer size or browser memory.
 - Simulation, resource, economy, industrial, trade, country-data, save and compatibility scripts remain in their existing static order.
 - Concurrent requests are coalesced; loaded renderers are reused; dependencies are loaded in order; failed loads can be retried; stale navigation generations cannot render over a newer route.
 - All ten route renderers remain in the service-worker offline precache, but are not referenced by the initial HTML and are not evaluated until their route is opened. Existing cached copies are migrated during app updates.
