@@ -159,9 +159,6 @@
                 // coordinator check is sufficient for the supported 0.5x–8x speeds.
                 // The awaited loop never overlaps turns and the runtime caps catch-up at one day.
                 const SIMULATION_FRAME_INTERVAL_MS = 500;
-                // The authoritative simulation commits one in-game day every 15 seconds.
-                // A modest frame cadence keeps UI/battery overhead low without polling each second.
-                const MAX_FRAME_DELTA_MS = 15000;
                 let isPaused = document.hidden === true;
                 let loopTimerId = null;
                 let loopInProgress = false;
@@ -205,7 +202,9 @@
                     loopInProgress = true;
                     try {
                         const now = performance.now();
-                        const dt = Math.min(MAX_FRAME_DELTA_MS, Math.max(0, now - lastTime));
+                        // Pass the full elapsed interval to the clock. The Simulation runtime
+                        // applies its one-day cap and records any dropped scaled time.
+                        const dt = Math.max(0, now - lastTime);
                         lastTime = now;
                         frameTick += 1;
                         if (window.__OMEGA_DIAG__ && window.__OMEGA_DIAG__.metrics) {
