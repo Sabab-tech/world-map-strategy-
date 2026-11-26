@@ -737,15 +737,21 @@
   }
   function applyProductionHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},inputs=Array.isArray(p.inputs)?p.inputs:[],outputs=Array.isArray(p.outputs)?p.outputs:[],
-        inv=cloneInventoryQuantities(ctx.stateTransaction.get('resource.inventory')||{}),
-        working=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],
-        inventoryLots=clone(ctx.stateTransaction.get('resource.inventoryLots')||{}),
-        ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[],
-        warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||null),
-        processedWarehouse=clone(ctx.stateTransaction.get('resource.processedWarehouse')||{warehouseId:'WH-'+canonical(ctx.countryId)+'-PROCESSED',countryId:canonical(ctx.countryId),type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+canonical(ctx.countryId)+':PROCESSED',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]}),
-        network=clone(ctx.stateTransaction.get('resource.industrialNetwork')||{}),
+        inventoryBase=ctx.stateTransaction.peek('resource.inventory')||{},inventoryChanges=Object.create(null),
+        batchRows=ctx.stateTransaction.peek('resource.batches'),
+        working=Array.isArray(batchRows)?batchRows.slice():[],
+        lotRows=ctx.stateTransaction.peek('resource.inventoryLots')||{},inventoryLots=copyMapShallow(lotRows),
+        ledgerRows=ctx.stateTransaction.peek('resource.inventoryLedger'),
+        ledger=Array.isArray(ledgerRows)?ledgerRows.slice():[],
+        warehouseBefore=ctx.stateTransaction.peek('resource.warehouse')||null,
+        warehouse=warehouseBefore?cloneWarehouseForMutation(warehouseBefore):null,
+        processedWarehouseBefore=ctx.stateTransaction.peek('resource.processedWarehouse')||null,
+        processedWarehouse=cloneWarehouseForMutation(processedWarehouseBefore,{warehouseId:'WH-'+canonical(ctx.countryId)+'-PROCESSED',countryId:canonical(ctx.countryId),type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+canonical(ctx.countryId)+':PROCESSED',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]}),
+        network=clone(ctx.stateTransaction.peek('resource.industrialNetwork')||{}),
         maps=consumptionLedgerMaps(network),flowByBatch=maps.flowByBatch,reservedByBatch=maps.reservedByBatch,
-        consumed=[],sourceBatchIds=[],inputQuality={},c=canonical(ctx.countryId),siteFlowChanged=false;
+        consumed=[],sourceBatchIds=[],inputQuality={},c=canonical(ctx.countryId),siteFlowChanged=false,
+        priorLosses=ctx.stateTransaction.peek('resource.stockLossLedger');
+    priorLosses=Array.isArray(priorLosses)?priorLosses:[];
     if(!inputs.length||!outputs.length)return{accepted:false,reason:'PRODUCTION_TRANSACTION_SHAPE_INVALID'};
     var lossEvents=Array.isArray(p.lossEvents)?clone(p.lossEvents):[],
       lossMeasurementStatus=String(p.lossMeasurementStatus||'UNOBSERVED').toUpperCase(),
@@ -763,8 +769,7 @@
           return{accepted:false,reason:'PRODUCTION_LOSS_EVENT_INVALID',index:le};
         if(loss.sourceType&&String(loss.sourceType).toUpperCase()!=='PRODUCTION')
           return{accepted:false,reason:'PRODUCTION_LOSS_SOURCE_TYPE_INVALID',eventId:lossEventId};
-        var priorLosses=Array.isArray(ctx.stateTransaction.get('resource.stockLossLedger'))
-          ?ctx.stateTransaction.get('resource.stockLossLedger'):[];
+        // priorLosses is a read-only transaction view; no full ledger copy is needed.
         if(priorLosses.some(function(row){return String(row&&row.eventId||'')===lossEventId;}))
           return{accepted:false,reason:'PRODUCTION_LOSS_EVENT_ALREADY_RECORDED',eventId:lossEventId};
         var normalizedLoss=tok(lossResource);
@@ -794,8 +799,9 @@
     var requestedByResource={};
     for(var i=0;i<inputs.length;i++){
       var item=inputs[i],rid=String(item&&item.resourceId||'').trim(),q=num(item&&item.quantity);
-      var key=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(function(k){return tok(k)===tok(rid);});
-      var available=key==null?null:num(inv[key]);
+      var key=resolveInventoryKey(inventoryBase,inventoryChanges,rid),
+        availableValue=readInventoryQuantity(inventoryBase,inventoryChanges,key),
+        available=availableValue===undefined?null:num(availableValue);
       if(!rid||q===null||q<=0)return{accepted:false,reason:'PRODUCTION_INPUT_INVALID'};
       if(available===null||available<q)return{accepted:false,reason:'RESOURCE_INVENTORY_INSUFFICIENT',resourceId:rid,requested:q,available:available===null?0:available};
       requestedByResource[rid]=(requestedByResource[rid]||0)+q;
@@ -803,8 +809,7 @@
     for(var resourceId in requestedByResource){
       if(!Object.prototype.hasOwnProperty.call(requestedByResource,resourceId))continue;
       var rawFree=warehouseFreeQuantity(warehouse,resourceId),processedFree=warehouseFreeQuantity(processedWarehouse,resourceId),
-        physicalFree=rawFree+processedFree,inventoryKey=Object.prototype.hasOwnProperty.call(inv,resourceId)?resourceId:
-          Object.keys(inv).find(function(k){return tok(k)===tok(resourceId);});
+        physicalFree=rawFree+processedFree,inventoryKey=resolveInventoryKey(inventoryBase,inventoryChanges,resourceId);
       if(physicalFree+1e-9<requestedByResource[resourceId])
         return{accepted:false,reason:'PRODUCTION_INPUT_NOT_WAREHOUSE_AVAILABLE',resourceId:resourceId,
           requested:requestedByResource[resourceId],available:physicalFree};
@@ -812,8 +817,11 @@
 
     for(var j=0;j<inputs.length;j++){
       var row=inputs[j],resId=String(row.resourceId),need=num(row.quantity);
-      var resolvedKey=Object.prototype.hasOwnProperty.call(inv,resId)?resId:Object.keys(inv).find(function(k){return tok(k)===tok(resId);});
-      inv[resolvedKey]=num(inv[resolvedKey])-need;
+      var resolvedKey=resolveInventoryKey(inventoryBase,inventoryChanges,resId),
+        currentQuantity=num(readInventoryQuantity(inventoryBase,inventoryChanges,resolvedKey));
+      if(currentQuantity===null||currentQuantity<need)
+        return{accepted:false,reason:'RESOURCE_INVENTORY_INSUFFICIENT',resourceId:resId,requested:need,available:currentQuantity===null?0:currentQuantity};
+      inventoryChanges[resolvedKey]=currentQuantity-need;
       var remaining=need,used=[],rawDebit=0,processedDebit=0,
         rawBudget=warehouseFreeQuantity(warehouse,resId),processedBudget=warehouseFreeQuantity(processedWarehouse,resId);
       for(var b=0;b<working.length&&remaining>1e-9;b++){
@@ -828,7 +836,8 @@
         spendable=Math.min(spendable,isProcessed?processedBudget:rawBudget);
         if(spendable<=1e-9)continue;
         var take=Math.min(spendable,remaining);
-        batch.remainingQuantity=Math.max(0,batchQty-take);
+        batch=Object.assign({},batch,{remainingQuantity:Math.max(0,batchQty-take)});
+        working[b]=batch;
         remaining-=take;
         if(isProcessed){processedDebit+=take;processedBudget=Math.max(0,processedBudget-take);}
         else{rawDebit+=take;rawBudget=Math.max(0,rawBudget-take);}
@@ -877,8 +886,9 @@
     for(var o=0;o<outputs.length;o++){
       var out=outputs[o],outId=String(out&&out.resourceId||'').trim(),outQty=num(out&&out.quantity);
       if(!outId||outQty===null||outQty<=0)return{accepted:false,reason:'PRODUCTION_OUTPUT_INVALID'};
-      var outKey=Object.prototype.hasOwnProperty.call(inv,outId)?outId:(Object.keys(inv).find(function(k){return tok(k)===tok(outId);})||outId);
-      inv[outKey]=(num(inv[outKey])||0)+outQty;
+      var outKey=resolveInventoryKey(inventoryBase,inventoryChanges,outId),
+        previousOutputQuantity=num(readInventoryQuantity(inventoryBase,inventoryChanges,outKey))||0;
+      inventoryChanges[outKey]=previousOutputQuantity+outQty;
       var observedInputs=Object.keys(inputQuality).filter(function(k){return inputQuality[k].quantity>0;});
       var derivedPurity=num(out&&out.purity);
       if(derivedPurity===null&&observedInputs.length===1)derivedPurity=inputQuality[observedInputs[0]].purityMass/inputQuality[observedInputs[0]].quantity;
@@ -950,7 +960,8 @@
     while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
     if(warehouse)ctx.stateTransaction.set('resource.warehouse',warehouse);
     if(processedWarehouse)ctx.stateTransaction.set('resource.processedWarehouse',processedWarehouse);
-    ctx.stateTransaction.set('resource.inventory',inv);
+    if(!stageInventoryQuantities(ctx,inventoryBase,inventoryChanges))
+      return{accepted:false,reason:'RESOURCE_INVENTORY_KEY_INVALID'};
     ctx.stateTransaction.set('resource.batches',working);
     ctx.stateTransaction.set('resource.inventoryLots',inventoryLots);
     ctx.stateTransaction.set('resource.inventoryLedger',ledger);
