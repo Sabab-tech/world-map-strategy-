@@ -293,30 +293,50 @@ window.CountryIOS = {
         if (!stage) return;
 
         const countryKey = this.activeCountry;
-        const normKey = (countryKey || '').toUpperCase().replace(/[-\s]/g, '_');
-        const countryRuntime = window.OmegaCountryRuntimeData;
-        const liveEconomy = (window.Game && window.Game.state && window.Game.state.economy) ||
-            (window.gameState && window.gameState.economy) || {};
-        const livePopulation = (window.Game && window.Game.state && window.Game.state.population) ||
-            (window.gameState && window.gameState.population) || {};
-        const lookupByKey = (records, candidates) => {
-            for (const candidate of candidates) {
-                const hit = Object.keys(records).find(key => key.toUpperCase().replace(/[-\s]/g, '_') ===
-                    String(candidate || '').toUpperCase().replace(/[-\s]/g, '_'));
-                if (hit !== undefined) return records[hit];
+        const chapterNumber = Number(chNum);
+        let econ = null;
+        let pop = null;
+        let rel = {};
+
+        // Most chapters, especially Resource Chapter 5, only need the selected
+        // country ID. Avoid scanning legacy economy/population/relation roots
+        // unless the destination chapter actually consumes those records.
+        const needsEconomy = [1, 2, 3, 4].includes(chapterNumber);
+        const needsPopulation = [1, 2, 3, 4, 10].includes(chapterNumber);
+        const needsRelations = [1, 6].includes(chapterNumber);
+        if (needsEconomy || needsPopulation || needsRelations) {
+            const normKey = (countryKey || '').toUpperCase().replace(/[-\s]/g, '_');
+            const countryRuntime = window.OmegaCountryRuntimeData;
+            const lookupByKey = (records, candidates) => {
+                for (const candidate of candidates) {
+                    const hit = Object.keys(records).find(key => key.toUpperCase().replace(/[-\s]/g, '_') ===
+                        String(candidate || '').toUpperCase().replace(/[-\s]/g, '_'));
+                    if (hit !== undefined) return records[hit];
+                }
+                return null;
+            };
+            const identity = countryRuntime && countryRuntime.resolveCountry(countryKey);
+            const keys = [countryKey, normKey, identity && identity.countryCode, identity && identity.iso3,
+                identity && identity.name, identity && identity.economyKey, identity && identity.populationKey];
+
+            if (needsEconomy) {
+                const liveEconomy = (window.Game && window.Game.state && window.Game.state.economy) ||
+                    (window.gameState && window.gameState.economy) || {};
+                econ = (countryRuntime && countryRuntime.getRecord('economy', countryKey)) ||
+                    lookupByKey(liveEconomy, keys) || null;
             }
-            return null;
-        };
-        const identity = countryRuntime && countryRuntime.resolveCountry(countryKey);
-        const keys = [countryKey, normKey, identity && identity.countryCode, identity && identity.iso3,
-            identity && identity.name, identity && identity.economyKey, identity && identity.populationKey];
-        const econ = (countryRuntime && countryRuntime.getRecord('economy', countryKey)) ||
-            lookupByKey(liveEconomy, keys) || null;
-        const pop = (countryRuntime && countryRuntime.getRecord('population', countryKey)) ||
-            lookupByKey(livePopulation, keys) || null;
-        const relationState = (window.Game && window.Game.state && window.Game.state.relations) ||
-            (window.gameState && window.gameState.relations) || {};
-        const rel = lookupByKey(relationState, keys) || {};
+            if (needsPopulation) {
+                const livePopulation = (window.Game && window.Game.state && window.Game.state.population) ||
+                    (window.gameState && window.gameState.population) || {};
+                pop = (countryRuntime && countryRuntime.getRecord('population', countryKey)) ||
+                    lookupByKey(livePopulation, keys) || null;
+            }
+            if (needsRelations) {
+                const relationState = (window.Game && window.Game.state && window.Game.state.relations) ||
+                    (window.gameState && window.gameState.relations) || {};
+                rel = lookupByKey(relationState, keys) || {};
+            }
+        }
 
         switch(chNum) {
             case 1:
