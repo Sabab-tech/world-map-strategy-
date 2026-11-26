@@ -1689,7 +1689,8 @@
   }
   function economyPhaseGetCheckpoint(input={}){
     const scope=economyPhaseScope(input);if(scope.error)return{status:'INVALID',reason:scope.error};
-    const store=economyPhaseState(),row=store.checkpoints[scope.key];
+    const existing=simulation.world.state?.simulation?.economyPhaseArchitectureV1;
+    const row=existing?.schemaVersion===ECONOMY_PHASE_CHECKPOINT_SCHEMA?existing.checkpoints?.[scope.key]:null;
     return{status:'OK',checkpoint:clone(row||economyPhaseDefaultCheckpoint(scope))};
   }
   function economyPhaseBegin(input={}){
@@ -1773,7 +1774,11 @@
     const key=String(input.key||'').trim(),scope=economyPhaseScope(input);
     if(scope.error)return{status:'INVALID',reason:scope.error};
     if(!key)return{status:'INVALID',reason:'IDEMPOTENCY_KEY_REQUIRED'};
+    if(!String(input.executionId||'').trim()||!String(input.operationId||'').trim())
+      return{status:'INVALID',reason:'EXECUTION_AND_OPERATION_IDS_REQUIRED'};
     const store=economyPhaseState(),existing=store.mutations[key];
+    if(existing&&(existing.domain!==scope.domain||existing.countryId!==scope.countryId||existing.sessionId!==scope.sessionId||existing.executionId!==String(input.executionId)))
+      return{status:'INVALID',reason:'IDEMPOTENCY_SCOPE_MISMATCH'};
     if(existing?.status==='POSTED')return{status:'DUPLICATE',mutation:clone(existing)};
     if(existing?.status==='PENDING')return{status:'RECONCILIATION_REQUIRED',mutation:clone(existing)};
     if(existing?.status==='RETRYABLE'){
@@ -1800,6 +1805,7 @@
   function economyPhaseReconcileMutation(input={}){
     const key=String(input.key||'').trim(),evidence=input.evidence||{},store=economyPhaseState(),row=store.mutations[key];
     if(!row)return{status:'NOT_FOUND'};
+    if(row.status==='POSTED')return{status:'DUPLICATE',mutation:clone(row)};
     if(evidence.status==='POSTED'&&String(evidence.evidenceId||'').trim()){
       row.status='POSTED';row.evidenceId=String(evidence.evidenceId).trim();
       return{status:'POSTED',mutation:clone(row)};
@@ -1811,7 +1817,9 @@
     return{status:'RECONCILIATION_REQUIRED',reason:'AUTHORITATIVE_LEDGER_EVIDENCE_REQUIRED',mutation:clone(row)};
   }
   function economyPhasePending(){
-    const store=economyPhaseState();
+    const existing=simulation.world.state?.simulation?.economyPhaseArchitectureV1;
+    if(!existing||existing.schemaVersion!==ECONOMY_PHASE_CHECKPOINT_SCHEMA)return[];
+    const store=existing;
     return Object.keys(store.checkpoints).map(key=>store.checkpoints[key])
       .filter(row=>row&&row.status!=='READY'&&row.status!=='COMPLETED')
       .map(row=>clone(row));
