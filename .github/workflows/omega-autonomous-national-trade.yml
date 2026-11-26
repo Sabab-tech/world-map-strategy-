@@ -140,7 +140,7 @@ jobs:
       - name: Daily clock opening/closing stock-flow regression
         run: node --test test/omega_simulation_daily_clock.test.mjs
       - name: Existing real resource gameplay pipeline
-        if: ${{ github.event_name != 'pull_request' || !contains(github.event.pull_request.title, '[skip-e2e]') }}
+        if: ${{ (github.event_name != 'pull_request' || !contains(github.event.pull_request.title, '[skip-e2e]')) && (github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip-e2e]')) }}
         run: npm run test:resource-e2e
       - name: Existing mine management and inventory pipeline
         run: npm run test:resource-mine-management
