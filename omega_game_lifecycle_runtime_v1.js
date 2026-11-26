@@ -228,8 +228,8 @@
     var pause = g.document.querySelector('[data-omega-action="pause"]');
     if (toggle) {
       var toggleLabel = running ? 'PAUSE TIME' : status === 'PAUSED' ? 'RESUME TIME' : status === 'ERROR' ? 'TIME ERROR' : 'START TIME';
-      toggle.textContent = '▶';
-      toggle.setAttribute('aria-label', status === 'PAUSED' ? 'Resume game' : status === 'ERROR' ? 'Game unavailable' : 'Play game');
+      toggle.textContent = running ? 'Ⅱ' : '▶';
+      toggle.setAttribute('aria-label', status === 'ERROR' ? 'Game unavailable' : running ? 'Pause game' : status === 'PAUSED' ? 'Resume game' : 'Start game');
       toggle.title = toggleLabel;
       toggle.setAttribute('aria-pressed', running ? 'true' : 'false');
     }
@@ -259,7 +259,7 @@
     for (var c = 0; c < clockButtons.length; c++) {
       clockButtons[c].disabled = clockUnavailable;
     }
-    if (toggle) toggle.disabled = clockUnavailable || running;
+    if (toggle) toggle.disabled = clockUnavailable;
     if (pause) pause.disabled = clockUnavailable || !running;
     var turnBusy = !!(sim && (sim.stepInProgress || sim.frameInProgress));
     var manualButtons = g.document.querySelectorAll('[data-omega-action="step-day"], [data-omega-action="advance-days"]');
@@ -982,7 +982,9 @@
     if (target.hasAttribute('data-omega-action')) {
       var action = target.getAttribute('data-omega-action');
       if (action === 'toggle') {
-        setSpeed(1, true);
+        var current = runtime();
+        var running = isSimulationRunning(current);
+        setSpeed(running ? 0 : (lastKnownSpeed || 1), !running);
       } else if (action === 'pause') {
         setSpeed(0);
       } else if (action === 'step-day') {
