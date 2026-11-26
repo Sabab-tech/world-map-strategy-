@@ -1080,3 +1080,59 @@ test('sub-day clock frames skip compatibility hydration until a real day commits
   assert.equal(sim.clock.turn, 1);
   assert.equal(gameState.simulation.date, '2015-01-02T00:00:00.000Z');
 });
+
+
+test('NPC-only Finance and Macro events do not repaint the player HUD', async () => {
+  const { win, sim } = createRuntime();
+  const queuedFrames = [];
+  let financeReads = 0;
+  win.requestAnimationFrame = callback => {
+    queuedFrames.push(callback);
+    return queuedFrames.length;
+  };
+  win.OmegaFinanceMinistry = {
+    getFinanceState(countryId) {
+      assert.equal(countryId, 'BGD');
+      financeReads += 1;
+      return { treasuryBalanceUsd: 1250000 };
+    }
+  };
+  const { lifecycle } = attachLifecycle(win, sim);
+  await lifecycle.restore();
+  queuedFrames.length = 0;
+  financeReads = 0;
+
+  const emit = (type, detail) => win.dispatchEvent(new win.CustomEvent(type, { detail }));
+  emit('OMEGA_FINANCE_STATE_UPDATED', { countryCode: 'USA', turn: 4 });
+  emit('OMEGA_FINANCE_STATE_UPDATED', { countryCode: 'CAN', turn: 4 });
+  emit('OMEGA_MACRO_STABILITY_TURN_PROCESSED', {
+    playerCountryCode: 'BGD',
+    updatedCountryCodes: ['USA', 'CAN'],
+    turn: 4
+  });
+
+  assert.equal(queuedFrames.length, 0,
+    'NPC-only country changes must not schedule a player HUD refresh');
+  assert.equal(financeReads, 0,
+    'NPC-only Finance/Macro events must not re-read the selected player treasury');
+
+  emit('OMEGA_FINANCE_STATE_UPDATED', { countryCode: 'BGD', turn: 4 });
+  emit('OMEGA_MACRO_STABILITY_TURN_PROCESSED', {
+    playerCountryCode: 'BGD',
+    updatedCountryCodes: ['CAN', 'BGD'],
+    turn: 4
+  });
+  assert.equal(queuedFrames.length, 1,
+    'player-country Finance and Macro changes must coalesce into one HUD refresh');
+  assert.equal(financeReads, 0,
+    'country-scoped updates remain deferred until the scheduled frame');
+  queuedFrames.shift()();
+  assert.equal(financeReads, 1,
+    'the scheduled refresh must read the player country once');
+
+  emit('OMEGA_FINANCE_STATE_UPDATED', { turn: 4 });
+  assert.equal(queuedFrames.length, 1,
+    'legacy events without country identity retain the compatibility refresh');
+  queuedFrames.shift()();
+  assert.equal(financeReads, 2);
+});
