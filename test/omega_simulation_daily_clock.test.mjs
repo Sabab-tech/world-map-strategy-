@@ -938,7 +938,7 @@ test('compact gameplay clock dock exposes only play and pause actions', () => {
   assert.match(hudCss, /button\[data-omega-speed\] \{\s*display: none !important;/);
   assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
   assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v151/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v152/);
   assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/);
   assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
   assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
