@@ -119,6 +119,10 @@ test('real-time frame drops excess elapsed time instead of running a multi-turn 
   assert.equal(sim.clock.accumulatorMs,0,'overdue days must not remain queued for a later burst');
   assert.equal(sim.clock.droppedScaledTimeMs,15000*4,'discarded scaled time must be visible in diagnostics');
   assert.equal(sim.diagnostics().clock.droppedScaledTimeMs,60000);
+  assert.equal(sim.diagnostics().timeDiscards.totalScaledMs,60000);
+  assert.equal(sim.diagnostics().timeDiscards.eventCount,1);
+  assert.equal(events.filter(event=>event.type==='OMEGA_SIMULATION_TIME_DROPPED').length,1,
+    'the dropped scaled time must be surfaced as a monitorable runtime event');
 });
 
 test('faster game speed preserves fractional calendar-day progress after a capped frame', async () => {
@@ -819,4 +823,35 @@ test('checkpoint foundation preserves player-country and active-session identity
     executionId:'OLD-SESSION',targetTurn:1}).reason,'PLAYER_SESSION_IDENTITY_MISMATCH');
   assert.equal(checkpoints.begin({domain:'food',countryId:'USA',sessionId:session.sessionId,
     executionId:'FOOD-1',targetTurn:1}).reason,'DOMAIN_NOT_ENABLED');
+});
+
+
+test('simulation diagnostics measure each participant with bounded rolling samples',async()=>{
+  const {sandbox,state}=makeSandbox();
+  let now=100;
+  sandbox.performance={now:()=>now};
+  loadScript('omega_simulation_runtime.js',sandbox);
+  sandbox.Omega.Simulation.configure({
+    state,
+    worldEngine:{setAuthoritativeState(){},processSimulationTick(){return{advanced:true};}}
+  });
+  const sim=sandbox.Omega.Simulation;
+  sim.createSession({playerCountryId:'BANGLADESH'});
+  sim.registerTurnParticipant('test.timed-participant',async()=>{
+    now+=12.5;
+    return{result:'measured'};
+  });
+  const result=await sim.advance(1);
+  assert.equal(result.steps,1);
+  const diagnostics=sim.diagnostics();
+  const timing=diagnostics.turnParticipants.find(row=>row.id==='test.timed-participant');
+  assert.equal(timing.sampleCount,1);
+  assert.equal(timing.rollingSampleCount,1);
+  assert.equal(timing.lastDurationMs,12.5);
+  assert.equal(timing.averageDurationMs,12.5);
+  assert.equal(timing.maxDurationMs,12.5);
+  assert.equal(timing.p95DurationMs,12.5);
+  assert.equal(diagnostics.lastTurnParticipantResults.find(row=>row.id==='test.timed-participant').durationMs,12.5);
+  assert.equal(state.simulation.participantTimings,undefined,
+    'process-local timing samples must not create another durable save-state authority');
 });
