@@ -44,13 +44,14 @@
   function cloneInventoryQuantities(value){
     if(value===null||typeof value!=='object')return{};
     if(Array.isArray(value))return clone(value);
-    var out={},seen=[[value,out]];
-    Object.keys(value).forEach(function(key){
-      if(key==='__proto__'||key==='constructor')return;
+    var out={},seen=[[value,out]],keys=Object.keys(value);
+    for(var i=0;i<keys.length;i++){
+      var key=keys[i];
+      if(key==='__proto__'||key==='constructor')continue;
       var item=value[key];
-      if(typeof item==='function'||item===undefined)return;
+      if(typeof item==='function'||item===undefined)continue;
       out[key]=item!==null&&typeof item==='object'?clone(item,seen):item;
-    });
+    }
     return out;
   }
   function num(v){if(v===null||v===undefined||v===''||typeof v==='boolean')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
