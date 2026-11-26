@@ -1227,12 +1227,12 @@ test('repainting the active resource chapter does not replay tab-scroll animatio
   const chapterTabs = [];
   const stage = { innerHTML:'' };
   let scrollCalls = 0;
-  const tab = {
+  const makeTab = chapter => ({
     classList: { add() {}, remove() {} },
-    getAttribute(name) { return name === 'data-chapter' ? '5' : null; },
+    getAttribute(name) { return name === 'data-chapter' ? String(chapter) : null; },
     scrollIntoView() { scrollCalls += 1; }
-  };
-  chapterTabs.push(tab);
+  });
+  chapterTabs.push(makeTab(4), makeTab(5));
   const document = {
     addEventListener() {},
     querySelectorAll(selector) { return selector === '.chapter-tab' ? chapterTabs : []; },
