@@ -266,6 +266,10 @@ window.CountryIOS = {
     },
 
     switchChapter(chNum) {
+        const previousRenderedChapter = Number(this._lastRenderedChapter);
+        const sameRenderedChapter = previousRenderedChapter === Number(chNum);
+        const sameResourceChapter = sameRenderedChapter && Number(chNum) === 5 &&
+            this._lastRenderedCountry === this.activeCountry;
         this.activeChapter = chNum;
 
         // Update tabs state
@@ -274,7 +278,11 @@ window.CountryIOS = {
             const ch = parseInt(tab.getAttribute('data-chapter'), 10);
             if (ch === chNum) {
                 tab.classList.add('active');
-                tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                // A data-only repaint of the already selected chapter must not
+                // restart a smooth-scroll animation on every resource update.
+                if (!sameRenderedChapter && typeof tab.scrollIntoView === 'function') {
+                    tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
             } else {
                 tab.classList.remove('active');
             }
@@ -352,11 +360,15 @@ window.CountryIOS = {
                 break;
         }
 
-        // Attach action handlers
+        this._lastRenderedChapter = Number(chNum);
+        this._lastRenderedCountry = countryKey;
+
+        // Attach action handlers to the newly rendered chapter content.
         this.bindQuickActions();
 
-        // Update AI Strategic Advisor
-        this.updateAdvisor(chNum, countryKey);
+        // Chapter 5's resource advisor text is static. A data-only resource
+        // repaint does not change it, so avoid rebuilding its advice each time.
+        if (!sameResourceChapter) this.updateAdvisor(chNum, countryKey);
     },
 
     // -------------------------------------------------------------------------
