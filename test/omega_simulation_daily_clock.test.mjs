@@ -341,8 +341,16 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(index, /id="omega-global-time-hud"/);
   assert.match(index, /data-omega-clock-progress/);
   assert.match(lifecycle, /function updateClockProgress\(\)/);
-  assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
-    'the compact two-button HUD must not repaint its hidden progress row on every paced clock frame');
+  assert.match(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
+    'the visible day-progress indicator must follow the authoritative clock without queuing a full HUD render');
+  assert.match(index, /data-omega-speed-readout/);
+  assert.match(index, /data-omega-treasury-readout/);
+  assert.match(index, /<details class="ogth-advanced"/);
+  assert.match(lifecycle, /realTimeStepMs = 15000/,
+    'clock progress must use the canonical real-time step, not the 24-hour in-game simulation duration');
+  assert.doesNotMatch(lifecycle.slice(lifecycle.indexOf('function updateClockProgress'), lifecycle.indexOf('function updateHud')),
+    /clock\.stepDurationMs/,
+    'real-time accumulator progress must not be divided by the in-game day duration');
   assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/,
     'bursty lifecycle events must share one animation-frame HUD refresh');
   assert.match(coordinator, /OMEGA_SIMULATION_CLOCK_TICK/);
@@ -865,12 +873,13 @@ test('manual time HUD buttons step days, run selected days, pause/resume and exp
   assert.equal(sim.clock.speed, 1, 'Play must always use the visible normal game speed');
   sim.clock.accumulatorMs = STEP_MS / 2;
   win.dispatchEvent(new win.CustomEvent('OMEGA_SIMULATION_CLOCK_TICK'));
-  assert.equal(progressFill.style.width, undefined,
-    'the hidden clock-progress bar must not receive 2 Hz DOM writes after the compact dock ships');
-  assert.deepEqual(progressAttributes, {},
-    'hidden progress accessibility attributes must not be rewritten on every clock frame');
-  assert.equal(progressLabel.textContent, '',
-    'the hidden progress label must stay out of the compact gameplay HUD');
+  assert.equal(progressFill.style.width, '50%',
+    'the visible day-progress bar must reflect the current configured clock step');
+  assert.equal(progressAttributes['aria-valuenow'], '50',
+    'the visible progressbar must expose its current percentage accessibly');
+  assert.equal(progressAttributes['aria-label'], 'Progress toward next game day: 50%');
+  assert.equal(progressLabel.textContent, 'NEXT DAY · 50%',
+    'the compact HUD must show current day progress without rebuilding the full HUD');
 
   dispatchAction('pause');
   assert.equal(sim.status, 'PAUSED', 'Pause must stop further automatic turns');
@@ -924,36 +933,32 @@ test('global time controls are moved outside the clipped header and expose an ex
 });
 
 
-test('compact gameplay clock dock stays at the screen edge and retains accessible speed choices', () => {
+test('compact gameplay clock keeps date, Treasury and a live accessible day-progress indicator', () => {
   const lifecycle = fs.readFileSync(path.join(root, 'omega_game_lifecycle_runtime_v1.js'), 'utf8');
   const hudCss = fs.readFileSync(path.join(root, 'omega_manual_time_controls_v1.css'), 'utf8');
   const serviceWorker = fs.readFileSync(path.join(root, 'omega-offline-map-sw.js'), 'utf8');
-  const activeDockCss = hudCss.slice(hudCss.lastIndexOf('/* Compact, edge-anchored gameplay clock:'));
+  const activeDockCss = hudCss.slice(hudCss.lastIndexOf('/* OMEGA time HUD v2:'));
 
   assert.match(lifecycle, /function ensurePauseButton\(\)/);
   assert.match(lifecycle, /button\.setAttribute\('data-omega-action', 'pause'\)/);
-  assert.match(lifecycle, /var running = isSimulationRunning\(current\);\s*setSpeed\(running \? 0 : \(lastKnownSpeed \|\| 1\), !running\);/);
   assert.match(lifecycle, /toggle\.textContent = running \? 'Ⅱ' : '▶'/);
   assert.match(lifecycle, /toggle\.disabled = clockUnavailable;/);
   assert.match(activeDockCss, /top: calc\(env\(safe-area-inset-top, 0px\) \+ 52px\) !important;/);
   assert.match(activeDockCss, /right: 8px !important;/);
-  assert.match(activeDockCss, /left: auto !important;/);
-  assert.match(activeDockCss, /transform: none !important;/);
-  assert.doesNotMatch(activeDockCss, /left: 50%|translateX/);
-  assert.match(activeDockCss, /button\[data-omega-action="pause"\] \{\s*display: none !important;/);
-  assert.match(activeDockCss, /button\[data-omega-speed\] \{\s*display: flex !important;/);
-  assert.match(activeDockCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
+  assert.match(activeDockCss, /left: 8px !important;/);
+  assert.match(activeDockCss, /\.ogth-advanced:not\(\[open\]\) > \.ogth-advanced-content \{ display: none !important; \}/);
+  assert.match(activeDockCss, /\.ogth-clock-progress-row[\s\S]*?display: flex !important;/);
   assert.match(activeDockCss, /height: 30px !important;/);
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v155/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v156/);
   assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/);
   assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
-  assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
-    'the hidden progress row must not trigger DOM writes twice per second');
+  assert.match(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
+    'the visible progress row updates from the clock signal without a full HUD repaint');
   const hudStart = lifecycle.indexOf('function updateHud(');
   const hudEnd = lifecycle.indexOf('function queueHudUpdate(', hudStart);
   assert.ok(hudStart >= 0 && hudEnd > hudStart);
-  assert.doesNotMatch(lifecycle.slice(hudStart, hudEnd), /updateClockProgress\(\)/,
-    'a committed-turn HUD update must not repaint a hidden clock-progress row');
+  assert.match(lifecycle.slice(hudStart, hudEnd), /updateClockProgress\(\)/,
+    'a committed turn also refreshes the visible progress indicator');
 });
 
 test('the single play/pause control toggles without losing the selected game speed', () => {

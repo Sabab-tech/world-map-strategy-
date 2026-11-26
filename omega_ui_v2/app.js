@@ -52,12 +52,26 @@
     state.screenAbortController = typeof g.AbortController === 'function' ? new g.AbortController() : null;
     return state.screenAbortController;
   }
+  function registerScreenCleanup(state, callback) {
+    if (!state || typeof callback !== 'function') return function () {};
+    if (!Array.isArray(state.screenCleanupHandlers)) state.screenCleanupHandlers = [];
+    var handlers = state.screenCleanupHandlers;
+    if (handlers.indexOf(callback) < 0) handlers.push(callback);
+    var active = true;
+    return function () {
+      if (!active) return;
+      active = false;
+      var index = handlers.indexOf(callback);
+      if (index >= 0) handlers.splice(index, 1);
+    };
+  }
   function screenWorkContext(state) {
     var controller = state && state.screenAbortController;
     var generation = Number(state && state.screenWorkGeneration) || 0;
     return {
       screenSignal:controller ? controller.signal : null,
       screenWorkGeneration:generation,
+      onRegisterCleanup:function (callback) { return registerScreenCleanup(state, callback); },
       isScreenWorkCurrent:function () {
         return !!state && stateFor(state.root) === state &&
           state.screenWorkGeneration === generation &&
@@ -694,9 +708,21 @@
   function screenIdentity(state) {
     return [state.route || '', state.ministryId || '', state.resourceSiteId || ''].join('|');
   }
+  function disposeCurrentScreen(root, state) {
+    if (!state) return 0;
+    var handlers = Array.isArray(state.screenCleanupHandlers) ? state.screenCleanupHandlers.splice(0) : [];
+    for (var i = handlers.length - 1; i >= 0; i -= 1) {
+      try { handlers[i]({ route:state.route || 'map', ministryId:state.ministryId || null }); } catch (_) {
+        // One broken screen cleanup must not prevent the next ministry from opening.
+      }
+    }
+    state.lastScreenCleanupCount = handlers.length;
+    return handlers.length;
+  }
   function replaceMainForNavigation(root) {
     var current = root && root.querySelector && root.querySelector('[data-omega-v2-main]');
     if (!current) return false;
+    disposeCurrentScreen(root, stateFor(root));
     stopScreenRotation(current);
     try {
       if (typeof current.cloneNode === 'function' && current.parentNode && typeof current.parentNode.replaceChild === 'function') {
@@ -810,6 +836,7 @@
       screenWorkGeneration:0,
       screenAbortController:null,
       pendingFrames:[],
+      screenCleanupHandlers:[],
       navigationPending:false,
       route:initialRoute,
       ministryId:options.initialMinistryId ? String(options.initialMinistryId) : null,
@@ -828,6 +855,7 @@
     if (typeof root === 'string') root = g.document && g.document.querySelector(root);
     if (!root || !root.__omegaUIV2State) return { ok:false, code:'UI_V2_NOT_MOUNTED' };
     var state = root.__omegaUIV2State;
+    disposeCurrentScreen(root, state);
     var main = root.querySelector && root.querySelector('[data-omega-v2-main]');
     var resource = g.OmegaUIV2ResourceMinistry;
     if (resource && typeof resource.unload === 'function' && main) {

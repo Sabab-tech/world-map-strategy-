@@ -241,6 +241,11 @@
     }
     var effectiveSpeed = number(sim && sim.clock && sim.clock.speed);
     if (effectiveSpeed !== null && effectiveSpeed > 0) lastKnownSpeed = effectiveSpeed;
+    var speedReadout = g.document.querySelector('[data-omega-speed-readout]');
+    if (speedReadout) {
+      var shownSpeed = effectiveSpeed !== null && effectiveSpeed > 0 ? effectiveSpeed : lastKnownSpeed;
+      speedReadout.textContent = (shownSpeed === null ? '—' : String(Number(shownSpeed.toFixed(2)))) + '×';
+    }
     var speedButtons = g.document.querySelectorAll('[data-omega-speed]');
     for (var i = 0; i < speedButtons.length; i++) {
       var speed = number(speedButtons[i].getAttribute('data-omega-speed'));
@@ -274,8 +279,11 @@
     if (!g.document) return;
     var sim = runtime();
     var clock = sim && sim.clock;
-    var elapsed = Math.max(0, Math.min(15000, number(clock && clock.accumulatorMs) || 0));
-    var percent = Math.floor((elapsed / 15000) * 100);
+    // accumulatorMs is accumulated real-time, not the in-game day duration.
+    // The authoritative Simulation Clock commits one day per 15-second real-time interval.
+    var realTimeStepMs = 15000;
+    var elapsed = Math.max(0, Math.min(realTimeStepMs, number(clock && clock.accumulatorMs) || 0));
+    var percent = Math.floor((elapsed / realTimeStepMs) * 100);
     var status = String(sim && sim.status || 'READY').toUpperCase();
     var running = status === 'RUNNING' && !(clock && clock.paused);
     var bar = g.document.querySelector('[data-omega-clock-progress]');
@@ -319,6 +327,7 @@
       ? safeCall(function () { return macroApi.getIndicators(country); }) : null;
     var treasury = number(fm && fm.treasuryBalanceUsd);
     if (treasury === null) treasury = number(economyState && economyState.treasury);
+    setText('[data-omega-treasury-readout]', treasury === null ? 'TREASURY NOT RECORDED' : 'TREASURY ' + money(treasury));
     var gdp = number(macro && macro.gdpUsd);
     if (gdp === null) gdp = number(economyState && (
       economyState.gdp ?? economyState.nominal_gdp ?? economyState.gdpCurrentUsd ??
@@ -373,6 +382,7 @@
     }
     lastResourceHudCountry = country || null;
     lastResourceHudTurn = turn;
+    updateClockProgress();
   }
   // Finance, resource and turn events can arrive in bursts during one day.
   // Coalesce their presentation work to one refresh per browser frame.
@@ -1103,6 +1113,9 @@
     g.addEventListener && g.addEventListener('beforeunload', onPageExit);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', queueTurnSave);
     g.addEventListener && g.addEventListener('OMEGA_COUNTRY_CONTEXT_CHANGED', onCountryContextChanged);
+    // The 500ms clock signal updates only the tiny progress indicator. It must never
+    // rebuild the HUD or trigger resource/Finance selectors on every animation frame.
+    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_STEP_COMPLETED', queueHudUpdate);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_STARTED', queueHudUpdate);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_PROGRESS', function (event) {

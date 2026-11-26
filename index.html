@@ -322,15 +322,37 @@
                         <strong data-omega-game-date>2015-01-01</strong>
                         <span data-omega-game-day>DAY 1 · TURN 0</span>
                     </div>
-                    <span class="ogth-save" data-omega-save>Autosave ready</span>
-                    <div class="ogth-controls" role="group" aria-label="Global simulation controls">
+                    <div class="ogth-primary-controls" role="group" aria-label="Primary game clock controls">
+                        <strong class="ogth-treasury-readout" data-omega-treasury-readout>TREASURY NOT RECORDED</strong>
                         <button type="button" data-omega-action="toggle" aria-label="Resume game" title="Start, pause or resume game">▶</button>
-                        <button type="button" data-omega-speed="0.5" aria-label="Half speed" title="Half speed">0.5x</button>
-                        <button type="button" data-omega-speed="1" class="active" aria-label="Normal game speed" title="Normal speed">1x</button>
-                        <button type="button" data-omega-speed="2" aria-label="Fast game speed" title="Fast speed">2x</button>
-                        <button type="button" data-omega-speed="3" aria-label="Three times game speed" title="Three times speed">3x</button>
-                        <button type="button" data-omega-speed="4" aria-label="Four times game speed" title="Four times speed">4x</button>
-                        <button type="button" data-omega-speed="8" aria-label="Eight times game speed" title="Eight times speed">8x</button>
+                        <span class="ogth-speed-readout" data-omega-speed-readout>1×</span>
+                        <details class="ogth-advanced">
+                            <summary>ADVANCED</summary>
+                            <div class="ogth-advanced-content">
+                                <span class="ogth-save" data-omega-save>Autosave ready</span>
+                                <div class="ogth-controls" role="group" aria-label="Simulation speed controls">
+                                    <button type="button" data-omega-speed="0.5" aria-label="Half speed" title="Half speed">0.5x</button>
+                                    <button type="button" data-omega-speed="1" class="active" aria-label="Normal game speed" title="Normal speed">1x</button>
+                                    <button type="button" data-omega-speed="2" aria-label="Fast speed" title="Fast speed">2x</button>
+                                    <button type="button" data-omega-speed="3" aria-label="Three times game speed" title="Three times speed">3x</button>
+                                    <button type="button" data-omega-speed="4" aria-label="Four times game speed" title="Four times speed">4x</button>
+                                    <button type="button" data-omega-speed="8" aria-label="Eight times game speed" title="Eight times speed">8x</button>
+                                </div>
+                                <div class="ogth-manual-controls" role="group" aria-label="Manual simulation controls">
+                                    <button type="button" class="ogth-manual-primary" data-omega-action="step-day">+1 DAY</button>
+                                    <label class="ogth-days-label" for="omega-manual-days">DAYS
+                                        <input id="omega-manual-days" type="number" inputmode="numeric" min="1" max="365" step="1" value="7" data-omega-days aria-label="Number of days to advance">
+                                    </label>
+                                    <button type="button" data-omega-action="advance-days">RUN DAYS</button>
+                                    <button type="button" data-omega-action="cancel-advance" disabled>CANCEL</button>
+                                    <button type="button" data-omega-action="diagnostics">DIAGNOSTICS</button>
+                                    <span class="ogth-manual-progress" data-omega-manual-progress>MANUAL TEST READY</span>
+                                </div>
+                                <pre class="ogth-diagnostics" data-omega-diagnostics hidden></pre>
+                                <div class="ogth-economy" data-omega-economy title="Daily revenue, spending and net are modeled annual Finance figures divided by 365, not observed daily cash receipts.">Treasury and daily fiscal flow: Not recorded</div>
+                                <div class="ogth-assets" data-omega-assets>Assets/resources not recorded</div>
+                            </div>
+                        </details>
                     </div>
                 </div>
                 <div class="ogth-clock-progress-row">
@@ -340,19 +362,6 @@
                         <span data-omega-clock-progress-fill></span>
                     </div>
                 </div>
-                <div class="ogth-manual-controls" role="group" aria-label="Manual simulation testing controls">
-                    <button type="button" class="ogth-manual-primary" data-omega-action="step-day">+1 DAY</button>
-                    <label class="ogth-days-label" for="omega-manual-days">DAYS
-                        <input id="omega-manual-days" type="number" inputmode="numeric" min="1" max="365" step="1" value="7" data-omega-days aria-label="Number of days to advance">
-                    </label>
-                    <button type="button" data-omega-action="advance-days">RUN DAYS</button>
-                    <button type="button" data-omega-action="cancel-advance" disabled>CANCEL</button>
-                    <button type="button" data-omega-action="diagnostics">DIAGNOSTICS</button>
-                    <span class="ogth-manual-progress" data-omega-manual-progress>MANUAL TEST READY</span>
-                </div>
-                <pre class="ogth-diagnostics" data-omega-diagnostics hidden></pre>
-                <div class="ogth-economy" data-omega-economy title="Daily revenue, spending and net are modeled annual Finance figures divided by 365, not observed daily cash receipts.">Treasury and daily fiscal flow: Not recorded</div>
-                <div class="ogth-assets" data-omega-assets>Assets/resources not recorded</div>
             </section>
 
                 <div class="status-group status-right">

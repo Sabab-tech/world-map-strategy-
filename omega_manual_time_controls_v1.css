@@ -362,3 +362,90 @@
     top: calc(env(safe-area-inset-top) + 52px) !important;
   }
 }
+
+
+/* OMEGA time HUD v2: compact always-visible feedback, advanced controls stay available on demand. */
+#omega-global-time-hud {
+  top: calc(env(safe-area-inset-top, 0px) + 52px) !important;
+  right: 8px !important; left: 8px !important; width: auto !important; max-width: none !important;
+  max-height: none !important; display: flex !important; flex-direction: column !important;
+  align-items: stretch !important; gap: 4px !important; padding: 5px 7px !important;
+  overflow: visible !important; border-radius: 7px !important; contain: layout paint !important;
+}
+#omega-global-time-hud .ogth-topline {
+  display: flex !important; flex-wrap: wrap !important; align-items: center !important;
+  justify-content: space-between !important; gap: 5px 9px !important; min-width: 0 !important;
+}
+#omega-global-time-hud .ogth-time {
+  display: flex !important; flex: 1 1 185px !important; align-items: center !important;
+  flex-wrap: wrap !important; gap: 4px 8px !important; min-width: 0 !important;
+  font: 800 9px/1.25 Inter, Arial, sans-serif !important;
+}
+#omega-global-time-hud .ogth-time strong {
+  color: #f4fbff !important; font-size: 11px !important; font-variant-numeric: tabular-nums !important;
+}
+#omega-global-time-hud .ogth-primary-controls {
+  display: flex !important; flex: 0 1 auto !important; align-items: center !important;
+  justify-content: flex-end !important; flex-wrap: wrap !important; gap: 5px !important; min-width: 0 !important;
+}
+#omega-global-time-hud .ogth-treasury-readout {
+  color: #70e4bd !important; font: 800 9px/1.2 Inter, Arial, sans-serif !important;
+  font-variant-numeric: tabular-nums !important; white-space: nowrap !important;
+}
+#omega-global-time-hud .ogth-primary-controls > button[data-omega-action="toggle"] {
+  display: flex !important; box-sizing: border-box !important; align-items: center !important;
+  justify-content: center !important; width: 30px !important; min-width: 30px !important;
+  height: 30px !important; min-height: 30px !important; padding: 0 !important;
+  border: 1px solid #23c7ed !important; border-radius: 5px !important;
+  background: linear-gradient(180deg, #12617a, #0b344f) !important; color: #f0fcff !important;
+  font: 900 13px/1 Arial, sans-serif !important;
+}
+#omega-global-time-hud .ogth-speed-readout {
+  color: #9fe7ff !important; font: 900 9px/1 Inter, Arial, sans-serif !important;
+  font-variant-numeric: tabular-nums !important; min-width: 18px !important;
+}
+#omega-global-time-hud .ogth-advanced { position: relative !important; flex: 0 0 auto !important; }
+#omega-global-time-hud .ogth-advanced > summary {
+  display: inline-flex !important; align-items: center !important; min-height: 28px !important;
+  padding: 0 7px !important; border: 1px solid rgba(105,164,202,.42) !important;
+  border-radius: 5px !important; background: #102137 !important; color: #dcecff !important;
+  font: 800 8px/1 Inter, Arial, sans-serif !important; letter-spacing: .03em !important;
+  cursor: pointer !important; list-style: none !important;
+}
+#omega-global-time-hud .ogth-advanced > summary::-webkit-details-marker { display: none !important; }
+#omega-global-time-hud .ogth-advanced[open] > summary { border-color: #39c9e9 !important; }
+#omega-global-time-hud .ogth-advanced-content {
+  display: flex !important; flex-wrap: wrap !important; align-items: center !important;
+  gap: 5px 8px !important; width: min(580px, calc(100vw - 24px)) !important;
+  max-height: min(48vh, 360px) !important; margin-top: 5px !important; padding: 7px !important;
+  overflow: auto !important; border: 1px solid rgba(91,157,190,.48) !important;
+  border-radius: 7px !important; background: rgba(4,12,23,.98) !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,.38) !important;
+}
+#omega-global-time-hud .ogth-advanced:not([open]) > .ogth-advanced-content { display: none !important; }
+#omega-global-time-hud .ogth-advanced-content .ogth-save,
+#omega-global-time-hud .ogth-advanced-content .ogth-economy,
+#omega-global-time-hud .ogth-advanced-content .ogth-assets {
+  display: block !important; flex: 1 1 100% !important; min-width: 0 !important;
+}
+#omega-global-time-hud .ogth-advanced-content .ogth-controls {
+  display: flex !important; flex: 1 1 auto !important; flex-wrap: wrap !important;
+}
+#omega-global-time-hud .ogth-advanced-content .ogth-manual-controls {
+  display: flex !important; flex: 1 1 100% !important; flex-wrap: wrap !important; min-width: 0 !important;
+}
+#omega-global-time-hud .ogth-advanced-content .ogth-diagnostics { display: block !important; flex: 1 1 100% !important; }
+#omega-global-time-hud .ogth-advanced-content .ogth-diagnostics[hidden] { display: none !important; }
+#omega-global-time-hud .ogth-clock-progress-row {
+  display: flex !important; flex: 0 0 auto !important; align-items: center !important;
+  gap: 7px !important; min-width: 0 !important; padding: 1px 0 !important;
+}
+#omega-global-time-hud .ogth-clock-progress-title { flex: 0 0 92px !important; font-size: 7px !important; }
+#omega-global-time-hud .ogth-clock-progress { height: 4px !important; }
+@media (max-width: 420px) {
+  #omega-global-time-hud { right: 5px !important; left: 5px !important; padding: 4px 6px !important; }
+  #omega-global-time-hud .ogth-time { flex-basis: 150px !important; }
+  #omega-global-time-hud .ogth-primary-controls { gap: 4px !important; }
+  #omega-global-time-hud .ogth-treasury-readout { font-size: 8px !important; }
+  #omega-global-time-hud .ogth-advanced-content { width: calc(100vw - 22px) !important; }
+}

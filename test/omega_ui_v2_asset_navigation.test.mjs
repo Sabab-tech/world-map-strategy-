@@ -196,4 +196,16 @@ test("UI v2 navigation and deferred section refresh use the shared action progre
     "navigation progress must finish or report the screen render error");
   assert.ok(app.includes("function scheduleScreenRefresh(root, callback, label, screenRoot)"),
     "the same deferred transition path must cover section refreshes, not only route entry");
+  assert.ok(app.includes("function registerScreenCleanup(state, callback)"),
+    "screen modules must be able to register timers, listeners and observers with the host lifecycle");
+  assert.ok(app.includes("onRegisterCleanup:function (callback)"),
+    "screen-owned cleanup registration must be part of the screen work context");
+  assert.ok(app.includes("function disposeCurrentScreen(root, state)"),
+    "the host must dispose the departing screen before replacing its DOM");
+  assert.ok(app.includes("disposeCurrentScreen(root, stateFor(root))"),
+    "navigation replacement must run the registered cleanup callbacks");
+  assert.ok(app.includes("screenCleanupHandlers:[]"),
+    "each mounted screen starts with an isolated cleanup registry");
+  assert.ok(app.includes("disposeCurrentScreen(root, state);"),
+    "unmount must also dispose active-screen subscriptions and timers");
 });
