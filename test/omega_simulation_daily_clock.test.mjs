@@ -1012,7 +1012,7 @@ test('the single play/pause control toggles without losing the selected game spe
 
   click(toggle);
   assert.equal(sim.status, 'RUNNING');
-  assert.equal(sim.clock.speed, 3, 'resuming must restore the player's last selected speed');
+  assert.equal(sim.clock.speed, 3, "resuming must restore the player's last selected speed");
   assert.equal(toggle.textContent, 'Ⅱ');
 });
 
