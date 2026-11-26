@@ -88,6 +88,7 @@ function buildContext(){
         for(const part of parts){if(cur==null)return undefined;cur=cur[part];}
         return cur===undefined?undefined:cur;
       },
+      peek(path){return this.get(path);},
       set(path,value){
         const parts=String(path).split('.'),domain=parts.shift();state[domain]=state[domain]||{};state[domain][countryId]=state[domain][countryId]||{};
         if(!parts.length){state[domain][countryId]=value;return;}
