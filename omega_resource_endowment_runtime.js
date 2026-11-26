@@ -949,12 +949,12 @@
   }
   function dispatch(type,c,payload){
     const m=interop();if(!m?.dispatchCommand)return{status:'UNAVAILABLE',reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
-    try{return m.dispatchCommand('resource',type,canonical(c),payload,{turn:n(payload?.productionPeriodTurn)??turn(),commandType:type,correlationId:payload?.correlationId||payload?.extractionId||null});}
+    try{return m.dispatchCommand('resource',type,canonical(c),payload,{turn:turn(),commandType:type,correlationId:payload?.correlationId||payload?.extractionId||null});}
     catch(e){return{status:'FAILED',reason:String(e?.message||e)};}
   }
   function emit(type,c,payload={},commandId=null){
     const m=interop();if(!m?.emitEvent)return null;
-    try{return m.emitEvent(type,canonical(c),'resource',{countryId:canonical(c),...clone(payload)},{turn:n(payload?.simulationTurn??payload?.productionPeriodTurn)??turn(),causationId:commandId,correlationId:payload?.correlationId||payload?.extractionId||null});}
+    try{return m.emitEvent(type,canonical(c),'resource',{countryId:canonical(c),...clone(payload)},{turn:turn(),causationId:commandId,correlationId:payload?.correlationId||payload?.extractionId||null});}
     catch(_){return null;}
   }
   function profile(c){
