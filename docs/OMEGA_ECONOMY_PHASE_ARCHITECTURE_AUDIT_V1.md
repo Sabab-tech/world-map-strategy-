@@ -123,3 +123,32 @@ The repository contains food-related presentation assets and food-processing vis
 - [x] Search repository for authoritative food/agriculture runtime; none identified.
 - [x] Keep this milestone audit-only; no production code or existing data modified.
 - [ ] E2 checkpoint schema and migration tests (next milestone).
+
+
+## 11. E2/E3 implementation update — 2026-11-26
+
+E2 checkpoint infrastructure is merged and remains stored under the authoritative Simulation state. The checkpoint API now includes an additive `seed()` operation for save migration. It seeds only a new or untouched checkpoint, records the baseline turn/source, and refuses to overwrite a checkpoint that already has execution progress.
+
+### E3 resource phase implementation
+
+The resource phase is integrated into the existing player-country Resource Economy participant. It does not add another clock, scheduler, country loop, or ledger owner.
+
+- The active checkpoint remains scoped to the canonical player country and exact Simulation session.
+- A resource day receives a stable `productionPeriodId` scoped to that session and game turn. The existing numeric `turn` and `simulationTurn` fields remain present for compatibility.
+- Missing periods are processed sequentially. Each period calls the existing `startCountryProduction` path with its own P5 `simulationTick`; elapsed days are not converted into a single multiplied extraction quantity.
+- The period identity follows the existing transaction into extraction records, raw batches, warehouse receipts, mine-production ledger rows, mine outputs and extraction-path stages.
+- Retry guards use the period identity. Legacy records without the new field retain a turn-based fallback only for the legacy `GAME_DAY_<turn>` identity.
+- A period checkpoint advances only after the positive mine-production rows and raw-warehouse receipts match by batch identity and quantity, and the corresponding batch, inventory lot and warehouse stored-batch entry are present.
+- A failed extraction or reconciliation leaves the checkpoint pending. A retry reuses the same period ID and lets the existing occurrence/ledger guards suppress already-committed work.
+- Legacy baseline seeding uses the session's creation turn and existing resource execution evidence. A legacy save with no reliable resource-execution evidence starts its checkpoint at the current turn rather than extracting resources retroactively for the whole campaign.
+
+The existing industrial runner, factory recipes, capacity/time-window calculation, market/trade path, resource catalog, occurrence identities and source datasets are not changed by E3. Industrial phase separation remains E4; the Food phase remains disabled.
+
+### E3 regression coverage and acceptance boundary
+
+Regression coverage is added to:
+- `test/omega_simulation_runtime.test.js` — one-time legacy baseline seed and no-replay behavior.
+- `test/omega_resource_endowment_runtime.test.mjs` — per-period identity propagation through extraction, P5, warehouse receipt and mine ledger contracts.
+- `test/omega_resource_economy_runtime_v2.test.mjs` — sequential catch-up, ledger/warehouse reconciliation, and resource-before-industrial ordering contracts.
+
+This implementation's GitHub Actions regression results must be checked on the exact PR head before merge. Browser end-to-end and Android tests remain excluded from this milestone.

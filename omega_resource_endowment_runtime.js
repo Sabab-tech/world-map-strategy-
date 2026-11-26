@@ -1472,9 +1472,10 @@
   }
 function batchFromExtraction(x,record){
     const q=mineQuality(x),rs=record?.reserveAfter||{},base=record?.producedBatch||{},qty=n(record?.approvedQuantity)||0;
+    const periodTurn=n(record?.simulationTurn)??turn(),productionPeriodId=String(record?.productionPeriodId||('GAME_DAY_'+periodTurn));
     const pa=String(record?.provenance?.productionAuthority||record?.provenance?.quantityAuthority||x?.capacity?.authority||'').toUpperCase();
     const simulatedQuantity=pa==='SIMULATED'||pa==='SIMULATION_RULESET'||x?.capacity?.stateAuthority==='SIMULATED';
-    const batchId=String(base?.batchId||('BATCH_EXT_'+turn()+'_'+canonical(x.countryId)+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')));
+    const batchId=String(base?.batchId||('BATCH_EXT_'+periodTurn+'_'+productionPeriodId.replace(/[^A-Z0-9:_-]/gi,'')+'_'+canonical(x.countryId)+'_'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')));
     const c=canonical(x.countryId);
     const local={
       batchId,resourceId:x.resourceId,materialIdentity:'RES_TYPE:'+x.resourceId,resourceIdentityKey:'RES_TYPE:'+x.resourceId,
@@ -1484,10 +1485,10 @@ function batchFromExtraction(x,record){
       ownerCountryCode:c,ownerKey:x.ownerKey||null,custodianKey:c,destinationCountryId:c,
       locationNodeKey:'WAREHOUSE:'+c+':RAW',warehouseId:'WH-'+c+'-RAW',
       occurrenceKey:x.occurrenceKey,siteReferenceKey:x.siteReferenceKey||null,siteName:x.depositName||null,originKey:x.occurrenceKey,facilityKey:x.occurrenceKey,extractionReference:record?.extractionId||null,sourceBatchIds:[],
-      lifecycleStatus:'AVAILABLE',timestampTurn:turn(),transferType:'LOCAL_EXTRACTION',
+      lifecycleStatus:'AVAILABLE',timestampTurn:periodTurn,productionPeriodId,transferType:'LOCAL_EXTRACTION',
       provenance:{
         sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME_V2',sourceAuthority:simulatedQuantity?'SIMULATED':'OBSERVED',
-        sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,depositKey:x.depositKey,occurrenceKey:x.occurrenceKey,simulationTurn:turn(),quantityAuthority:simulatedQuantity?'SIMULATED':'OBSERVED'
+        sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,depositKey:x.depositKey,occurrenceKey:x.occurrenceKey,simulationTurn:periodTurn,productionPeriodId,quantityAuthority:simulatedQuantity?'SIMULATED':'OBSERVED'
       },
       reserveAfter:clone(rs)
     };
@@ -1849,6 +1850,12 @@ function batchFromExtraction(x,record){
     return{accepted:true,countryId:c,mineCount:rows.length,mineSiteReferenceCount,resourceCount:Object.keys(projection.endowment).length};
   }
   function extractHandler(cmd,ctx){
+    const requestedPeriodTurn=n(cmd?.payload?.productionPeriodTurn);
+    const productionPeriodTurn=requestedPeriodTurn===null?turn():requestedPeriodTurn;
+    const productionPeriodId=String(cmd?.payload?.productionPeriodId||('GAME_DAY_'+productionPeriodTurn)).trim();
+    if(!Number.isSafeInteger(productionPeriodTurn)||productionPeriodTurn<0||productionPeriodTurn>turn()||
+       !productionPeriodId||productionPeriodId.length>192)
+      return{accepted:false,reason:'PRODUCTION_PERIOD_IDENTITY_INVALID'};
     const c=canonical(ctx.countryId),r=g.__OmegaResourceReserveRegistry,p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     if(strategicPolicy&&strategicPolicy.diagnostics?.().rulesLoaded!==true)return{accepted:false,reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY'};
@@ -1856,9 +1863,9 @@ function batchFromExtraction(x,record){
     const current=ctx.stateTransaction.get('resource.mineStates')||{};
     const production=clone(ctx.stateTransaction.get('resource.production')||{});
     const previousExtractionTurn=n(ctx.stateTransaction.get('resource.lastExtractionTurn'));
-    if(previousExtractionTurn!==turn()){
+    if(previousExtractionTurn!==productionPeriodTurn){
       for(const key of Object.keys(production))production[key]=0;
-      ctx.stateTransaction.set('resource.lastExtractionTurn',turn());
+      ctx.stateTransaction.set('resource.lastExtractionTurn',productionPeriodTurn);
     }
     const inventory=clone(ctx.stateTransaction.get('resource.inventory')||{});
     const reserves=clone(ctx.stateTransaction.get('resource.reserves')||{});
@@ -1927,10 +1934,11 @@ function batchFromExtraction(x,record){
     // Build lookup indexes once. Repeated per-occurrence scans over growing ledgers
     // make a selected-site extraction O(history × selected sites).
     const firstPositiveProductionByOccurrence=new Map(),committedProductionByOccurrence=new Map();
-    const extractionTurn=turn();
+    const extractionTurn=productionPeriodTurn;
     for(const row of mineProductionLedger){
       const key=String(row?.occurrenceKey||row?.mineId||'').trim();
-      if(!key||n(row?.turn??row?.simulationTurn)!==extractionTurn||(n(row?.quantity)||0)<=0)continue;
+      if(!key||(row?.productionPeriodId?String(row.productionPeriodId)!==productionPeriodId:
+        (productionPeriodId!=='GAME_DAY_'+productionPeriodTurn||n(row?.turn??row?.simulationTurn)!==extractionTurn))||(n(row?.quantity)||0)<=0)continue;
       if(!firstPositiveProductionByOccurrence.has(key))firstPositiveProductionByOccurrence.set(key,row);
       if(String(row?.batchId||'').trim()&&!committedProductionByOccurrence.has(key))
         committedProductionByOccurrence.set(key,row);
@@ -1996,12 +2004,12 @@ function batchFromExtraction(x,record){
         path.status='BLOCKED_MISSING_QUANTITATIVE_DATA';
         path.blockReason='SITE_REFERENCE_HAS_NO_QUANTITATIVE_MINE_RECORD';
       }
-      if(path.stages.length===0)path.stages.push({stage:'SITE_CONTROLLER_SCAN',turn:turn(),status:hasExecutable?'EXECUTABLE':'BLOCKED_MISSING_QUANTITATIVE_DATA'});
-      path.lastTurn=turn();
+      if(path.stages.length===0)path.stages.push({stage:'SITE_CONTROLLER_SCAN',turn:productionPeriodTurn,status:hasExecutable?'EXECUTABLE':'BLOCKED_MISSING_QUANTITATIVE_DATA'});
+      path.lastTurn=productionPeriodTurn;
       minePaths[siteKey]=path;
       if(!hasExecutable){
         mineOutputs[siteKey]={
-          siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,simulationTurn:turn(),
+          siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,simulationTurn:productionPeriodTurn,
           producedQuantity:0,status:'BLOCKED_MISSING_QUANTITATIVE_DATA',
           blockReason:'SITE_REFERENCE_HAS_NO_QUANTITATIVE_MINE_RECORD',
           pathId
@@ -2017,7 +2025,7 @@ function batchFromExtraction(x,record){
       if(!Array.isArray(existingPath.stages))existingPath.stages=[];
       if(!Array.isArray(existingPath.batchIds))existingPath.batchIds=[];
       if(!Array.isArray(existingPath.inventoryAllocations))existingPath.inventoryAllocations=[];
-      const currentTurn=turn();
+      const currentTurn=productionPeriodTurn;
       if(!existingPath.stages.some(stage=>stage.stage==='EXTRACTION_SCAN'&&n(stage.turn)===currentTurn))
         existingPath.stages.push({stage:'EXTRACTION_SCAN',turn:currentTurn});
       existingPath.lastTurn=currentTurn;
@@ -2034,8 +2042,8 @@ function batchFromExtraction(x,record){
             String(priorRecord.productionId||'')+'\\u0000'+occurrenceKey
           );
           replayedRecords.push(committedRecord?{...clone(committedRecord),producedBatch:clone(priorBatch)}:{
-            extractionId:String(priorRecord.productionId||('EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey))),
-            countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,
+            extractionId:String(priorRecord.productionId||('EXT-'+productionPeriodTurn+'-'+c+'-'+String(x.occurrenceKey))),
+            countryId:c,simulationTurn:productionPeriodTurn,occurrenceKey:x.occurrenceKey,
             siteReferenceKey:x.siteReferenceKey||null,siteName:x.depositName||null,
             siteType:x.assetType||x.siteType||null,depositKey:x.depositKey,resourceId:resource,
             approvedQuantity:n(priorRecord.quantity)||0,status:priorRecord.status||'COMMITTED',
@@ -2043,8 +2051,8 @@ function batchFromExtraction(x,record){
             provenance:{sourceAuthority:priorRecord.sourceAuthority||'UNOBSERVED'}
           });
           if(!existingPath.stages.some(stage=>stage.stage==='EXTRACTION_REPLAYED_ALREADY_COMMITTED'&&
-            stage.turn===turn()&&String(stage.batchId||'')===priorBatchId)){
-            existingPath.stages.push({stage:'EXTRACTION_REPLAYED_ALREADY_COMMITTED',turn:turn(),
+            stage.turn===productionPeriodTurn&&String(stage.batchId||'')===priorBatchId)){
+            existingPath.stages.push({stage:'EXTRACTION_REPLAYED_ALREADY_COMMITTED',turn:productionPeriodTurn,
               batchId:priorBatchId,quantity:n(priorRecord.quantity)||0});
           }
           minePaths[x.occurrenceKey]=existingPath;
@@ -2052,7 +2060,7 @@ function batchFromExtraction(x,record){
         }
       }
       const markPathBlocked=(reason,details={})=>{
-        const blockedTurn=turn();
+        const blockedTurn=productionPeriodTurn;
         existingPath.status='BLOCKED';existingPath.blockReason=String(reason||'EXTRACTION_NOT_APPROVED');
         if(!existingPath.stages.some(stage=>stage.stage==='EXTRACTION_BLOCKED'&&
           n(stage.turn)===blockedTurn&&String(stage.reason||'')===existingPath.blockReason)){
@@ -2077,7 +2085,7 @@ function batchFromExtraction(x,record){
         const siteGate=strategicPolicy.siteAvailableForExtraction(c,policySiteId);
         if(siteGate&&!siteGate.allowed){
           const reason={occurrenceKey:x.occurrenceKey,siteId:policySiteId,resourceId:x.resourceId,reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED'};
-          blocked.push(reason);mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason};
+          blocked.push(reason);mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason};
           markPathBlocked(reason.reason,{siteId:policySiteId});continue;
         }
       }
@@ -2085,13 +2093,13 @@ function batchFromExtraction(x,record){
       if(!reserve){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'RESERVE_STATE_UNAVAILABLE'};
         blocked.push(reason);
-        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason};
+        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason};
         markPathBlocked(reason.reason);continue;
       }
       if(reserve.residualQuantity<=0){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'RESERVE_EXHAUSTED'};
         blocked.push(reason);
-        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
+        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
         markPathBlocked(reason.reason,{residualQuantity:n(reserve.residualQuantity)||0});continue;
       }
       const operationalStatus=String(reserve.operationalStatus||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
@@ -2112,14 +2120,14 @@ function batchFromExtraction(x,record){
       if(!operational){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'MINE_NOT_OPERATIONAL',operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null};
         blocked.push(reason);
-        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null,residualQuantity:n(reserve.residualQuantity)||0};
+        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null,residualQuantity:n(reserve.residualQuantity)||0};
         markPathBlocked(reason.reason,{operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null});continue;
       }
       let capacity=x.isSimulationGenerated?x.capacity:null;try{if(!capacity)capacity=r.getCapacityForOccurrence(x.occurrenceKey);}catch(_){}
       if(!capacity){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'EXTRACTION_CAPACITY_UNAVAILABLE'};
         blocked.push(reason);
-        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
+        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
         markPathBlocked(reason.reason);continue;
       }
       let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(windowHours)?.windowCapacity)||0;}catch(_){windowQuantity=(n(capacity.activeRate)||n(capacity.nominalRate)||0)*turnDays;}
@@ -2142,13 +2150,13 @@ function batchFromExtraction(x,record){
       if(windowQuantity<=0){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'EXTRACTION_OUTPUT_RATE_UNAVAILABLE'};
         blocked.push(reason);
-        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:turn(),producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
+        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
         markPathBlocked(reason.reason);continue;
       }
       const request=new p5.ExtractionRequest({
         occurrenceKey:x.occurrenceKey,requestedQuantity:windowQuantity,requestedUnit:reserve.unit,
         requestedPeriod:p5.TemporalWindowUnit?.PER_DAY||'PER_DAY',assetReference:capacity.assetReference,
-        expectedStateVersion:n(reserve.stateVersion)||1,simulationTick:turn(),timeWindowDurationHours:windowHours,
+        expectedStateVersion:n(reserve.stateVersion)||1,simulationTick:productionPeriodTurn,timeWindowDurationHours:windowHours,
         extractionMethod:p5.ExtractionMethodEnum?.UNKNOWN||'UNKNOWN',
         provenance:{sourceSubsystem:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME',sourceId:x.depositKey,timestamp:0,
           sourceAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED',sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,
@@ -2175,18 +2183,18 @@ function batchFromExtraction(x,record){
       const q=n(result.approvedQuantity)||0,resource=x.resourceId;
       const predictedUnit=result.producedBatch?.unit||result.reserveAfter?.unit||x?.capacity?.unit||resourceDefinition(resource)?.unit||null;
       const carbonGate=strategicPolicy?.previewCarbonActivity?.(c,resource,q,predictedUnit,'RESOURCE_EXTRACTION',ctx,{
-        activityId:'EXTRACTION-PREVIEW:'+c+':'+x.occurrenceKey+':T'+turn(),siteId:policySiteId||x.siteReferenceKey||null,sourceId:x.occurrenceKey
+        activityId:'EXTRACTION-PREVIEW:'+c+':'+x.occurrenceKey+':T'+productionPeriodTurn,siteId:policySiteId||x.siteReferenceKey||null,sourceId:x.occurrenceKey
       });
       if(carbonGate&&carbonGate.allowed===false){
         const reason=carbonGate.reason||'CARBON_QUOTA_POLICY_BLOCKED_EXTRACTION';
         blocked.push({occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId||null,resourceId:resource,reason,carbonGate:clone(carbonGate)});
         mineOutputs[x.occurrenceKey]={countryId:c,occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId||null,resourceId:resource,
-          simulationTurn:turn(),status:'BLOCKED',blockReason:reason,approvedQuantity:0,carbonGate:clone(carbonGate)};
+          simulationTurn:productionPeriodTurn,status:'BLOCKED',blockReason:reason,approvedQuantity:0,carbonGate:clone(carbonGate)};
         markPathBlocked(reason,{carbonGate:clone(carbonGate)});continue;
       }
       const record={
-        extractionId:'EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''),
-        countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,siteReferenceKey:x.siteReferenceKey||null,siteName:x.depositName||null,
+        extractionId:'EXT-'+productionPeriodTurn+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')+'-'+productionPeriodId.replace(/[^A-Z0-9:_-]/gi,''),
+        countryId:c,simulationTurn:productionPeriodTurn,productionPeriodId,occurrenceKey:x.occurrenceKey,siteReferenceKey:x.siteReferenceKey||null,siteName:x.depositName||null,
         siteType:x.assetType||x.siteType||null,depositKey:x.depositKey,resourceId:resource,
         requestedQuantity:request.requestedQuantity,approvedQuantity:q,status:result.status,
         effortUtilization:n(x.capacity?.utilization??x.capacity?.effortUtilization??0.85),simulationGenerated:!!x.isSimulationGenerated,
@@ -2217,7 +2225,7 @@ function batchFromExtraction(x,record){
       if(typeof strategicPolicy?.recordExtractionImpactTx==='function'){
         const environmentalResult=strategicPolicy.recordExtractionImpactTx(ctx,{transactionId:batch.batchId,siteId:policySiteId||x.occurrenceKey,resourceId:resource,quantity:q,unit:batch.unit,batchId:batch.batchId,extractionId:record.extractionId});
         if(environmentalResult?.accepted===false&&environmentalResult.reason!=='ENVIRONMENTAL_RULES_UNAVAILABLE'){
-          existingPath.stages.push({stage:'ENVIRONMENTAL_IMPACT',turn:turn(),status:'DEGRADED',reason:environmentalResult.reason||'ENVIRONMENTAL_IMPACT_NOT_RECORDED'});
+          existingPath.stages.push({stage:'ENVIRONMENTAL_IMPACT',turn:productionPeriodTurn,status:'DEGRADED',reason:environmentalResult.reason||'ENVIRONMENTAL_IMPACT_NOT_RECORDED'});
         }
       }
       inventoryLots[batch.batchId]={
@@ -2225,12 +2233,12 @@ function batchFromExtraction(x,record){
         destinationCountryId:c,warehouseId:batch.warehouseId,quantity:q,remainingQuantity:q,
         stage:'RAW_INVENTORY',purity:batch.purity,gradePercent:batch.grade,qualityState:clone(batch.qualityState),
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,pathId,
-        extractionReference:record.extractionId,simulationTurn:turn(),status:'AVAILABLE'
+        extractionReference:record.extractionId,simulationTurn:productionPeriodTurn,productionPeriodId,status:'AVAILABLE'
       };
-      existingPath.stages.push({stage:'BATCH_CREATED',turn:turn(),batchId:batch.batchId,quantity:q});
+      existingPath.stages.push({stage:'BATCH_CREATED',turn:productionPeriodTurn,batchId:batch.batchId,quantity:q});
       existingPath.batchIds.push(batch.batchId);
-      existingPath.inventoryAllocations.push({batchId:batch.batchId,resourceId:resource,quantity:q,warehouseId:batch.warehouseId,turn:turn(),status:'ALLOCATED_TO_COUNTRY_INVENTORY'});
-      existingPath.status='INVENTORY_AVAILABLE';existingPath.lastTurn=turn();delete existingPath.blockReason;
+      existingPath.inventoryAllocations.push({batchId:batch.batchId,resourceId:resource,quantity:q,warehouseId:batch.warehouseId,turn:productionPeriodTurn,status:'ALLOCATED_TO_COUNTRY_INVENTORY'});
+      existingPath.status='INVENTORY_AVAILABLE';existingPath.lastTurn=productionPeriodTurn;delete existingPath.blockReason;
       minePaths[x.occurrenceKey]=existingPath;
       const sitePathKey=String(x.siteReferenceKey||'');
       if(sitePathKey&&sitePathKey!==String(x.occurrenceKey)&&minePaths[sitePathKey]){
@@ -2239,11 +2247,11 @@ function batchFromExtraction(x,record){
         if(!sitePath.batchIds.includes(batch.batchId))sitePath.batchIds.push(batch.batchId);
         sitePath.inventoryAllocations=Array.isArray(sitePath.inventoryAllocations)?sitePath.inventoryAllocations:[];
         if(!sitePath.inventoryAllocations.some(a=>String(a?.batchId||'')===String(batch.batchId))){
-          sitePath.inventoryAllocations.push({batchId:batch.batchId,resourceId:resource,quantity:q,warehouseId:batch.warehouseId,turn:turn(),status:'ALLOCATED_TO_COUNTRY_INVENTORY',occurrenceKey:x.occurrenceKey});
+          sitePath.inventoryAllocations.push({batchId:batch.batchId,resourceId:resource,quantity:q,warehouseId:batch.warehouseId,turn:productionPeriodTurn,status:'ALLOCATED_TO_COUNTRY_INVENTORY',occurrenceKey:x.occurrenceKey});
         }
-        sitePath.status='INVENTORY_AVAILABLE';sitePath.resourceId=sitePath.resourceId||resource;delete sitePath.blockReason;sitePath.lastTurn=turn();
+        sitePath.status='INVENTORY_AVAILABLE';sitePath.resourceId=sitePath.resourceId||resource;delete sitePath.blockReason;sitePath.lastTurn=productionPeriodTurn;
         sitePath.stages=Array.isArray(sitePath.stages)?sitePath.stages:[];
-        sitePath.stages.push({stage:'BATCH_CREATED',turn:turn(),batchId:batch.batchId,quantity:q,occurrenceKey:x.occurrenceKey});
+        sitePath.stages.push({stage:'BATCH_CREATED',turn:productionPeriodTurn,batchId:batch.batchId,quantity:q,occurrenceKey:x.occurrenceKey});
         minePaths[sitePathKey]=sitePath;
       }
       const fiscalPending=dispatch('OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING',c,{
@@ -2256,18 +2264,18 @@ function batchFromExtraction(x,record){
         correlationId:record.extractionId
       });
       if(fiscalPending?.status!=='APPLIED'){
-        existingPath.stages.push({stage:'TREASURY_FISCAL_LEDGER_PENDING',turn:turn(),status:'DEGRADED',reason:fiscalPending?.reason||'FISCAL_LEDGER_HANDLER_UNAVAILABLE'});
+        existingPath.stages.push({stage:'TREASURY_FISCAL_LEDGER_PENDING',turn:productionPeriodTurn,status:'DEGRADED',reason:fiscalPending?.reason||'FISCAL_LEDGER_HANDLER_UNAVAILABLE'});
         minePaths[x.occurrenceKey]=existingPath;
       } else {
-        existingPath.stages.push({stage:'TREASURY_FISCAL_LEDGER_PENDING',turn:turn(),status:'RECORDED',cashPosted:false});
+        existingPath.stages.push({stage:'TREASURY_FISCAL_LEDGER_PENDING',turn:productionPeriodTurn,status:'RECORDED',cashPosted:false});
         minePaths[x.occurrenceKey]=existingPath;
       }
       if(!mineOutputTotals[x.occurrenceKey])mineOutputTotals[x.occurrenceKey]={cumulativeQuantity:0,turnCount:0,lastTurn:null};
       mineOutputTotals[x.occurrenceKey].cumulativeQuantity=(n(mineOutputTotals[x.occurrenceKey].cumulativeQuantity)||0)+q;
       mineOutputTotals[x.occurrenceKey].turnCount=(n(mineOutputTotals[x.occurrenceKey].turnCount)||0)+1;
-      mineOutputTotals[x.occurrenceKey].lastTurn=turn();
+      mineOutputTotals[x.occurrenceKey].lastTurn=productionPeriodTurn;
       mineOutputs[x.occurrenceKey]={
-        occurrenceKey:x.occurrenceKey,siteReferenceKey:x.siteReferenceKey||null,depositKey:x.depositKey,resourceId:resource,simulationTurn:turn(),
+        occurrenceKey:x.occurrenceKey,siteReferenceKey:x.siteReferenceKey||null,depositKey:x.depositKey,resourceId:resource,simulationTurn:productionPeriodTurn,
         assetType:x.assetType||'STRUCTURED_MINE',simulationGenerated:!!x.isSimulationGenerated,effortUtilization:x.isSimulationGenerated?1:null,
         producedQuantity:q,residualQuantity:n(result.reserveAfter.residualQuantity)||0,status:result.status,
         effortUtilization:record.effortUtilization,simulationGenerated:record.simulationGenerated,
@@ -2278,7 +2286,7 @@ function batchFromExtraction(x,record){
       if(mineIndex>=0){
         const updatedMine={...mines[mineIndex],
           reserveState:clone(result.reserveAfter.toJSON?.()||result.reserveAfter),operationalStatus:result.reserveAfter.operationalStatus,
-          residualQuantity:n(result.reserveAfter.residualQuantity)||0,lastOutputQuantity:q,lastOutputTurn:turn(),
+          residualQuantity:n(result.reserveAfter.residualQuantity)||0,lastOutputQuantity:q,lastOutputTurn:productionPeriodTurn,
           lastBatchId:batch.batchId,purity:batch.purity,gradePercent:batch.grade,qualityState:clone(batch.qualityState),warehouseId:batch.warehouseId
         };
         updatedMine.resourceAsset=g.GSRSK_Part04?.normalizeUnifiedAsset?.({
@@ -2303,13 +2311,13 @@ function batchFromExtraction(x,record){
       warehouse.receipts=appendBounded(warehouse.receipts,{
         receiptId:'WH-REC-'+batch.batchId,warehouseId:batch.warehouseId,countryId:c,batchId:batch.batchId,
         occurrenceKey:x.occurrenceKey,resourceId:resource,quantity:q,unit:batch.unit,purity:batch.purity,gradePercent:batch.grade,
-        receivedFrom:'MINE_EXTRACTION',simulationTurn:turn(),status:'RECEIVED'
+        receivedFrom:'MINE_EXTRACTION',simulationTurn:productionPeriodTurn,productionPeriodId,status:'RECEIVED'
       },MAX_LEDGER);
-      warehouse.lastReceiptTurn=turn();
+      warehouse.lastReceiptTurn=productionPeriodTurn;
       mineProductionLedger.push({
         productionId:record.extractionId,mineId:x.occurrenceKey,siteReferenceKey:x.siteReferenceKey||null,mineName:x.depositName,depositKey:x.depositKey,
         resourceId:resource,quantity:q,unit:batch.unit,purity:batch.purity,gradePercent:batch.grade,batchId:batch.batchId,
-        warehouseId:batch.warehouseId,turn:turn(),reserveBefore:n(result.reserveBefore?.residualQuantity),
+        warehouseId:batch.warehouseId,turn:productionPeriodTurn,productionPeriodId,reserveBefore:n(result.reserveBefore?.residualQuantity),
         reserveAfter:n(result.reserveAfter?.residualQuantity),status:result.status,
         sourceDatasetId:x.sourceDatasetId||x.rawDeposit?.sourceDatasetId||null,sourceAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED',simulationGenerated:!!x.isSimulationGenerated
       });
@@ -2318,6 +2326,10 @@ function batchFromExtraction(x,record){
       extracted.push({...record,producedBatch:batch});
 
     }
+    for(const row of Object.values(mineOutputs))if(n(row?.simulationTurn??row?.turn)===productionPeriodTurn&&!row.productionPeriodId)
+      row.productionPeriodId=productionPeriodId;
+    for(const path of Object.values(minePaths))for(const stage of Array.isArray(path?.stages)?path.stages:[])
+      if(n(stage?.turn)===productionPeriodTurn&&!stage.productionPeriodId)stage.productionPeriodId=productionPeriodId;
     const warehouseCheck=boundary()?.validateWarehouse?.(warehouse,c);
     if(warehouseCheck&&!warehouseCheck.ok)return{accepted:false,countryId:c,extracted:0,blocked:[warehouseCheck],records:[]};
     ctx.stateTransaction.set('resource.mineStates',current);
@@ -2340,7 +2352,7 @@ function batchFromExtraction(x,record){
     const tradeAvailability=computeTradeAvailability(inventory,strategicReserve.availableByResource);
     ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
     ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
-    for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
+    for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:productionPeriodTurn},cmd.commandId);
     return{accepted:true,countryId:c,extracted:extracted.length,replayed:replayedRecords.length,
       blocked:blocked.length,records:[...extracted,...replayedRecords]};
   }
@@ -2355,7 +2367,7 @@ function batchFromExtraction(x,record){
         resourceId:record.resourceId||null,quantity:record.approvedQuantity||0,batch:clone(record.producedBatch||null),
         purity:record.producedBatch?.purity??null,gradePercent:record.producedBatch?.grade??null,
         warehouseId:record.producedBatch?.warehouseId||('WH-'+c+'-RAW'),availabilityStatus:'AVAILABLE_FOR_FACTORY_INPUT',
-        simulationTurn:turn(),sourceAuthority:record?.provenance?.sourceAuthority||'RESOURCE_JSON',simulationGenerated:!!record?.simulationGenerated,targetMinistry:'economy'
+        simulationTurn:n(record?.simulationTurn)??turn(),productionPeriodId:record?.productionPeriodId||null,sourceAuthority:record?.provenance?.sourceAuthority||'RESOURCE_JSON',simulationGenerated:!!record?.simulationGenerated,targetMinistry:'economy'
       };
       emit('OMEGA_RESOURCE_EXTRACTION_COMPLETED',c,payload,dispatchResult?.commandId||null);
       emit('OMEGA_RESOURCE_BATCH_CREATED',c,payload,dispatchResult?.commandId||null);
@@ -2366,11 +2378,20 @@ function batchFromExtraction(x,record){
     install();
     return dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',canonical(c),{correlationId:'RESOURCE-HYDRATE-MANUAL-'+turn()+'-'+canonical(c)});
   }
-  async function extractCountry(c,occurrenceKeys=null){
+  async function extractCountry(c,occurrenceKeys=null,options={}){
     install();
+    const periodTurn=n(options?.productionPeriodTurn);
+    const periodId=String(options?.productionPeriodId||'').trim();
+    if(periodTurn!==null&&(!Number.isSafeInteger(periodTurn)||periodTurn<0||periodTurn>turn()))
+      return{status:'BLOCKED',reason:'PRODUCTION_PERIOD_TURN_INVALID'};
+    if(periodId.length>192)return{status:'BLOCKED',reason:'PRODUCTION_PERIOD_ID_INVALID'};
+    const payload={occurrenceKeys:Array.isArray(occurrenceKeys)?occurrenceKeys:undefined,
+      productionPeriodTurn:periodTurn===null?undefined:periodTurn,
+      productionPeriodId:periodId||undefined,
+      correlationId:'RESOURCE-EXTRACT-MANUAL-'+(periodId||periodTurn||turn())+'-'+canonical(c)};
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     if(strategicPolicy?.loadRules){const ready=await strategicPolicy.loadRules();if(ready?.status!=='READY')return{status:'BLOCKED',reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY',detail:ready};}
-    const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',canonical(c),{occurrenceKeys:Array.isArray(occurrenceKeys)?occurrenceKeys:undefined,correlationId:'RESOURCE-EXTRACT-MANUAL-'+turn()+'-'+canonical(c)});
+    const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',canonical(c),payload);
     publishCommittedExtractionEvents(c,result);
     return result;
   }
@@ -2391,7 +2412,16 @@ function batchFromExtraction(x,record){
         return{status:'BLOCKED',reason:'COUNTRY_HYDRATION_NOT_COMMITTED',detail:refreshed,countryId:c};
       bucket=state()?.resource?.[c]||{};
     }
-    const t=turn();
+    const requestedTurn=n(options?.productionPeriodTurn);
+    if(requestedTurn!==null&&(!Number.isSafeInteger(requestedTurn)||requestedTurn<0||requestedTurn>turn()))
+      return{status:'BLOCKED',reason:'PRODUCTION_PERIOD_TURN_INVALID',countryId:c};
+    const t=requestedTurn===null?turn():requestedTurn;
+    const productionPeriodId=String(options?.productionPeriodId||('GAME_DAY_'+t)).trim();
+    if(!productionPeriodId||productionPeriodId.length>192)
+      return{status:'BLOCKED',reason:'PRODUCTION_PERIOD_ID_INVALID',countryId:c};
+    const samePeriod=row=>row?.productionPeriodId
+      ?String(row.productionPeriodId)===productionPeriodId
+      :(productionPeriodId==='GAME_DAY_'+t&&n(row?.turn??row?.simulationTurn)===t);
     const requestedSites=Array.isArray(siteIds)&&siteIds.length?new Set(siteIds.map(String)):null;
     const outputs=bucket.mineOutputs&&typeof bucket.mineOutputs==='object'?bucket.mineOutputs:{};
     const paths=bucket.minePaths&&typeof bucket.minePaths==='object'?bucket.minePaths:{};
@@ -2399,12 +2429,12 @@ function batchFromExtraction(x,record){
     const attempted=new Set(),retryableBlocked=new Set(),successfulOccurrences=new Set();
     const currentLedger=Array.isArray(bucket.mineProductionLedger)?bucket.mineProductionLedger:[];
     for(const row of currentLedger){
-      if(n(row?.turn)!==t||(n(row?.quantity)||0)<=0)continue;
+      if(!samePeriod(row)||(n(row?.quantity)||0)<=0)continue;
       const key=String(row.occurrenceKey||row.mineId||'').trim();
       if(key)successfulOccurrences.add(key);
     }
     for(const [key,row] of Object.entries(outputs)){
-      if(n(row?.simulationTurn??row?.turn)!==t)continue;
+      if(!samePeriod(row))continue;
       attempted.add(String(key));
       const quantity=n(row?.producedQuantity??row?.approvedQuantity??row?.quantity)||0;
       if(quantity>0)successfulOccurrences.add(String(key));
@@ -2412,7 +2442,7 @@ function batchFromExtraction(x,record){
     }
     for(const [key,path] of Object.entries(paths)){
       const scanned=Array.isArray(path?.stages)&&path.stages.some(stage=>
-        n(stage?.turn)===t&&['EXTRACTION_SCAN','EXTRACTION_BLOCKED'].includes(String(stage?.stage||'')));
+        (stage?.productionPeriodId?String(stage.productionPeriodId)===productionPeriodId:(productionPeriodId==='GAME_DAY_'+t&&n(stage?.turn)===t))&&['EXTRACTION_SCAN','EXTRACTION_BLOCKED'].includes(String(stage?.stage||'')));
       if(scanned){
         attempted.add(String(key));
         if(String(path?.status||'').toUpperCase()==='BLOCKED')retryableBlocked.add(String(key));
@@ -2440,9 +2470,9 @@ function batchFromExtraction(x,record){
       if(!requestedSites)return true;
       return requestedSites.has(siteKey)||requestedSites.has(String(siteByOccurrence.get(String(key))||''));
     });
-    const currentSiteIds=new Set(currentLedger.filter(row=>n(row?.turn)===t&&(n(row?.quantity)||0)>0)
+    const currentSiteIds=new Set(currentLedger.filter(row=>samePeriod(row)&&(n(row?.quantity)||0)>0)
       .map(row=>String(row.siteReferenceKey||row.mineId||row.occurrenceKey||'')).filter(Boolean));
-    const currentPositiveOutputs=Object.values(outputs).filter(row=>n(row?.simulationTurn??row?.turn)===t&&
+    const currentPositiveOutputs=Object.values(outputs).filter(row=>samePeriod(row)&&
       (n(row?.producedQuantity??row?.approvedQuantity??row?.quantity)||0)>0);
     for(const row of currentPositiveOutputs){
       const key=String(row.siteReferenceKey||row.siteId||'');
@@ -2451,8 +2481,8 @@ function batchFromExtraction(x,record){
     if(!candidates.length){
       const activeCount=requestedSites?Array.from(currentSiteIds).filter(id=>requestedSites.has(id)).length:currentSiteIds.size;
       return{status:activeCount?'ALREADY_ACTIVE':'BLOCKED',reason:activeCount?'PRODUCTION_ALREADY_STARTED_THIS_TURN':'NO_UNATTEMPTED_SITE_OCCURRENCES',
-        countryId:c,turn:t,activeSiteCount:activeCount,attemptedOccurrenceCount:attempted.size,blockedOccurrenceCount:
-          Object.values(outputs).filter(row=>n(row?.simulationTurn??row?.turn)===t&&
+        countryId:c,turn:t,productionPeriodId,activeSiteCount:activeCount,attemptedOccurrenceCount:attempted.size,blockedOccurrenceCount:
+          Object.values(outputs).filter(row=>samePeriod(row)&&
             (String(row?.status||'').toUpperCase().startsWith('BLOCK')||!!row?.blockReason)).length,
         requestedSiteIds:requestedSites?[...requestedSites]:null,records:[]};
     }
@@ -2461,7 +2491,7 @@ function batchFromExtraction(x,record){
     const sliceSize=constrained?3:8,sliceResults=[];
     for(let offset=0;offset<candidates.length;offset+=sliceSize){
       const slice=candidates.slice(offset,offset+sliceSize);
-      const result=await extractCountry(c,slice);
+      const result=await extractCountry(c,slice,{productionPeriodTurn:t,productionPeriodId});
       const payload=result?.result||result||{};
       sliceResults.push({result,payload,records:Array.isArray(payload.records)?payload.records:[],
         blocked:Array.isArray(payload.blocked)?payload.blocked.length:Math.max(0,n(payload.blocked)||0)});
@@ -2473,7 +2503,7 @@ function batchFromExtraction(x,record){
     const blocked=sliceResults.reduce((sum,row)=>sum+row.blocked,0);
     const failed=sliceResults.find(row=>row.result?.status!=='APPLIED'||row.payload?.status==='FAILED');
     const status=produced.length?(blocked?'PARTIALLY_STARTED':'STARTED'):'BLOCKED';
-    return{status,countryId:c,turn:t,requestedSiteCount:requestedSites?.size||null,
+    return{status,countryId:c,turn:t,productionPeriodId,requestedSiteCount:requestedSites?.size||null,
       attemptedOccurrenceCount:candidates.length,processedOccurrenceCount:records.length,
       extractionSliceCount:sliceResults.length,startedSiteCount:producingSites.size,
       extractedRecordCount:produced.length,blockedOccurrenceCount:blocked,

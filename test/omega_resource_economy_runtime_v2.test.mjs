@@ -206,6 +206,38 @@ function createContext(){
   return {context,worldState,handlers,events,commands,commandCollisions,stateTx};
 }
 
+test('resource extraction phase catches up one stable game-day at a time and reconciles before checkpoint commit',()=>{
+  const simulationSource=readFileSync('omega_simulation_runtime.js','utf8');
+  const endowmentSource=readFileSync('omega_resource_endowment_runtime.js','utf8');
+  const economySource=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  assert.match(simulationSource,/function economyPhaseSeed\(input=\{\}\)/,
+    'legacy save migration must seed a checkpoint baseline without replaying earlier turns');
+  assert.match(economySource,/function resourcePhasePeriodIdentity\(sessionId,periodTurn\)/,
+    'each resource period must be stable within the active session');
+  assert.match(economySource,/for\(var periodTurn=lastProcessed\+1;periodTurn<=targetTurn;periodTurn\+\+\)/,
+    'elapsed days must be processed sequentially rather than multiplied into one extraction');
+  assert.match(economySource,/productionPeriodTurn:periodTurn,productionPeriodId:periodId/,
+    'the same period identity must reach the endowment runtime on every day');
+  assert.match(endowmentSource,/simulationTick:productionPeriodTurn,timeWindowDurationHours:windowHours/,
+    'each period must preserve the existing P5 capacity calculation while receiving a distinct tick');
+  assert.match(economySource,/RESOURCE_PERIOD_LEDGER_RECEIPT_QUANTITY_MISMATCH/,
+    'a period cannot reconcile when its mine ledger quantity differs from the raw warehouse receipt');
+  assert.match(endowmentSource,/extractionReference:record\.extractionId,simulationTurn:productionPeriodTurn,productionPeriodId,status:'AVAILABLE'/,
+    'inventory lots must retain the same extraction period identity');
+  assert.match(economySource,/String\(batch\?\.productionPeriodId\|\|'\'\)!==periodId\|\|String\(lot\?\.productionPeriodId\|\|'\'\)!==periodId/,
+    'batch and inventory lot period IDs must agree before the checkpoint is committed');
+  assert.match(economySource,/RESOURCE_PERIOD_BATCH_WAREHOUSE_STATE_MISMATCH/,
+    'a period must verify its batch, inventory lot and warehouse stored-batch identity');
+  assert.match(economySource,/if\(!reconciliation\.ok\)\{\s*api\.fail\(/,
+    'failed ledger reconciliation must leave the resource checkpoint pending');
+  assert.match(economySource,/phase:'RESOURCE_EXTRACTION',\s*lastProcessedEventId:periodId,\s*reconciliation:\{status:'RECONCILED'/,
+    'the resource checkpoint must advance only with reconciliation evidence');
+  const resourcePhase=economySource.indexOf("runCheckpointedResourceExtraction(cid,endowment)");
+  const industrialPhase=economySource.indexOf("industrial.runCountryTurn(cid)",resourcePhase);
+  assert.ok(resourcePhase>=0&&industrialPhase>resourcePhase,
+    'the existing industrial phase must remain after the resource extraction phase');
+});
+
 test('export settlement replay is idempotent across company flows, Treasury clearing and fiscal receipts',async()=>{
   const {context,worldState,commands,commandCollisions}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');

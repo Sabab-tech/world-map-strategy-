@@ -1697,6 +1697,36 @@
     const row=existing?economyPhaseState().checkpoints[scope.key]||null:null;
     return{status:'OK',checkpoint:clone(row||economyPhaseDefaultCheckpoint(scope))};
   }
+  function economyPhaseSeed(input={}){
+    const scope=economyPhaseScope(input);if(scope.error)return{status:'INVALID',reason:scope.error};
+    const baselineTurn=finite(input.baselineTurn);
+    if(baselineTurn===null||baselineTurn<0||Math.floor(baselineTurn)!==baselineTurn)
+      return{status:'INVALID',reason:'BASELINE_TURN_INVALID'};
+    const store=economyPhaseState();
+    let row=store.checkpoints[scope.key];
+    if(row){
+      if(row.baseline?.source===String(input.source||'LEGACY_SAVE_MIGRATION')&&
+         Number(row.baseline?.turn)===baselineTurn)
+        return{status:'ALREADY_SEEDED',checkpoint:clone(row)};
+      const untouched=Number(row.revision||0)===0&&!row.activeExecution&&!row.lastExecution&&
+        Number(row.lastProcessedTurn||0)===0&&Number(row.pendingThroughTurn||0)===0&&
+        Number(row.pendingElapsedDays||0)===0;
+      if(!untouched)return{status:'ALREADY_INITIALIZED',reason:'CHECKPOINT_ALREADY_HAS_PROGRESS',checkpoint:clone(row)};
+    }else{
+      row=store.checkpoints[scope.key]=economyPhaseDefaultCheckpoint(scope);
+    }
+    row.lastProcessedTurn=baselineTurn;
+    row.pendingThroughTurn=baselineTurn;
+    row.pendingElapsedDays=0;
+    row.lastProcessedDate=input.baselineDate==null?row.lastProcessedDate:String(input.baselineDate);
+    row.lastSuccessfulPhase='LEGACY_SAVE_BASELINE';
+    row.lastProcessedEventId='BASELINE:'+String(input.source||'LEGACY_SAVE_MIGRATION');
+    row.baseline={turn:baselineTurn,source:String(input.source||'LEGACY_SAVE_MIGRATION'),
+      evidenceId:String(input.evidenceId||'').trim()||null};
+    row.activeExecution=null;row.lastExecution=null;row.status='READY';
+    row.revision=Number(row.revision||0)+1;
+    return{status:'SEEDED',checkpoint:clone(row)};
+  }
   function economyPhaseBegin(input={}){
     const scope=economyPhaseScope(input);if(scope.error)return{status:'INVALID',reason:scope.error};
     const executionId=String(input.executionId||'').trim();
@@ -1832,7 +1862,7 @@
   }
   const EconomyPhaseCheckpointAPI=Object.freeze({
     VERSION:'1.0.0',SCHEMA_VERSION:ECONOMY_PHASE_CHECKPOINT_SCHEMA,
-    get:economyPhaseGetCheckpoint,begin:economyPhaseBegin,resume:economyPhaseResume,
+    get:economyPhaseGetCheckpoint,seed:economyPhaseSeed,begin:economyPhaseBegin,resume:economyPhaseResume,
     commit:economyPhaseCommit,fail:economyPhaseFail,pending:economyPhasePending,
     idempotencyKey:economyPhaseIdempotencyKey,reserveMutation:economyPhaseReserveMutation,
     completeMutation:economyPhaseCompleteMutation,reconcileMutation:economyPhaseReconcileMutation
