@@ -992,12 +992,20 @@ test('bursty finance, resource and turn events coalesce to one HUD refresh per a
   assert.equal(resourceHudUpdates, 1,
     'Finance updates during the same game turn must not rebuild the resource HUD');
 
+  event('RESOURCE_STATE_UPDATED');
+  event('RESOURCE_STATE_UPDATED');
+  assert.equal(queuedFrames.length, 1,
+    'same-turn resource change events must share one scheduled HUD refresh');
+  queuedFrames.shift()();
+  assert.equal(resourceHudUpdates, 2,
+    'a real resource change must refresh the resource HUD without waiting for the next game day');
+
   sim.clock.turn = 2;
   gameState.simulation.turn = 2;
   event('OMEGA_SIMULATION_TURN_COMMITTED');
   assert.equal(queuedFrames.length, 1);
   queuedFrames.shift()();
-  assert.equal(resourceHudUpdates, 2,
+  assert.equal(resourceHudUpdates, 3,
     'the resource HUD may refresh again after the authoritative game day changes');
 });
 
