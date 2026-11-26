@@ -246,28 +246,29 @@
 }
 
 
-/* Compact gameplay dock: only the two explicit clock actions stay visible. */
+/* Compact, edge-anchored gameplay clock: keep the map centre unobstructed. */
 #omega-global-time-hud {
-  top: auto !important;
-  right: auto !important;
-  bottom: 16px !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
+  position: fixed !important;
+  top: calc(env(safe-area-inset-top, 0px) + 52px) !important;
+  right: 8px !important;
+  bottom: auto !important;
+  left: auto !important;
+  transform: none !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
+  justify-content: flex-end !important;
   grid-template-columns: none !important;
   gap: 0 !important;
-  width: auto !important;
-  max-width: calc(100vw - 24px) !important;
-  max-height: none !important;
+  width: max-content !important;
+  max-width: calc(100vw - 16px) !important;
+  max-height: 36px !important;
   margin: 0 !important;
-  padding: 4px !important;
-  overflow: visible !important;
-  border-color: rgba(192, 157, 101, .72) !important;
-  border-radius: 9px !important;
-  background: rgba(14, 18, 23, .94) !important;
-  box-shadow: 0 5px 18px rgba(0, 0, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .06) !important;
+  padding: 3px !important;
+  overflow: hidden !important;
+  border-color: rgba(91, 157, 190, .55) !important;
+  border-radius: 8px !important;
+  background: rgba(5, 15, 26, .92) !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .32), inset 0 1px rgba(255, 255, 255, .04) !important;
 }
 #omega-global-time-hud .ogth-topline {
   display: contents !important;
@@ -287,45 +288,77 @@
   flex-wrap: nowrap !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 6px !important;
+  gap: 3px !important;
   margin: 0 !important;
 }
-#omega-global-time-hud .ogth-controls button[data-omega-speed] {
+#omega-global-time-hud .ogth-controls button[data-omega-action="pause"] {
   display: none !important;
 }
-#omega-global-time-hud .ogth-controls button[data-omega-action="toggle"],
-#omega-global-time-hud .ogth-controls button[data-omega-action="pause"] {
+#omega-global-time-hud .ogth-controls button[data-omega-action="toggle"] {
   display: flex !important;
   box-sizing: border-box !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 58px !important;
-  min-width: 58px !important;
-  height: 48px !important;
-  min-height: 48px !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
   padding: 0 !important;
-  border: 1px solid rgba(224, 190, 132, .78) !important;
-  border-radius: 7px !important;
-  background: linear-gradient(180deg, #d8bd8a, #927044) !important;
-  color: #18202a !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), 0 2px 5px rgba(0, 0, 0, .28) !important;
-  font: 900 23px/1 Arial, sans-serif !important;
+  border: 1px solid rgba(91, 196, 220, .72) !important;
+  border-radius: 6px !important;
+  background: linear-gradient(180deg, #17647b, #10354b) !important;
+  color: #e9fbff !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .12) !important;
+  font: 900 13px/1 Arial, sans-serif !important;
   letter-spacing: 0 !important;
-  text-shadow: 0 1px rgba(255, 255, 255, .16) !important;
+  touch-action: manipulation !important;
+}
+#omega-global-time-hud .ogth-controls button[data-omega-speed] {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 23px !important;
+  width: auto !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 3px !important;
+  border-radius: 5px !important;
+  font: 800 8px/1 Inter, Arial, sans-serif !important;
+  letter-spacing: 0 !important;
   touch-action: manipulation !important;
 }
 #omega-global-time-hud .ogth-controls button[data-omega-action="toggle"]:disabled,
-#omega-global-time-hud .ogth-controls button[data-omega-action="pause"]:disabled {
+#omega-global-time-hud .ogth-controls button[data-omega-speed]:disabled {
   opacity: .42 !important;
   filter: saturate(.55) !important;
 }
-#omega-global-time-hud .ogth-controls button[data-omega-action="toggle"]:focus-visible,
-#omega-global-time-hud .ogth-controls button[data-omega-action="pause"]:focus-visible {
-  outline: 2px solid #ffe2a8 !important;
-  outline-offset: 3px !important;
+#omega-global-time-hud .ogth-controls button:focus-visible {
+  outline: 2px solid #75e4ff !important;
+  outline-offset: 2px !important;
 }
-@supports (bottom: env(safe-area-inset-bottom)) {
+@media (max-width: 380px) {
   #omega-global-time-hud {
-    bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+    right: 5px !important;
+    max-width: calc(100vw - 10px) !important;
+    padding: 2px !important;
+  }
+  #omega-global-time-hud .ogth-controls { gap: 2px !important; }
+  #omega-global-time-hud .ogth-controls button[data-omega-speed] {
+    min-width: 21px !important;
+    padding: 0 2px !important;
+    font-size: 7px !important;
+  }
+  #omega-global-time-hud .ogth-controls button[data-omega-action="toggle"] {
+    width: 28px !important;
+    min-width: 28px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+  }
+}
+@supports (top: env(safe-area-inset-top)) {
+  #omega-global-time-hud {
+    top: calc(env(safe-area-inset-top) + 52px) !important;
   }
 }
