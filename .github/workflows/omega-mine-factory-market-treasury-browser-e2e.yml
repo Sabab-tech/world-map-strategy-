@@ -52,8 +52,6 @@ permissions:
 
 jobs:
   mine-factory-market-treasury:
-    # Owner policy: the live browser E2E suite is permanently skipped.
-    if: ${{ false }}
     name: one-session-mine-to-treasury
     runs-on: ubuntu-24.04
     timeout-minutes: 22
