@@ -2979,6 +2979,108 @@
     }
     return Math.max(0,Math.min(targetTurn,Math.floor(baseline)));
   }
+  function industrialPhasePeriodIdentity(sessionId,periodTurn){
+    return 'OMEGA_INDUSTRIAL_DAY:'+encodeURIComponent(String(sessionId))+':'+String(periodTurn);
+  }
+  async function runCheckpointedIndustrialProduction(countryId,industrial){
+    var cid=canonical(countryId),targetTurn=Math.max(0,Math.floor(turn()));
+    if(!industrial||typeof industrial.runCountryTurn!=='function')
+      return{status:'NOT_AVAILABLE',reason:'INDUSTRIAL_COUNTRY_TURN_UNAVAILABLE'};
+    var simulation=g.Omega&&g.Omega.Simulation;
+    var root=simulation?.world?.state||state()||{};
+    var session=root.simulation?.session||state()?.simulation?.session||{};
+    var api=g.Omega?.EconomyPhaseCheckpoints;
+    var sessionId=String(session.sessionId||'').trim();
+    // Preserve legacy/test hosts without a canonical Simulation session; the real
+    // application enters the checkpoint path only with the active session identity.
+    if(!api||typeof api.get!=='function'||typeof api.seed!=='function'||
+       typeof api.begin!=='function'||typeof api.commit!=='function'||
+       typeof industrial.reconcileProductionPeriod!=='function'||
+       !sessionId||!session.playerCountryId||canonical(session.playerCountryId)!==cid){
+      return industrial.runCountryTurn(cid);
+    }
+    var scope={domain:'industrial',countryId:cid,sessionId};
+    var fetched=api.get(scope);
+    if(fetched?.status!=='OK')
+      return{status:'FAILED',reason:fetched?.reason||'INDUSTRIAL_PHASE_CHECKPOINT_UNAVAILABLE'};
+    var checkpoint=fetched.checkpoint||{};
+    if(!checkpoint.baseline&&Number(checkpoint.revision||0)===0&&
+       Number(checkpoint.lastProcessedTurn||0)===0&&!checkpoint.activeExecution){
+      var createdTurn=num(session.createdTurn);
+      var baseline=createdTurn===null?Math.max(0,targetTurn-1):Math.max(0,Math.min(targetTurn,Math.floor(createdTurn)));
+      var seeded=api.seed(Object.assign({},scope,{baselineTurn:baseline,
+        source:'LEGACY_SAVE_MIGRATION',baselineDate:state()?.simulation?.date||null}));
+      if(!['SEEDED','ALREADY_SEEDED'].includes(String(seeded?.status||'')))
+        return{status:'FAILED',reason:seeded?.reason||'INDUSTRIAL_PHASE_BASELINE_SEED_FAILED',detail:seeded};
+      checkpoint=seeded.checkpoint||checkpoint;
+    }
+    var lastProcessed=Math.max(0,Math.floor(num(checkpoint.lastProcessedTurn)||0));
+    if(lastProcessed>targetTurn)
+      return{status:'FAILED',reason:'INDUSTRIAL_PHASE_CHECKPOINT_AHEAD_OF_CLOCK',lastProcessedTurn:lastProcessed,targetTurn};
+    var pendingDays=targetTurn-lastProcessed;
+    if(pendingDays>365)
+      return{status:'FAILED',reason:'INDUSTRIAL_CATCH_UP_WINDOW_EXCEEDED',pendingElapsedDays:pendingDays,maximumCatchUpDays:365};
+    var periodResults=[],lastPeriodResult=null;
+    for(var periodTurn=lastProcessed+1;periodTurn<=targetTurn;periodTurn++){
+      var periodId=industrialPhasePeriodIdentity(sessionId,periodTurn);
+      var executionId='INDUSTRIAL:'+encodeURIComponent(sessionId)+':'+cid+':'+periodTurn;
+      var started=api.begin(Object.assign({},scope,{executionId,targetTurn:periodTurn}));
+      if(started?.status==='ALREADY_PROCESSED'){
+        checkpoint=started.checkpoint||checkpoint;
+        continue;
+      }
+      if(!['STARTED','RECOVERY_REQUIRED'].includes(String(started?.status||'')))
+        return{status:'FAILED',reason:started?.reason||'INDUSTRIAL_PHASE_EXECUTION_COULD_NOT_START',
+          checkpoint:started?.checkpoint||checkpoint,periodTurn};
+      var runResult;
+      try{
+        runResult=await industrial.runCountryTurn(cid,{
+          productionPeriodTurn:periodTurn,productionPeriodId:periodId
+        });
+      }catch(error){
+        api.fail(Object.assign({},scope,{executionId,error:String(error?.message||error)}));
+        return{status:'FAILED',reason:String(error?.message||error),periodTurn,
+          checkpoint:api.get(scope)?.checkpoint||checkpoint};
+      }
+      var reconciliation=industrial.reconcileProductionPeriod(cid,periodTurn,periodId,runResult);
+      if(!reconciliation?.ok){
+        api.fail(Object.assign({},scope,{executionId,error:reconciliation?.reason||'INDUSTRIAL_PERIOD_RECONCILIATION_FAILED'}));
+        return{status:'FAILED',reason:reconciliation?.reason||'INDUSTRIAL_PERIOD_RECONCILIATION_FAILED',
+          periodTurn,runResult,reconciliation,checkpoint:api.get(scope)?.checkpoint||checkpoint};
+      }
+      if(started.status==='RECOVERY_REQUIRED'){
+        var resumed=api.resume(Object.assign({},scope,{executionId,reconciliation:{
+          status:'RECONCILED',evidenceId:reconciliation.evidenceId
+        }}));
+        if(resumed?.status!=='RESUMED')
+          return{status:'FAILED',reason:resumed?.reason||'INDUSTRIAL_PHASE_RECOVERY_REJECTED',
+            periodTurn,runResult,reconciliation,checkpoint:resumed?.checkpoint||checkpoint};
+      }
+      var clock=simulation?.clock||{},stepMs=num(clock.stepDurationMs),epochMs=num(clock.startEpochMs);
+      var processedDate=stepMs!==null&&stepMs>0&&epochMs!==null
+        ?new Date(epochMs+periodTurn*stepMs).toISOString()
+        :(state()?.simulation?.date||null);
+      var committed=api.commit(Object.assign({},scope,{
+        executionId,processedThroughTurn:periodTurn,processedDate,
+        phase:'INDUSTRIAL_PRODUCTION',
+        lastProcessedEventId:periodId,
+        reconciliation:{status:'RECONCILED',evidenceId:reconciliation.evidenceId}
+      }));
+      if(committed?.status!=='COMMITTED')
+        return{status:'FAILED',reason:committed?.reason||'INDUSTRIAL_PHASE_CHECKPOINT_COMMIT_FAILED',
+          periodTurn,runResult,reconciliation,checkpoint:committed?.checkpoint||checkpoint};
+      checkpoint=committed.checkpoint;
+      periodResults.push(reconciliation);
+      lastPeriodResult=runResult;
+    }
+    return{status:'COMPLETED',countryId:cid,turn:targetTurn,
+      processedPeriods:periodResults.length,
+      pendingElapsedDays:Math.max(0,targetTurn-Number(checkpoint.lastProcessedTurn||0)),
+      lastProcessedTurn:Number(checkpoint.lastProcessedTurn||0),
+      production:lastPeriodResult||{status:'ALREADY_PROCESSED'},
+      reconciliation:periodResults[periodResults.length-1]||null};
+  }
+
   function reconcileResourceProductionPeriod(countryId,periodTurn,periodId,runResult){
     var resource=bucket(countryId,'resource')||{};
     var samePeriod=function(row){
@@ -3224,7 +3326,9 @@
       var industrial=g.Omega&&g.Omega.ResourceIndustrialNetwork;
       if(industrial&&typeof industrial.runCountryTurn==='function'){
         try{
-          industrialResult=await measure('industrial-run-country-turn',function(){return industrial.runCountryTurn(cid);});
+          industrialResult=await measure('industrial-run-country-turn',function(){
+            return runCheckpointedIndustrialProduction(cid,industrial);
+          });
         }catch(error){
           emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,{status:'DEGRADED',reason:String(error&&error.message||error),turn:turn()},'resource-economy');
         }

@@ -1288,3 +1288,34 @@ test('a buyer bid arriving after factory output upgrades the player seller offer
   assert.equal(rebuildCount,rebuildsBeforeOffScopeRequest,
     'an inactive non-player seller must not trigger another country offer refresh');
 });
+
+
+test('industrial production phase is session-scoped, sequential and warehouse-reconciled before checkpoint commit',()=>{
+  const simulationSource=readFileSync('omega_simulation_runtime.js','utf8');
+  const industrialSource=readFileSync('omega_resource_industrial_network_v1.js','utf8');
+  const economySource=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  assert.match(economySource,/function industrialPhasePeriodIdentity\(sessionId,periodTurn\)/,
+    'industrial production needs a stable identity scoped to the active Simulation session');
+  assert.match(economySource,/for\(var periodTurn=lastProcessed\+1;periodTurn<=targetTurn;periodTurn\+\+\)/,
+    'missed industrial game days must be processed sequentially');
+  assert.match(economySource,/productionPeriodTurn:periodTurn,productionPeriodId:periodId/,
+    'the same period identity must reach the existing industrial runner');
+  assert.match(economySource,/domain:'industrial',countryId:cid,sessionId/,
+    'industrial checkpoints must use the canonical player country and active session');
+  assert.match(economySource,/phase:'INDUSTRIAL_PRODUCTION',\s*lastProcessedEventId:periodId/,
+    'the industrial checkpoint advances only after the period-specific reconciliation');
+  assert.match(economySource,/if\(!reconciliation\?\.ok\)\{\s*api\.fail\(/,
+    'failed output reconciliation must leave the period pending for recovery');
+  assert.match(industrialSource,/function reconcileProductionPeriod\(countryId,periodTurn,periodId,runResult\)/,
+    'the industrial authority must reconcile finished goods against existing warehouse and ledgers');
+  assert.match(industrialSource,/productionPeriodId:productionPeriodId\(\)/,
+    'finished output records must retain their creation/completion game-day identity');
+  assert.match(industrialSource,/INDUSTRIAL_PERIOD_BATCH_WAREHOUSE_STATE_MISMATCH/,
+    'warehouse receipt, batch and inventory-lot identities must agree');
+  assert.match(industrialSource,/lastProgressPeriodId===activePeriodId/,
+    'construction progress must not be incremented twice when an industrial period is retried');
+  assert.match(industrialSource,/RECOVERY_REQUIRED/,
+    'partial period execution must retain a recoverable journal instead of clearing the period');
+  assert.match(simulationSource,/ECONOMY_PHASE_DOMAINS=new Set\(\['resources','industrial','fiscal'\]\)/,
+    'the industrial phase must reuse the existing authoritative checkpoint domain');
+});
