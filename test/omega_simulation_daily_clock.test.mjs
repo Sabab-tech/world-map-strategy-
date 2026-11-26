@@ -919,26 +919,32 @@ test('global time controls are moved outside the clipped header and expose an ex
     'the body-level time dock must stay above the UI v2 cabinet stacking layer (2147483000)');
   assert.match(hudCss, /pointer-events: auto !important;/,
     'the persistent time dock must accept pointer and touch input');
-  assert.match(hudCss, /min-height: 44px !important;/,
-    'the primary time controls must have touch-friendly targets');
+  assert.match(hudCss, /button\[data-omega-action="toggle"\][\s\S]*?min-height: 30px !important;/,
+    'the always-available clock toggle must remain compact without losing a usable target');
 });
 
 
-test('compact gameplay clock dock exposes only play and pause actions', () => {
+test('compact gameplay clock dock stays at the screen edge and retains accessible speed choices', () => {
   const lifecycle = fs.readFileSync(path.join(root, 'omega_game_lifecycle_runtime_v1.js'), 'utf8');
   const hudCss = fs.readFileSync(path.join(root, 'omega_manual_time_controls_v1.css'), 'utf8');
   const serviceWorker = fs.readFileSync(path.join(root, 'omega-offline-map-sw.js'), 'utf8');
+  const activeDockCss = hudCss.slice(hudCss.lastIndexOf('/* Compact, edge-anchored gameplay clock:'));
 
   assert.match(lifecycle, /function ensurePauseButton\(\)/);
   assert.match(lifecycle, /button\.setAttribute\('data-omega-action', 'pause'\)/);
-  assert.match(lifecycle, /if \(action === 'toggle'\) \{\s*setSpeed\(1, true\);\s*\} else if \(action === 'pause'\) \{\s*setSpeed\(0\);/);
-  assert.match(lifecycle, /toggle\.textContent = '▶'/);
-  assert.match(lifecycle, /pause\.textContent = 'Ⅱ'/);
-  assert.match(hudCss, /bottom: 16px !important;/);
-  assert.match(hudCss, /button\[data-omega-speed\] \{\s*display: none !important;/);
-  assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
-  assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v154/);
+  assert.match(lifecycle, /var running = isSimulationRunning\(current\);\s*setSpeed\(running \? 0 : \(lastKnownSpeed \|\| 1\), !running\);/);
+  assert.match(lifecycle, /toggle\.textContent = running \? 'Ⅱ' : '▶'/);
+  assert.match(lifecycle, /toggle\.disabled = clockUnavailable;/);
+  assert.match(activeDockCss, /top: calc\(env\(safe-area-inset-top, 0px\) \+ 52px\) !important;/);
+  assert.match(activeDockCss, /right: 8px !important;/);
+  assert.match(activeDockCss, /left: auto !important;/);
+  assert.match(activeDockCss, /transform: none !important;/);
+  assert.doesNotMatch(activeDockCss, /left: 50%|translateX/);
+  assert.match(activeDockCss, /button\[data-omega-action="pause"\] \{\s*display: none !important;/);
+  assert.match(activeDockCss, /button\[data-omega-speed\] \{\s*display: flex !important;/);
+  assert.match(activeDockCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
+  assert.match(activeDockCss, /height: 30px !important;/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v155/);
   assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/);
   assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
   assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
@@ -948,6 +954,66 @@ test('compact gameplay clock dock exposes only play and pause actions', () => {
   assert.ok(hudStart >= 0 && hudEnd > hudStart);
   assert.doesNotMatch(lifecycle.slice(hudStart, hudEnd), /updateClockProgress\(\)/,
     'a committed-turn HUD update must not repaint a hidden clock-progress row');
+});
+
+test('the single play/pause control toggles without losing the selected game speed', () => {
+  const { win, sim } = createRuntime();
+  const toggle = {
+    textContent: '',
+    title: '',
+    disabled: false,
+    attributes: new Map([['data-omega-action', 'toggle']]),
+    setAttribute(name, value) { this.attributes.set(name, String(value)); },
+    getAttribute(name) { return this.attributes.has(name) ? this.attributes.get(name) : null; },
+    hasAttribute(name) { return this.attributes.has(name); },
+    closest() { return this; }
+  };
+  const speedThree = {
+    attributes: new Map([['data-omega-speed', '3']]),
+    getAttribute(name) { return this.attributes.has(name) ? this.attributes.get(name) : null; },
+    hasAttribute(name) { return this.attributes.has(name); },
+    closest() { return this; }
+  };
+  const nodes = new Map([['[data-omega-action="toggle"]', toggle]]);
+  const { documentListeners } = attachLifecycle(win, sim, nodes);
+  const click = target => {
+    const event = {
+      target,
+      cancelable: true,
+      preventDefault() {},
+      stopImmediatePropagation() {},
+      stopPropagation() {}
+    };
+    for (const handler of documentListeners.get('click') || []) handler(event);
+  };
+
+  assert.equal(toggle.textContent, '▶');
+  assert.equal(toggle.getAttribute('aria-label'), 'Start game');
+  assert.equal(toggle.disabled, false);
+
+  click(toggle);
+  assert.equal(sim.status, 'RUNNING');
+  assert.equal(sim.clock.speed, 1);
+  assert.equal(toggle.textContent, 'Ⅱ');
+  assert.equal(toggle.getAttribute('aria-label'), 'Pause game');
+  assert.equal(toggle.getAttribute('aria-pressed'), 'true');
+  assert.equal(toggle.disabled, false, 'the visible toggle remains usable while the game is running');
+
+  click(speedThree);
+  assert.equal(sim.status, 'RUNNING');
+  assert.equal(sim.clock.speed, 3);
+
+  click(toggle);
+  assert.equal(sim.status, 'PAUSED');
+  assert.equal(sim.clock.speed, 0);
+  assert.equal(toggle.textContent, '▶');
+  assert.equal(toggle.getAttribute('aria-label'), 'Resume game');
+  assert.equal(toggle.getAttribute('aria-pressed'), 'false');
+
+  click(toggle);
+  assert.equal(sim.status, 'RUNNING');
+  assert.equal(sim.clock.speed, 3, "resuming must restore the player's last selected speed");
+  assert.equal(toggle.textContent, 'Ⅱ');
 });
 
 
