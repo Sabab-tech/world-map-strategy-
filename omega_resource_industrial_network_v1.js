@@ -6972,21 +6972,21 @@ function runCountryTurn(countryValue,options={}){
   const task=countryTurnTail.catch(()=>undefined).then(async()=>{
     const previousContext=activeIndustrialProductionPeriod;
     if(periodExecution)activeIndustrialProductionPeriod=periodExecution;
-    const network=netState(cid);
-    if(!network.industrialProductionPeriods||typeof network.industrialProductionPeriods!=='object'||
-       Array.isArray(network.industrialProductionPeriods))network.industrialProductionPeriods={};
-    const existing=network.industrialProductionPeriods[periodId];
-    if(existing?.status==='COMPLETED'){
-      if(periodExecution)activeIndustrialProductionPeriod=previousContext;
-      return{status:'COMPLETED',countryId:cid,turn:periodTurn,productionPeriodId:periodId,
-        idempotent:true,journal:clone(existing.result||{})};
-    }
-    network.industrialProductionPeriods[periodId]={
-      ...(existing||{}),countryId:cid,turn:periodTurn,productionPeriodId:periodId,
-      status:'STARTED',attemptCount:Math.max(0,Math.floor(num(existing?.attemptCount)||0))+1,
-      startedAt:existing?.startedAt||new Date().toISOString(),lastAttemptAt:new Date().toISOString()
-    };
+    let network=null;
     try{
+      network=netState(cid);
+      if(!network.industrialProductionPeriods||typeof network.industrialProductionPeriods!=='object'||
+         Array.isArray(network.industrialProductionPeriods))network.industrialProductionPeriods={};
+      const existing=network.industrialProductionPeriods[periodId];
+      if(existing?.status==='COMPLETED'){
+        return{status:'COMPLETED',countryId:cid,turn:periodTurn,productionPeriodId:periodId,
+          idempotent:true,journal:clone(existing.result||{})};
+      }
+      network.industrialProductionPeriods[periodId]={
+        ...(existing||{}),countryId:cid,turn:periodTurn,productionPeriodId:periodId,
+        status:'STARTED',attemptCount:Math.max(0,Math.floor(num(existing?.attemptCount)||0))+1,
+        startedAt:existing?.startedAt||new Date().toISOString(),lastAttemptAt:new Date().toISOString()
+      };
       await loadCatalog();
       const shipments=await advanceShipments(cid);
       const projects=await advanceProjects(cid);
@@ -7011,13 +7011,20 @@ function runCountryTurn(countryValue,options={}){
       pruneIndustrialProductionPeriods(network);
       return result;
     }catch(error){
-      network.industrialProductionPeriods[periodId]={
-        ...network.industrialProductionPeriods[periodId],
-        status:'RECOVERY_REQUIRED',lastError:String(error?.message||error),
-        failedAt:new Date().toISOString()
-      };
+      if(network&&network.industrialProductionPeriods&&
+         network.industrialProductionPeriods[periodId]&&
+         network.industrialProductionPeriods[periodId].status!=='COMPLETED'){
+        network.industrialProductionPeriods[periodId]={
+          ...network.industrialProductionPeriods[periodId],
+          status:'RECOVERY_REQUIRED',lastError:String(error?.message||error),
+          failedAt:new Date().toISOString()
+        };
+      }
       throw error;
     }finally{
+      // Also restore the context when netState/journal setup fails before the
+      // domain work starts. A stale historical turn must never leak into the
+      // next player action or another country's runtime.
       activeIndustrialProductionPeriod=previousContext;
     }
   });
