@@ -1659,8 +1659,10 @@
     }else if(typeof store!=='object'||Array.isArray(store)||Number(store.schemaVersion)!==ECONOMY_PHASE_CHECKPOINT_SCHEMA){
       throw new Error('ECONOMY_PHASE_CHECKPOINT_SCHEMA_UNSUPPORTED');
     }
-    if(!store.checkpoints||typeof store.checkpoints!=='object'||Array.isArray(store.checkpoints))store.checkpoints={};
-    if(!store.mutations||typeof store.mutations!=='object'||Array.isArray(store.mutations))store.mutations={};
+    if(!store.checkpoints)store.checkpoints={};
+    else if(typeof store.checkpoints!=='object'||Array.isArray(store.checkpoints))throw new Error('ECONOMY_PHASE_CHECKPOINT_DATA_INVALID');
+    if(!store.mutations)store.mutations={};
+    else if(typeof store.mutations!=='object'||Array.isArray(store.mutations))throw new Error('ECONOMY_PHASE_MUTATION_JOURNAL_INVALID');
     return store;
   }
   function economyPhaseScope(input={}){
@@ -1690,7 +1692,9 @@
   function economyPhaseGetCheckpoint(input={}){
     const scope=economyPhaseScope(input);if(scope.error)return{status:'INVALID',reason:scope.error};
     const existing=simulation.world.state?.simulation?.economyPhaseArchitectureV1;
-    const row=existing?.schemaVersion===ECONOMY_PHASE_CHECKPOINT_SCHEMA?existing.checkpoints?.[scope.key]:null;
+    if(existing&&Number(existing.schemaVersion)!==ECONOMY_PHASE_CHECKPOINT_SCHEMA)
+      return{status:'UNSUPPORTED_SCHEMA',reason:'ECONOMY_PHASE_CHECKPOINT_SCHEMA_UNSUPPORTED'};
+    const row=existing?.checkpoints?.[scope.key]||null;
     return{status:'OK',checkpoint:clone(row||economyPhaseDefaultCheckpoint(scope))};
   }
   function economyPhaseBegin(input={}){
@@ -1818,7 +1822,9 @@
   }
   function economyPhasePending(){
     const existing=simulation.world.state?.simulation?.economyPhaseArchitectureV1;
-    if(!existing||existing.schemaVersion!==ECONOMY_PHASE_CHECKPOINT_SCHEMA)return[];
+    if(!existing)return[];
+    if(Number(existing.schemaVersion)!==ECONOMY_PHASE_CHECKPOINT_SCHEMA)
+      throw new Error('ECONOMY_PHASE_CHECKPOINT_SCHEMA_UNSUPPORTED');
     const store=existing;
     return Object.keys(store.checkpoints).map(key=>store.checkpoints[key])
       .filter(row=>row&&row.status!=='READY'&&row.status!=='COMPLETED')
