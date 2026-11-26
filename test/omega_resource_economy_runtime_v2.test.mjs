@@ -1298,7 +1298,9 @@ test('flat inventory snapshots copy scalar balances directly while preserving ne
   const helpers=source.slice(start,end);
   const cloneInventory=vm.runInNewContext('(function(){'+helpers+';return cloneInventoryQuantities;})()');
   const nested={value:7};nested.self=nested;
-  const input={crude_oil:125,iron_ore:50,unknown:null,nested};
+  const shared={detail:9};
+  const input={crude_oil:125,iron_ore:50,unknown:null,nested,sharedA:shared,sharedB:shared};
+  input.rootReference=input;
   Object.defineProperty(input,'__proto__',{value:{polluted:true},enumerable:true});
   Object.defineProperty(input,'constructor',{value:{unsafe:true},enumerable:true});
   input.ignored=undefined;
@@ -1312,6 +1314,8 @@ test('flat inventory snapshots copy scalar balances directly while preserving ne
     'scalar quantities remain unchanged and nested legacy values remain available');
   assert.notEqual(snapshot.nested,nested,'nested object values retain deep isolation');
   assert.equal(snapshot.nested.self,snapshot.nested,'nested cycles remain supported');
+  assert.equal(snapshot.rootReference,snapshot,'the snapshot must preserve references back to its root');
+  assert.equal(snapshot.sharedA,snapshot.sharedB,'shared nested values must retain their shared identity');
   assert.equal(Object.prototype.hasOwnProperty.call(snapshot,'__proto__'),false);
   assert.equal(Object.prototype.hasOwnProperty.call(snapshot,'constructor'),false);
   assert.equal(Object.prototype.hasOwnProperty.call(snapshot,'ignored'),false);
