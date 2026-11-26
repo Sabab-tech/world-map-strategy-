@@ -704,7 +704,9 @@
     }
     if(rem>1e-9)return{accepted:false,reason:'RESOURCE_INVENTORY_NOT_WAREHOUSE_AVAILABLE',
       resourceId:rid,requested:q,available:q-rem,unavailableOrReserved:rem};
-    var inv=Object.assign({},invBefore);inv[key]=cur-q;
+    var nextQuantity=cur-q;
+    if(!stageInventoryQuantity(ctx,invBefore,key,nextQuantity))
+      return{accepted:false,reason:'RESOURCE_INVENTORY_KEY_INVALID',resourceId:rid};
     var ledgerBefore=ctx.stateTransaction.peek('resource.inventoryLedger'),
       ledger=Array.isArray(ledgerBefore)?ledgerBefore.slice():[];
     ledger.push({type:'INVENTORY_CONSUMED',resourceId:rid,quantity:q,reason:p.reason||'PROCESSING_OR_FACTORY_INPUT',turn:turn(),consumed:used});
@@ -722,14 +724,13 @@
       processedWarehouseNext=Object.assign({},pwhBefore,{availableByResource:processedBook,lastMovementTurn:turn(),lastMovementType:'CONSUME'});
     }
     var networkNext=applyMineWarehouseConsumption(networkBefore,maps,consumedBySiteBatch);
-    ctx.stateTransaction.set('resource.inventory',inv);
     if(batchesNext)ctx.stateTransaction.set('resource.batches',batchesNext);
     if(lotsNext)ctx.stateTransaction.set('resource.inventoryLots',lotsNext);
     ctx.stateTransaction.set('resource.inventoryLedger',ledger);
     if(warehouseNext)ctx.stateTransaction.set('resource.warehouse',warehouseNext);
     if(processedWarehouseNext)ctx.stateTransaction.set('resource.processedWarehouse',processedWarehouseNext);
     if(networkNext)ctx.stateTransaction.set('resource.industrialNetwork',networkNext);
-    emit('OMEGA_RESOURCE_INVENTORY_CHANGED',c,{resourceId:rid,delta:-q,newQuantity:inv[key],
+    emit('OMEGA_RESOURCE_INVENTORY_CHANGED',c,{resourceId:rid,delta:-q,newQuantity:nextQuantity,
       rawWarehouseQuantity:warehouseNext?.availableByResource?.[rid]??whBefore?.availableByResource?.[rid]??null,
       processedWarehouseQuantity:processedWarehouseNext?.availableByResource?.[rid]??pwhBefore?.availableByResource?.[rid]??null},'resource');
     return{accepted:true,resourceId:rid,quantity:q,consumed:used};
@@ -961,9 +962,12 @@
   function addInventoryHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},rid=String(p.resourceId||'').trim(),q=num(p.quantity);
     if(!rid||q===null||q<=0)return{accepted:false,reason:'ADD_INPUT_INVALID'};
-    var c=canonical(ctx.countryId),inv=cloneInventoryQuantities(ctx.stateTransaction.get('resource.inventory')||{}),key=Object.prototype.hasOwnProperty.call(inv,rid)?rid:(Object.keys(inv).find(function(k){return tok(k)===tok(rid);})||rid);
-    inv[key]=(num(inv[key])||0)+q;
-    var bs=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],stage=String(p.stage||'FINISHED').toUpperCase();
+    var c=canonical(ctx.countryId),inventory=ctx.stateTransaction.peek('resource.inventory')||{},
+      key=resolveInventoryKey(inventory,null,rid),nextQuantity=(num(inventory[key])||0)+q;
+    if(!stageInventoryQuantity(ctx,inventory,key,nextQuantity))
+      return{accepted:false,reason:'RESOURCE_INVENTORY_KEY_INVALID',resourceId:rid};
+    var batchRows=ctx.stateTransaction.peek('resource.batches'),
+      bs=Array.isArray(batchRows)?batchRows.slice():[],stage=String(p.stage||'FINISHED').toUpperCase();
     var batchId=String(p.batchId||('BATCH_'+turn()+'_'+c+'_'+tok(rid)+'_'+(bs.length+1))),processed=['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(stage);
     var warehouseId=processed?'WH-'+c+'-PROCESSED':'WH-'+c+'-RAW',locationNodeKey='WAREHOUSE:'+c+':'+(processed?'PROCESSED':'RAW');
     var b={batchId,resourceId:rid,materialIdentity:rid,quantity:q,remainingQuantity:q,unit:p.unit||null,stage,ownerCountryCode:c,ownerCompanyId:String(p.ownerCompanyId||('STATE_INDUSTRY_'+c)),
@@ -981,9 +985,9 @@
     target.availableByResource[rid]=(num(target.availableByResource[rid])||0)+q;if(!target.storedBatchIds.includes(b.batchId))target.storedBatchIds.push(b.batchId);
     target.receipts=Array.isArray(target.receipts)?target.receipts:[];target.receipts.push({receiptId:'WH-REC-'+b.batchId,warehouseId:warehouseId,countryId:c,batchId:b.batchId,resourceId:rid,quantity:q,unit:b.unit,simulationTurn:turn(),status:'RECEIVED'});
     var lots=copyMapShallow(ctx.stateTransaction.peek('resource.inventoryLots')||{});lots[b.batchId]={batchId:b.batchId,resourceId:rid,quantity:q,remainingQuantity:q,unit:b.unit,stage,countryId:c,warehouseId,locationNodeKey,ownerCompanyId:b.ownerCompanyId,sourceBatchIds:b.sourceBatchIds,status:'AVAILABLE',provenance:clone(b.provenance),createdTurn:turn()};
-    ctx.stateTransaction.set('resource.inventory',inv);ctx.stateTransaction.set('resource.batches',bs);ctx.stateTransaction.set('resource.inventoryLedger',ledger);ctx.stateTransaction.set('resource.inventoryLots',lots);
+    ctx.stateTransaction.set('resource.batches',bs);ctx.stateTransaction.set('resource.inventoryLedger',ledger);ctx.stateTransaction.set('resource.inventoryLots',lots);
     ctx.stateTransaction.set('resource.warehouse',wh);ctx.stateTransaction.set('resource.processedWarehouse',pwh);
-    emit('OMEGA_RESOURCE_INVENTORY_CHANGED',c,{resourceId:rid,delta:q,newQuantity:inv[key],warehouseQuantity:target.availableByResource[rid],stage:stage,transactionId:p.transactionId||null},'resource');
+    emit('OMEGA_RESOURCE_INVENTORY_CHANGED',c,{resourceId:rid,delta:q,newQuantity:nextQuantity,warehouseQuantity:target.availableByResource[rid],stage:stage,transactionId:p.transactionId||null},'resource');
     return{accepted:true,resourceId:rid,quantity:q,batch:b};
   }
   function publishResourceRuntimeHandler(cmd,ctx){
@@ -2390,29 +2394,28 @@
     var p=cmd&&cmd.payload||{},c=canonical(ctx.countryId),eventId=String(p.eventId||'').trim(),
       rid=String(p.resourceId||'').trim(),q=num(p.quantity),reason=String(p.reason||'').trim();
     if(!c||!eventId||!rid||q===null||q<=0||!reason)return{accepted:false,reason:'STOCK_WRITE_OFF_INPUT_INVALID'};
-    var existing=Array.isArray(ctx.stateTransaction.get('resource.stockLossLedger'))
-      ?ctx.stateTransaction.get('resource.stockLossLedger'):[];
+    var existing=ctx.stateTransaction.peek('resource.stockLossLedger')||[];
     var prior=existing.find(function(row){return String(row&&row.eventId||'')===eventId;});
     if(prior){
       if(String(prior.resourceId||'')!==rid||Math.abs((num(prior.quantity)||0)-q)>1e-9||
         String(prior.reason||'')!==reason)return{accepted:false,reason:'STOCK_LOSS_EVENT_IDEMPOTENCY_COLLISION'};
       return{accepted:true,duplicate:true,noStateChangeAccepted:true,event:clone(prior)};
     }
-    var invBefore=ctx.stateTransaction.get('resource.inventory')||{},inv=cloneInventoryQuantities(invBefore),
-      invKey=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(function(key){return tok(key)===tok(rid);}),
-      available=invKey===undefined?null:num(inv[invKey]);
+    var invBefore=ctx.stateTransaction.peek('resource.inventory')||{},
+      invKey=resolveInventoryKey(invBefore,null,rid),
+      available=invKey===undefined?null:num(invBefore[invKey]);
     if(available===null||available+1e-9<q)return{accepted:false,reason:'STOCK_WRITE_OFF_INVENTORY_INSUFFICIENT',resourceId:rid,requested:q,available:available===null?0:available};
-    var rawBefore=ctx.stateTransaction.get('resource.warehouse')||null,
-      processedBefore=ctx.stateTransaction.get('resource.processedWarehouse')||null,
+    var rawBefore=ctx.stateTransaction.peek('resource.warehouse')||null,
+      processedBefore=ctx.stateTransaction.peek('resource.processedWarehouse')||null,
       rawBoundary=boundary()?.validateWarehouse?.(rawBefore,c),
       processedBoundary=boundary()?.validateWarehouse?.(processedBefore,c);
     if(rawBoundary&&!rawBoundary.ok)return{accepted:false,reason:'CROSS_COUNTRY_WAREHOUSE_BREACH',detail:clone(rawBoundary)};
     if(processedBoundary&&!processedBoundary.ok)return{accepted:false,reason:'CROSS_COUNTRY_PROCESSED_WAREHOUSE_BREACH',detail:clone(processedBoundary)};
-    var raw=rawBefore?clone(rawBefore):null,processed=processedBefore?clone(processedBefore):null,
-      network=ctx.stateTransaction.get('resource.industrialNetwork')||{},
-      maps=consumptionLedgerMaps(network),batchesBefore=ctx.stateTransaction.get('resource.batches'),
-      batches=Array.isArray(batchesBefore)?batchesBefore.slice():[],lotsBefore=ctx.stateTransaction.get('resource.inventoryLots')||{},
-      lots=Object.assign({},lotsBefore),rawBudget=warehouseFreeQuantity(rawBefore,rid),
+    var raw=rawBefore,processed=processedBefore,
+      network=ctx.stateTransaction.peek('resource.industrialNetwork')||{},
+      maps=consumptionLedgerMaps(network),batchesBefore=ctx.stateTransaction.peek('resource.batches'),
+      batches=Array.isArray(batchesBefore)?batchesBefore.slice():[],lotsBefore=ctx.stateTransaction.peek('resource.inventoryLots')||{},
+      lots=copyMapShallow(lotsBefore),rawBudget=warehouseFreeQuantity(rawBefore,rid),
       processedBudget=warehouseFreeQuantity(processedBefore,rid),remaining=q,rawDebit=0,processedDebit=0,used=[];
     for(var i=0;i<batches.length&&remaining>1e-9;i++){
       var batch=batches[i],batchResource=String(batch&&(batch.resourceId||batch.materialIdentity)||'');
@@ -2439,7 +2442,9 @@
     }
     if(remaining>1e-9)return{accepted:false,reason:'STOCK_WRITE_OFF_NOT_FREE_PHYSICAL_STOCK',
       resourceId:rid,requested:q,allocatable:q-remaining,unavailableOrReserved:remaining};
-    inv[invKey]=Math.max(0,available-q);
+    var nextQuantity=Math.max(0,available-q);
+    if(!stageInventoryQuantity(ctx,invBefore,invKey,nextQuantity))
+      return{accepted:false,reason:'RESOURCE_INVENTORY_KEY_INVALID',resourceId:rid};
     function debitWarehouse(warehouse,amount){
       if(!warehouse||amount<=1e-9)return warehouse;
       var book=Object.assign({},warehouse.availableByResource||{}),
@@ -2448,8 +2453,8 @@
       return Object.assign({},warehouse,{availableByResource:book,lastMovementTurn:turn(),lastMovementType:'STOCK_LOSS'});
     }
     raw=debitWarehouse(raw,rawDebit);processed=debitWarehouse(processed,processedDebit);
-    var ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))
-      ?ctx.stateTransaction.get('resource.inventoryLedger').slice():[];
+    var ledgerRows=ctx.stateTransaction.peek('resource.inventoryLedger'),
+      ledger=Array.isArray(ledgerRows)?ledgerRows.slice():[];
     var event={eventId:eventId,sourceEventId:eventId,sourceType:'STORAGE',lossType:'STORAGE',
       resourceId:rid,quantity:q,unit:p.unit||null,reason:reason,used:used,
       evidenceAuthority:p.evidenceAuthority||'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'};
@@ -2458,7 +2463,6 @@
     ledger.push({type:'STORAGE_LOSS_COMMITTED',eventId:eventId,resourceId:rid,quantity:q,reason:reason,
       unit:p.unit||null,turn:turn(),periodId:'GAME_TURN_'+String(turn()),batchAllocations:used});
     while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
-    ctx.stateTransaction.set('resource.inventory',inv);
     ctx.stateTransaction.set('resource.batches',batches);
     ctx.stateTransaction.set('resource.inventoryLots',lots);
     ctx.stateTransaction.set('resource.inventoryLedger',ledger);
