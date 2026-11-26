@@ -58,11 +58,13 @@ test('Industry runtime events are coalesced into one bounded in-place refresh', 
   assert.equal(h.root.__omegaV2IndustryEventsBound, true);
   const turnHandlers = h.listeners.get('OMEGA_SIMULATION_TURN_COMMITTED') || [];
   const extractionHandlers = h.listeners.get('OMEGA_RESOURCE_EXTRACTION_COMPLETED') || [];
-  assert.equal(turnHandlers.length, 1);
-  assert.equal(extractionHandlers.length, 1);
+  const turnRefreshHandler = turnHandlers.find(handler => handler.__omegaIndustryRuntimeRefreshHandler);
+  const extractionRefreshHandler = extractionHandlers.find(handler => handler.__omegaIndustryRuntimeRefreshHandler);
+  assert.equal(turnHandlers.filter(handler => handler.__omegaIndustryRuntimeRefreshHandler).length, 1);
+  assert.equal(extractionRefreshHandler && extractionRefreshHandler.__omegaIndustryRuntimeRefreshHandler, true);
 
-  turnHandlers[0]({detail:{countryId:'BGD'}});
-  extractionHandlers[0]({detail:{countryId:'BGD'}});
+  turnRefreshHandler({detail:{countryId:'BGD'}});
+  extractionRefreshHandler({detail:{countryId:'BGD'}});
   assert.equal(h.timers.size, 1, 'one screen refresh should cover a burst of turn and domain events');
   assert.equal(Array.from(h.timers.values())[0].delay, 180);
   assert.deepEqual(Object.keys(h.root.__omegaV2IndustryRefreshEvents).sort(), [
@@ -73,7 +75,9 @@ test('Industry runtime events are coalesced into one bounded in-place refresh', 
 
 test('Industry runtime listeners reject another country and are removed with screen cleanup', () => {
   const h = createHarness();
-  const handler = h.listeners.get('OMEGA_SIMULATION_TURN_COMMITTED')[0];
+  const turnHandlers = h.listeners.get('OMEGA_SIMULATION_TURN_COMMITTED') || [];
+  const handler = turnHandlers.find(row => row.__omegaIndustryRuntimeRefreshHandler);
+  assert.equal(typeof handler, 'function');
   handler({detail:{countryId:'USA'}});
   assert.equal(h.timers.size, 0, 'events for another country must not refresh the player screen');
 
@@ -84,16 +88,22 @@ test('Industry runtime listeners reject another country and are removed with scr
   assert.equal(h.root.__omegaV2IndustryEventsBound, false);
   assert.equal(h.root.__omegaV2IndustryRuntimeEventHandlers.length, 0);
   assert.ok(h.removed.length > 0);
-  for (const rows of h.listeners.values()) assert.equal(rows.length, 0);
+  for (const rows of h.listeners.values()) {
+    assert.equal(rows.some(row => row.__omegaIndustryRuntimeRefreshHandler), false,
+      'only the new screen-scoped listeners should be removed');
+  }
+  const legacyCoverageHandlers = h.listeners.get('OMEGA_SIMULATION_TURN_COMMITTED') || [];
+  assert.equal(legacyCoverageHandlers.length, 1,
+    'the pre-existing factory coverage listener must remain registered');
   h.cleanup();
-  assert.equal(h.removed.length, Object.keys(h.api.runtimeEventNames).length);
+  assert.equal(h.removed.length, h.api.runtimeEventNames.length);
 });
 
 test('Industry runtime updates do not route through navigation scheduling', () => {
   const h = createHarness();
   const source = fs.readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
   assert.match(source, /function refreshIndustryRuntimeInPlace/);
-  assert.match(source, /render(root, options)/);
+  assert.ok(source.includes('var result = render(root, options);'));
   assert.match(source, /bindIndustryRuntimeEvents(root, options)/);
   assert.doesNotMatch(source.slice(source.indexOf('function scheduleIndustryRuntimeRefresh'), source.indexOf('function bindIndustryRuntimeEvents')), /scheduleRender\(/);
   assert.equal(typeof h.api.scheduleRuntimeRefresh, 'function');

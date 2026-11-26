@@ -4435,6 +4435,7 @@
         if (sourceCountry && selectedCountry && sourceCountry !== selectedCountry) return;
         scheduleIndustryRuntimeRefresh(root, eventName);
       };
+      handler.__omegaIndustryRuntimeRefreshHandler = true;
       handlers.push({ type:eventName, callback:handler });
       g.addEventListener(eventName, handler);
     });
