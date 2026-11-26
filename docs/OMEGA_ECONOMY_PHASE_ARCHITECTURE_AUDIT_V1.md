@@ -173,13 +173,22 @@ This addendum supersedes the earlier statement that industrial phase separation 
 - Events scoped to another country are ignored.
 - Screen cleanup cancels pending refresh work and removes only the listeners registered by this screen. Existing factory-coverage listeners remain untouched.
 
-### M3 — Runtime observability
+### M0 support — bounded runtime observability
 
 - Each ordered Simulation turn participant records last, average, maximum and rolling p95 execution duration.
 - Rolling samples are bounded to 32 per participant and the diagnostic map is bounded to 256 participant records.
 - Dropped scaled time is exposed in Simulation diagnostics and emitted as `OMEGA_SIMULATION_TIME_DROPPED` for both the clock's one-step-per-frame cap and the in-flight frame queue cap.
 - Timing samples remain process-local diagnostics; they are not a second save-state authority.
 - The documented authoritative 1x day cadence is 15 seconds, matching `STEP_MS` and the composition root.
+
+### M3 — Transaction-scoped inventory copy optimization
+
+- `resource.inventory` is a flat resource-ID-to-quantity map in the authoritative economy contract. The dedicated `cloneInventoryQuantities` path copies scalar balances directly in a bounded key loop rather than recursively entering the generic clone and allocating a traversal map for each scalar entry.
+- Nested legacy values still use the existing deep-clone routine with a shared seen table, preserving root cycles, nested cycles, and shared object identity. Prototype-pollution keys, functions, and undefined values retain the generic clone's filtering rules.
+- The specialized copy is limited to the resource inventory quantity map used by transaction handlers, finalization before/after inventory snapshots, and the detached dashboard inventory summary.
+- Batches, inventory lots, warehouses, industrial networks, receipts, and ledgers continue using deep copies because they contain nested mutable transaction evidence and rollback-sensitive state.
+- Regression coverage verifies detached scalar quantities, nested isolation, cycles, shared references, prototype-key filtering, and use at the inventory snapshot/transaction boundaries.
+- This removes per-entry recursive clone/WeakMap overhead; it does not skip the authoritative inventory key scan or change inventory ownership, mutation, transaction rollback, or reconciliation.
 
 ### M4 — Checkpointed elapsed-time industrial production
 
