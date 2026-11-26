@@ -1937,7 +1937,8 @@ function batchFromExtraction(x,record){
     const extractionTurn=productionPeriodTurn;
     for(const row of mineProductionLedger){
       const key=String(row?.occurrenceKey||row?.mineId||'').trim();
-      if(!key||n(row?.turn??row?.simulationTurn)!==extractionTurn||(n(row?.quantity)||0)<=0)continue;
+      if(!key||(row?.productionPeriodId?String(row.productionPeriodId)!==productionPeriodId:
+        (productionPeriodId!=='GAME_DAY_'+productionPeriodTurn||n(row?.turn??row?.simulationTurn)!==extractionTurn))||(n(row?.quantity)||0)<=0)continue;
       if(!firstPositiveProductionByOccurrence.has(key))firstPositiveProductionByOccurrence.set(key,row);
       if(String(row?.batchId||'').trim()&&!committedProductionByOccurrence.has(key))
         committedProductionByOccurrence.set(key,row);
@@ -2192,7 +2193,7 @@ function batchFromExtraction(x,record){
         markPathBlocked(reason,{carbonGate:clone(carbonGate)});continue;
       }
       const record={
-        extractionId:'EXT-'+productionPeriodTurn+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''),
+        extractionId:'EXT-'+productionPeriodTurn+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,'')+'-'+productionPeriodId.replace(/[^A-Z0-9:_-]/gi,''),
         countryId:c,simulationTurn:productionPeriodTurn,productionPeriodId,occurrenceKey:x.occurrenceKey,siteReferenceKey:x.siteReferenceKey||null,siteName:x.depositName||null,
         siteType:x.assetType||x.siteType||null,depositKey:x.depositKey,resourceId:resource,
         requestedQuantity:request.requestedQuantity,approvedQuantity:q,status:result.status,
@@ -2420,7 +2421,7 @@ function batchFromExtraction(x,record){
       return{status:'BLOCKED',reason:'PRODUCTION_PERIOD_ID_INVALID',countryId:c};
     const samePeriod=row=>row?.productionPeriodId
       ?String(row.productionPeriodId)===productionPeriodId
-      :n(row?.turn??row?.simulationTurn)===t;
+      :(productionPeriodId==='GAME_DAY_'+t&&n(row?.turn??row?.simulationTurn)===t);
     const requestedSites=Array.isArray(siteIds)&&siteIds.length?new Set(siteIds.map(String)):null;
     const outputs=bucket.mineOutputs&&typeof bucket.mineOutputs==='object'?bucket.mineOutputs:{};
     const paths=bucket.minePaths&&typeof bucket.minePaths==='object'?bucket.minePaths:{};
