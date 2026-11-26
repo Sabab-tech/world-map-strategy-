@@ -405,7 +405,6 @@
             reason:stateDirective.reason||'STATE_SUPPLY_DIRECTIVE_BLOCKED',stateSupplyDirective:stateDirective});
           continue;
         }
-  function clearResource(rid,orders,history=[]){return drainMarketWorkSync(clearResourceWork(rid,orders,history));}
         matched+=q;lastBid=bid;lastAsk=ask;
         matches.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,quantity:q,bidPriceUsd:bid.priceUsd,askPriceUsd:ask.priceUsd,bidPrice:bid.price,askPrice:ask.price,referenceLiquidity:!!ask.referenceOnly,productType:bid.productType||ask.productType||describeProduct(rid).productType,productRole:bid.productRole||ask.productRole||null});
         bid.remaining-=q;ask.remaining-=q;
@@ -429,7 +428,8 @@
       bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.filter(x=>x.referenceOnly!==true).reduce((s,x)=>s+(n(x.quantity)||0),0),referenceAskDepth:asks.filter(x=>x.referenceOnly===true).reduce((s,x)=>s+(n(x.quantity)||0),0),
       priceDiscovery:clearing!==null?'ORDER_BOOK_CROSSING':(bestBid!==null&&bestAsk!==null?'NEGOTIATION_RANGE':ref?'REFERENCE_ONLY':'UNAVAILABLE'),
       referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,vwapUsd:vwap,spreadUsd:spread,volatilityUsd,
-      microstructure:{bidCount:bids.length,askCount:asks.filter(x=>x.referenceOnly!==true).length,referenceAskCount:asks.filter(x  async function rebuildCooperatively(){
+      microstructure:{bidCount:bids.length,askCount:asks.filter(x=>x.referenceOnly!==true).length,referenceAskCount:asks.filter(x  function clearResource(rid,orders,history=[]){return drainMarketWorkSync(clearResourceWork(rid,orders,history));}
+  async function rebuildCooperatively(){
     const previousSnapshot=activeMarketSnapshot,previousProductIndex=activeProductIndex;
     const startedAt=marketNow(),pacing={sliceStartedAt:startedAt,yieldCount:0,maxSliceMs:0};
     activeMarketSnapshot=createMarketSnapshot();
