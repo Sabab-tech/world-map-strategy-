@@ -84,7 +84,7 @@ function createRuntime() {
   return { win, sim, gameState, storage, dispatched, worldTicks };
 }
 
-function attachLifecycle(win, sim) {
+function attachLifecycle(win, sim, nodes = new Map()) {
   const documentListeners = new Map();
   win.document = {
     readyState: 'interactive',
@@ -94,7 +94,7 @@ function attachLifecycle(win, sim) {
       rows.push(handler);
       documentListeners.set(type, rows);
     },
-    querySelector() { return null; },
+    querySelector(selector) { return nodes.get(selector) || null; },
     querySelectorAll() { return []; }
   };
   win.Omega.App = { state: 'READY', simulation: sim };
@@ -104,7 +104,7 @@ function attachLifecycle(win, sim) {
     Date, JSON, Number, String, Math, Promise, Map, Object, Array, Error, Intl
   });
   vm.runInContext(lifecycleSource, lifecycleContext, { filename: 'omega_game_lifecycle_runtime_v1.js' });
-  return { documentListeners, lifecycle: win.Omega.GameLifecycle };
+  return { documentListeners, lifecycle: win.Omega.GameLifecycle, nodes };
 }
 
 test('one 15-second real-time interval advances exactly one shared game day', async () => {
@@ -935,5 +935,41 @@ test('compact gameplay clock dock exposes only play and pause actions', () => {
   assert.match(hudCss, /button\[data-omega-speed\] \{\s*display: none !important;/);
   assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
   assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v149/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v150/);
+});
+
+
+test('the game-time HUD updates budget balance and macro stability only from committed country indicators', () => {
+  const { win, sim, gameState } = createRuntime();
+  let indicators = {
+    gdpUsd:9000000,
+    annualBudgetBalanceUsd:-125000,
+    stabilityScore:61.5,
+    stabilityStatus:'WATCH'
+  };
+  const economyNode = { textContent:'', title:'' };
+  const nodes = new Map([['[data-omega-economy]', economyNode]]);
+  win.OmegaMacroStabilityRuntime = {
+    getIndicators(countryId) {
+      assert.equal(countryId,'BGD');
+      return indicators;
+    }
+  };
+  const { lifecycle } = attachLifecycle(win,sim,nodes);
+  lifecycle.updateHud();
+  assert.match(economyNode.textContent,/Budget balance -\$125K/);
+  assert.match(economyNode.textContent,/Stability 61\.5\/100/);
+
+  indicators = {
+    gdpUsd:9400000,
+    annualBudgetBalanceUsd:275000,
+    stabilityScore:74.2,
+    stabilityStatus:'STABLE'
+  };
+  sim.clock.turn = 1;
+  gameState.simulation.turn = 1;
+  win.dispatchEvent(new win.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED',{detail:{simulationTurn:1}}));
+  assert.match(economyNode.textContent,/Budget balance \$275K/);
+  assert.match(economyNode.textContent,/Stability 74\.2\/100/);
+  assert.match(economyNode.textContent,/STABLE/);
 });

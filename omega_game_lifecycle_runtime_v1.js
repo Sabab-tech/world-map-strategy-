@@ -40,6 +40,12 @@
   var saveStatus = 'AUTOSAVE READY';
   // Gameplay automation is opt-in after every boot and remains paused in the background.
   var backgroundRunsEnabled = false;
+  var lastResourceHudCountry = null;
+  var lastResourceHudTurn = -1;
+  var hudRefreshTimer = null;
+  var lastHudRefreshAt = 0;
+  var HUD_REFRESH_DEBOUNCE_MS = 180;
+  var HUD_REFRESH_MIN_INTERVAL_MS = 500;
 
   function runtime() {
     return (g.Omega && (g.Omega.SimulationRuntime || g.Omega.Simulation)) || null;
@@ -152,7 +158,8 @@
 
   function setText(selector, value) {
     var node = g.document && g.document.querySelector(selector);
-    if (node) node.textContent = String(value);
+    var text = String(value);
+    if (node && node.textContent !== text) node.textContent = text;
   }
 
   function setSaveStatus(value) {
@@ -261,9 +268,26 @@
     }
   }
 
+  function scheduleHudRefresh() {
+    if (hudRefreshTimer !== null) return;
+    var now = Date.now();
+    var delay = HUD_REFRESH_DEBOUNCE_MS;
+    var remaining = HUD_REFRESH_MIN_INTERVAL_MS - (now - lastHudRefreshAt);
+    if (remaining > delay) delay = remaining;
+    hudRefreshTimer = g.setTimeout(function () {
+      hudRefreshTimer = null;
+      updateHud();
+    }, Math.max(0, delay));
+  }
+
   function updateHud() {
     var sim = runtime();
     if (!sim || !sim.clock || !g.document) return;
+    if (hudRefreshTimer !== null) {
+      try { g.clearTimeout(hudRefreshTimer); } catch (_) {}
+      hudRefreshTimer = null;
+    }
+    lastHudRefreshAt = Date.now();
     var root = rootState();
     var turn = Math.max(0, Math.floor(number(sim.clock.turn) || 0));
     var isoDate = safeCall(function () { return sim.clock.simulationDate(); }) ||
@@ -276,27 +300,45 @@
     updateClockProgress();
 
     var country = playerCountry(sim);
-    if (country && typeof g.updateGlobalResourceHUD === 'function') {
+    var refreshCountryResources = (country || null) !== lastResourceHudCountry || turn !== lastResourceHudTurn;
+    if (refreshCountryResources && country && typeof g.updateGlobalResourceHUD === 'function') {
       try { g.updateGlobalResourceHUD(country); } catch (_) {}
     }
+
     var fm = country ? currentFinance(country) : null;
     var economyState = country ? findCountryBucket('economy', country) : null;
+    var macroApi = g.OmegaMacroStabilityRuntime || (g.Omega && g.Omega.MacroStabilityRuntime) || null;
+    var macro = country && macroApi && typeof macroApi.getIndicators === 'function'
+      ? safeCall(function () { return macroApi.getIndicators(country); }) : null;
     var treasury = number(fm && fm.treasuryBalanceUsd);
     if (treasury === null) treasury = number(economyState && economyState.treasury);
-    var gdp = number(economyState && (
+    var gdp = number(macro && macro.gdpUsd);
+    if (gdp === null) gdp = number(economyState && (
       economyState.gdp ?? economyState.nominal_gdp ?? economyState.gdpCurrentUsd ??
       economyState.gdp_current_usd ?? economyState.gdpUsd ?? economyState.gdp_usd ?? economyState.GDP
     ));
+    var budgetBalance = number(macro && macro.annualBudgetBalanceUsd);
+    if (budgetBalance === null) budgetBalance = number(fm && fm.fiscalModel && fm.fiscalModel.annualBudgetBalanceUsd);
+    if (budgetBalance === null) budgetBalance = number(economyState && (
+      economyState.budget_balance ?? economyState.budgetBalanceUsd ?? economyState.annualBudgetBalanceUsd
+    ));
+    var stabilityScore = number(macro && macro.stabilityScore);
+    var stabilityStatus = String(macro && macro.stabilityStatus || '').trim();
     var econNode = g.document.querySelector('[data-omega-economy]');
     if (econNode) {
-      econNode.textContent = (country || 'COUNTRY NOT SELECTED') +
+      var scoreLabel = stabilityScore === null ? 'Not recorded' : stabilityScore.toFixed(1) + '/100';
+      var economyText = (country || 'COUNTRY NOT SELECTED') +
         '  GDP ' + (gdp === null ? 'Not recorded' : money(gdp)) +
-        '  Treasury ' + (treasury === null ? 'Not recorded' : money(treasury));
-      econNode.title = 'GDP and Treasury are read from the selected country game state. Missing values remain Not recorded.';
+        '  Treasury ' + (treasury === null ? 'Not recorded' : money(treasury)) +
+        '  Budget balance ' + (budgetBalance === null ? 'Not recorded' : money(budgetBalance)) +
+        '  Stability ' + scoreLabel + (stabilityStatus ? ' · ' + stabilityStatus : '');
+      if (econNode.textContent !== economyText) econNode.textContent = economyText;
+      var economyTitle = 'GDP, Treasury, annual budget balance and macro stability are read from the selected country Finance/Macro Stability game state. Missing values remain Not recorded.';
+      if (econNode.title !== economyTitle) econNode.title = economyTitle;
     }
 
     var assetNode = g.document.querySelector('[data-omega-assets]');
-    if (assetNode) {
+    if (assetNode && refreshCountryResources) {
       var values = [];
       var inventory = country ? resourceInventory(country) : null;
       if (inventory) {
@@ -319,10 +361,12 @@
       var economyBucket = country ? findCountryBucket('economy', country) : null;
       var energy = number(economyBucket && (economyBucket.energyProduction ?? economyBucket.energyProduced ?? economyBucket.electricityProduction));
       if (energy !== null) values.push('Energy ' + compact(energy) + (economyBucket.energyUnit || economyBucket.powerUnit ? ' ' + (economyBucket.energyUnit || economyBucket.powerUnit) : ''));
-      assetNode.textContent = values.length ? values.slice(0, 5).join('  ·  ') : 'Assets/resources not recorded';
+      var assetsText = values.length ? values.slice(0, 5).join('  ·  ') : 'Assets/resources not recorded';
+      if (assetNode.textContent !== assetsText) assetNode.textContent = assetsText;
     }
+    lastResourceHudCountry = country || null;
+    lastResourceHudTurn = turn;
   }
-
   function openDb() {
     return new Promise(function (resolve, reject) {
       if (!g.indexedDB) { reject(new Error('INDEXED_DB_UNAVAILABLE')); return; }
@@ -1034,7 +1078,8 @@
       updateHud();
     });
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_COMPLETED', updateHud);
-    g.addEventListener && g.addEventListener('OMEGA_FINANCE_STATE_UPDATED', updateHud);
+    g.addEventListener && g.addEventListener('OMEGA_FINANCE_STATE_UPDATED', scheduleHudRefresh);
+    g.addEventListener && g.addEventListener('OMEGA_MACRO_STABILITY_TURN_PROCESSED', scheduleHudRefresh);
     [
       'MINISTRY_STATE_CHANGED', 'RESOURCE_STATE_UPDATED', 'OMEGA_FINANCE_STATE_UPDATED',
       'FINANCE_STATE_UPDATED', 'DECISION_ENACTED', 'POLICY_VOTE_CAST',
@@ -1047,7 +1092,7 @@
     ['COUNTRY_SELECTED', 'COUNTRY_CHANGED', 'OMEGA_COUNTRY_SELECTED', 'OMEGA_PLAYER_COUNTRY_CHANGED', 'MINISTRY_SELECTED'].forEach(function (type) {
       g.addEventListener && g.addEventListener(type, function () { updateHud(); scheduleStateSave(); });
     });
-    g.addEventListener && g.addEventListener('RESOURCE_STATE_UPDATED', updateHud);
+    g.addEventListener && g.addEventListener('RESOURCE_STATE_UPDATED', scheduleHudRefresh);
     g.addEventListener && g.addEventListener('OMEGA_READY', function () {
       restoreOnReady().catch(function () {
         restoreFailed = true;

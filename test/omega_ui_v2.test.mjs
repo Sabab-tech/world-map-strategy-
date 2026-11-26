@@ -3913,6 +3913,7 @@ test('market presentation keeps raw, factory-role and food lanes separate and us
     'Autonomous trade, Resource Research, identity runtime and later shell changes must invalidate the previously cached v129 shell');
   for (const asset of [
     './omega_global_trade_system.js',
+    './omega_phase6_national_population_capacity_runtime_v1.js',
     './omega_black_market_system_v1.js',
     './omega_sanction_response_runtime_v1.js',
     './omega_black_market_network_v1.js',

@@ -5,6 +5,7 @@
   'use strict';
 
   var ROUTES = ['map', 'overview', 'government', 'economy', 'more', 'industry', 'reports', 'religion', 'autonomous-development'];
+  var activeRoot = null;
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]; }); }
   function canonicalCountry(value) {
     var raw = String(value == null ? '' : value).trim();
@@ -25,6 +26,22 @@
     return '';
   }
   function stateFor(root) { return root && root.__omegaUIV2State; }
+  function getActiveContext(root) {
+    var state = stateFor(root || activeRoot);
+    if (!state) return null;
+    return {
+      route:state.route || 'map',
+      ministryId:state.ministryId || null,
+      countryId:state.countryId || null,
+      section:state.section || 'dashboard',
+      governmentView:state.governmentView || 'executive-ministry'
+    };
+  }
+  function publishViewContext(root) {
+    var context = getActiveContext(root);
+    if (typeof g.dispatchEvent !== 'function' || typeof g.CustomEvent !== 'function') return;
+    try { g.dispatchEvent(new g.CustomEvent('OMEGA_MINISTRY_VIEW_CHANGED', { detail:context || { route:'map', ministryId:null, countryId:null } })); } catch (_) {}
+  }
   function rotateScreenWork(state) {
     if (!state) return null;
     var previous = state.screenAbortController;
@@ -111,6 +128,7 @@
     return 'ministry-detail';
   }
   function refreshAfterStateChange(root, deferRender) {
+    publishViewContext(root);
     return deferRender ? scheduleNavigationRender(root) : render(root);
   }
   function openMinistry(root, id, deferRender) {
@@ -802,6 +820,8 @@
       countryId:canonicalCountry(options.countryId || currentCountry() || ''),
       history:initialHistory, options:options
     };
+    activeRoot = root;
+    publishViewContext(root);
     return Object.assign({ mounted:true }, render(root));
   }
   function unmount(root) {
@@ -816,10 +836,12 @@
     state.resourceScopeActive = false;
     invalidatePendingRender(state);
     root.innerHTML = '';
+    if (activeRoot === root) activeRoot = null;
     delete root.__omegaUIV2State;
+    publishViewContext(null);
     root.classList.remove('omega-v2-app-root');
     return { ok:true };
   }
 
-  g.OmegaUIV2App = Object.freeze({ version:'1.0.0', mount:mount, render:render, navigate:navigate, back:back, openMinistry:openMinistry, unmount:unmount, destinations:ROUTES.slice() });
+  g.OmegaUIV2App = Object.freeze({ version:'1.0.0', mount:mount, render:render, navigate:navigate, back:back, openMinistry:openMinistry, getActiveContext:getActiveContext, unmount:unmount, destinations:ROUTES.slice() });
 })(typeof window !== 'undefined' ? window : globalThis);
