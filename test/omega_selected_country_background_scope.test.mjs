@@ -47,7 +47,7 @@ test('resource economy and mine/action pipelines never call world-wide processin
   const resourcePhase = between(economy, 'async function runCheckpointedResourceExtraction(countryId,endowment){', 'function runTurnCore(cid){');
   assert.match(resourcePhase, /endowment\.startCountryProduction\(cid,null,\{[\s\S]*?productionPeriodTurn:periodTurn,productionPeriodId:periodId/,
     'resource catch-up must retain the canonical country extraction entry point and pass the daily period identity');
-  assert.match(resourcePhase, /canonical\(session\.playerCountryId\)===cid/,
+  assert.match(resourcePhase, /!session\.playerCountryId\|\|canonical\(session\.playerCountryId\)!==cid/,
     'checkpoint scope must remain bound to the active player country');
   assert.match(resourcePhase, /endowment\.startCountryProduction\(cid,null,\{skipHydrationIfReady:true\}\)/,
     'legacy runtime fallback must remain available when checkpoint APIs are absent');
