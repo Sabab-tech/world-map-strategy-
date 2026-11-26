@@ -364,6 +364,23 @@ assert.ok(countryRefresh.refresh?.resourceCount>0,JSON.stringify(countryRefresh.
 assert.ok(countryRefresh.refresh?.yieldCount>0,JSON.stringify(countryRefresh.refresh));
 assert.ok(marketRefreshYieldCount>0,'the market refresh must yield control to the browser between workload slices');
 assert.equal(market.diagnostics().lastCountryRefresh?.scheduler,'COOPERATIVE_MAIN_THREAD_SLICES');
+const committedBooks=globalThis.__OmegaMarketBooks;
+const secondRefreshTurn=refreshTurn+1;
+globalThis.Game.state.simulation.turn=secondRefreshTurn;
+const secondDayTask=market.rebuildCountry(refreshPlayerCountryId);
+assert.equal(typeof secondDayTask?.then,'function');
+assert.equal(market.rebuild(),committedBooks,
+  'a synchronous ministry/UI market read must keep the last committed snapshot while a new day refresh is in flight');
+const [secondDayRefresh,concurrentSecondDayRefresh]=await Promise.all([
+  secondDayTask,market.rebuildCountry(refreshPlayerCountryId)
+]);
+assert.equal(secondDayRefresh.status,'COMPLETED',JSON.stringify(secondDayRefresh));
+assert.equal(secondDayRefresh.turn,secondRefreshTurn);
+assert.deepEqual(concurrentSecondDayRefresh,secondDayRefresh,
+  'concurrent day refresh requests must share one committed market build');
+assert.ok(secondDayRefresh.refresh?.yieldCount>0,JSON.stringify(secondDayRefresh.refresh));
+assert.equal((await market.rebuildCountry(refreshPlayerCountryId)).status,'ALREADY_UPDATED',
+  'a committed day cannot rebuild or publish the same market twice');
 assert.equal(market.getCompanyResearchRequests(refreshPlayerCountryId,'AURORA_INDUSTRIAL_GROUP')[0]?.status,'RESOLVED',
   'queued market research must still resolve after the cooperative refresh');
 
