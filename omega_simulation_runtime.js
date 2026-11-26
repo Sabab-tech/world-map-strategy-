@@ -1219,7 +1219,8 @@
       if(this.status!=='RUNNING')return {steps:0,turn:this.clock.turn,status:this.status};
       this.frameInProgress=true;
       try{
-        this.world.hydrateCompatibility();
+        // Compatibility roots are hydrated in step() when a real game day commits.
+        // Sub-day clock frames only accumulate elapsed time and must not rescan world roots.
         const combinedDelta=delta+this.pendingRealDeltaMs;
         this.pendingRealDeltaMs=0;
         const scheduledSteps=this.clock.consumeRealDelta(combinedDelta);
