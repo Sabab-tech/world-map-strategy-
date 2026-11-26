@@ -851,7 +851,10 @@
     publishViewContext(root);
     return Object.assign({ mounted:true }, render(root));
   }
-  function unmount(root) {$1    var state = root.__omegaUIV2State;
+  function unmount(root) {
+    if (typeof root === 'string') root = g.document && g.document.querySelector(root);
+    if (!root || !root.__omegaUIV2State) return { ok:false, code:'UI_V2_NOT_MOUNTED' };
+    var state = root.__omegaUIV2State;
     disposeCurrentScreen(root, state);
     var main = root.querySelector && root.querySelector('[data-omega-v2-main]');
     var resource = g.OmegaUIV2ResourceMinistry;
