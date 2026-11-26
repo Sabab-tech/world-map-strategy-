@@ -8,7 +8,7 @@
 
 Do not add a second simulation clock or a parallel world-economy scheduler. The repository already has one authoritative `Omega.Simulation` turn coordinator, a bounded `Omega.WorldSimulationScheduler` for country autonomy/macro work, and a player-country Resource Economy participant. The resource participant currently owns a sequential resource-to-industry-to-market turn. The next implementation must evolve this existing ownership without duplicating domain ledgers or changing the canonical player-country/session identity.
 
-This E1 change is audit-only: no production runtime, game data, save schema, economic formula, workflow, or existing test has been modified.
+This E1 change is audit-only: no production runtime, game data, save schema, economic formula, or existing test has been modified. The existing daily-clock workflow is extended only to run the focused audit regression test.
 
 ## 1. Existing execution ownership
 
