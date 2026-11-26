@@ -239,8 +239,8 @@ test("UI v2 screen renderers are lazy-loaded and cached on first use with upgrad
   for (const file of lazyScreens) {
     assert.equal(html.includes('src="' + file + '"'), false,
       file + " must not execute from the initial HTML shell");
-    assert.equal(core.includes('"./' + file + '"'), false,
-      file + " must not be fetched as part of the initial core shell");
+    assert.equal(core.includes('"./' + file + '"'), true,
+      file + " must remain precached for offline use without being referenced by the initial HTML shell");
     assert.ok(lazy.includes('"./' + file + '"'),
       file + " must be registered for lazy cache migration");
   }
