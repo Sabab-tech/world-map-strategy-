@@ -1290,6 +1290,44 @@ test('a buyer bid arriving after factory output upgrades the player seller offer
 });
 
 
+test('StateTransaction.peek is zero-copy until staged child writes, and parent reads include those writes',()=>{
+  const source=readFileSync('omega_ministry_state_transaction.js','utf8');
+  const state={resource:{BGD:{inventory:{crude_oil:10,iron_ore:20}}}};
+  const win={Game:{state},gameState:state,console};
+  win.window=win;
+  const context=vm.createContext({window:win,globalThis:win,console,Date,JSON,Number,String,Math,Object,Array,Set,Map,WeakMap,Promise});
+  vm.runInContext(source,context,{filename:'omega_ministry_state_transaction.js'});
+  const api=win.Omega&&win.Omega.MinistryStateTransaction;
+  assert.ok(api,'the canonical state transaction API must load');
+  const transaction=api.create('resource','BGD',1,'INVENTORY-PEEK-01',state);
+  const basePeek=transaction.peek('resource.inventory');
+  assert.equal(basePeek,state.resource.BGD.inventory,
+    'an unchanged read-only peek should not allocate another inventory snapshot');
+  const detached=transaction.get('resource.inventory');
+  assert.notEqual(detached,basePeek,'get() must preserve its detached-copy contract');
+  detached.crude_oil=999;
+  assert.equal(basePeek.crude_oil,10,'mutating get() must not affect authoritative state');
+
+  transaction.set('resource.inventory.crude_oil',7);
+  const effective=transaction.peek('resource.inventory');
+  assert.notEqual(effective,basePeek,'a parent read after a child write must materialize an overlay');
+  assert.equal(effective.crude_oil,7,'parent reads must include staged child-path writes');
+  assert.equal(effective.iron_ore,20,'unmodified balances must remain unchanged');
+  assert.equal(transaction.peek('resource.inventory.crude_oil'),7,
+    'the exact child read must see its staged value');
+  effective.iron_ore=123;
+  assert.equal(state.resource.BGD.inventory.iron_ore,20,
+    'a materialized overlay must remain detached from the authoritative base');
+
+  transaction.set('resource.inventory.iron_ore',18);
+  const finalRead=transaction.get('resource.inventory');
+  assert.equal(finalRead.crude_oil,7);
+  assert.equal(finalRead.iron_ore,18);
+  transaction.commit();
+  assert.equal(state.resource.BGD.inventory.crude_oil,7);
+  assert.equal(state.resource.BGD.inventory.iron_ore,18);
+});
+
 test('flat inventory snapshots copy scalar balances directly while preserving nested isolation',()=>{
   const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   const start=source.indexOf('function clone(v,seen){');
