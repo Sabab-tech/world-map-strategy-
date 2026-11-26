@@ -1304,8 +1304,8 @@ test('industrial production phase is session-scoped, sequential and warehouse-re
     'industrial checkpoints must use the canonical player country and active session');
   assert.match(economySource,/phase:'INDUSTRIAL_PRODUCTION',\s*lastProcessedEventId:periodId/,
     'the industrial checkpoint advances only after the period-specific reconciliation');
-  assert.match(economySource,/if\(!reconciliation\?\.ok\)\{\s*api\.fail\(/,
-    'failed output reconciliation must leave the period pending for recovery');
+  assert.match(economySource,/if\(!reconciliation\?\.ok\)\{\s*industrial\.markProductionPeriodRecovery\(cid,periodId,[\s\S]{0,240}?\);\s*api\.fail\(/,
+    'failed output reconciliation must mark the industrial journal recoverable and leave its checkpoint pending');
   assert.match(industrialSource,/function reconcileProductionPeriod\(countryId,periodTurn,periodId,runResult\)/,
     'the industrial authority must reconcile finished goods against existing warehouse and ledgers');
   assert.match(industrialSource,/productionPeriodId:productionPeriodId\(\)/,
