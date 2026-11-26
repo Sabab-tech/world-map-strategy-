@@ -152,9 +152,19 @@ const CORE_ASSETS = [
   "./assets/ministers/health.svg",
   "./assets/ui-photos/education-university.svg",
 "./omega_ui_v2/module-loader.js",
+  "./omega_ui_v2/screens/government.js",
+  "./omega_ui_v2/screens/ministry-detail.js",
+  "./omega_ui_v2/screens/economy.js",
+  "./omega_ui_v2/screens/resource-ministry.js",
+  "./omega_ui_v2/screens/mine-detail.js",
+  "./omega_ui_v2/screens/industry.js",
+  "./omega_ui_v2/screens/home-affairs.js",
+  "./omega_ui_v2/screens/police-fleet.js",
+  "./omega_ui_v2/screens/reports.js",
+  "./omega_ui_v2/screens/autonomous-development.js",
   ];
-// Route renderers are deliberately excluded from CORE_ASSETS. They are cached when
-// first requested, while existing offline copies are migrated during an app update.
+// Route renderers stay in the offline precache, but are not referenced by index.html.
+// The UI module loader evaluates each renderer only when its route is first opened.
 const LAZY_SCREEN_ASSETS = [
   "./omega_ui_v2/screens/government.js",
   "./omega_ui_v2/screens/ministry-detail.js",
