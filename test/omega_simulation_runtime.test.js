@@ -689,3 +689,112 @@ test('manual batch respects an external pause when the prior session was running
   assert.equal(sim.status, 'PAUSED', 'an external pause must not be overwritten by the pre-batch RUNNING state');
   assert.equal(sim.clock.paused, true);
 });
+
+
+test('economy phase checkpoints accumulate elapsed turns without skipping pending days',()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const sim=sandbox.Omega.Simulation,session=sim.createSession({playerCountryId:'USA'});
+  const checkpoints=sandbox.Omega.EconomyPhaseCheckpoints;
+  const scope={domain:'resources',countryId:'USA',sessionId:session.sessionId};
+  const started=checkpoints.begin({...scope,executionId:'RES-USA-3',targetTurn:3});
+  assert.equal(started.status,'STARTED');
+  assert.equal(started.checkpoint.pendingElapsedDays,3);
+  const partial=checkpoints.commit({...scope,executionId:'RES-USA-3',processedThroughTurn:2,
+    processedDate:'2026-11-27',phase:'RESOURCE_RECONCILIATION',
+    reconciliation:{status:'RECONCILED',evidenceId:'RESOURCE-LEDGER-2'}});
+  assert.equal(partial.status,'COMMITTED');
+  assert.equal(partial.checkpoint.lastProcessedTurn,2);
+  assert.equal(partial.checkpoint.pendingElapsedDays,1);
+  assert.equal(partial.checkpoint.status,'CATCHING_UP');
+  const next=checkpoints.begin({...scope,executionId:'RES-USA-4',targetTurn:4});
+  assert.equal(next.status,'STARTED');
+  assert.equal(next.execution.fromTurn,3);
+  assert.equal(next.execution.throughTurn,4);
+  assert.equal(next.checkpoint.pendingElapsedDays,2);
+  const complete=checkpoints.commit({...scope,executionId:'RES-USA-4',processedThroughTurn:4,
+    processedDate:'2026-11-29',phase:'RESOURCE_RECONCILIATION',
+    reconciliation:{status:'RECONCILED',evidenceId:'RESOURCE-LEDGER-4'}});
+  assert.equal(complete.checkpoint.lastProcessedTurn,4);
+  assert.equal(complete.checkpoint.pendingElapsedDays,0);
+  assert.equal(complete.checkpoint.status,'READY');
+  assert.equal(state.simulation.economyPhaseArchitectureV1.schemaVersion,1);
+});
+
+test('failed economy phase cannot advance and recovery requires reconciliation evidence',()=>{
+  const {sandbox}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const sim=sandbox.Omega.Simulation,session=sim.createSession({playerCountryId:'USA'});
+  const checkpoints=sandbox.Omega.EconomyPhaseCheckpoints;
+  const scope={domain:'industrial',countryId:'USA',sessionId:session.sessionId};
+  assert.equal(checkpoints.begin({...scope,executionId:'IND-USA-2',targetTurn:2}).status,'STARTED');
+  const failed=checkpoints.fail({...scope,executionId:'IND-USA-2',error:'WAREHOUSE_RECONCILIATION_FAILED'});
+  assert.equal(failed.status,'FAILED');
+  assert.equal(failed.checkpoint.lastProcessedTurn,0);
+  assert.equal(failed.checkpoint.pendingElapsedDays,2);
+  assert.equal(checkpoints.resume({...scope,executionId:'IND-USA-2'}).status,'RECONCILIATION_REQUIRED');
+  const resumed=checkpoints.resume({...scope,executionId:'IND-USA-2',
+    reconciliation:{status:'RECONCILED',evidenceId:'WAREHOUSE-REVIEW-2'}});
+  assert.equal(resumed.status,'RESUMED');
+  const committed=checkpoints.commit({...scope,executionId:'IND-USA-2',processedThroughTurn:2,
+    phase:'INDUSTRIAL_RECONCILIATION',
+    reconciliation:{status:'RECONCILED',evidenceId:'WAREHOUSE-LEDGER-2'}});
+  assert.equal(committed.status,'COMMITTED');
+  assert.equal(committed.checkpoint.lastProcessedTurn,2);
+});
+
+test('economy mutation journal suppresses duplicates and only retries after NOT_POSTED proof',()=>{
+  const {sandbox}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const sim=sandbox.Omega.Simulation,session=sim.createSession({playerCountryId:'USA'});
+  const checkpoints=sandbox.Omega.EconomyPhaseCheckpoints;
+  const scope={domain:'resources',countryId:'USA',sessionId:session.sessionId,
+    executionId:'RES-USA-1',operationId:'MINE_ROYALTY_POST'};
+  const generated=checkpoints.idempotencyKey(scope);
+  assert.equal(generated.status,'OK');
+  const mutation={...scope,key:generated.key};
+  assert.equal(checkpoints.reserveMutation(mutation).status,'RESERVED');
+  assert.equal(checkpoints.reserveMutation(mutation).status,'RECONCILIATION_REQUIRED');
+  assert.equal(checkpoints.completeMutation({...mutation,evidence:{status:'POSTED',evidenceId:'TREASURY-LEDGER-1'}}).status,'POSTED');
+  assert.equal(checkpoints.reserveMutation(mutation).status,'DUPLICATE');
+  const second={...scope,operationId:'WAREHOUSE_CREDIT'};
+  second.key=checkpoints.idempotencyKey(second).key;
+  assert.equal(checkpoints.reserveMutation(second).status,'RESERVED');
+  assert.equal(checkpoints.reconcileMutation({...second,evidence:{status:'NOT_POSTED',evidenceId:'WAREHOUSE-AUDIT-1'}}).status,'RETRYABLE');
+  assert.equal(checkpoints.reserveMutation(second).status,'RETRY_ALLOWED');
+  assert.equal(checkpoints.reserveMutation({...mutation,countryId:'CAN'}).reason,'PLAYER_SESSION_IDENTITY_MISMATCH');
+});
+
+test('economy phase checkpoints and mutation journal survive canonical save/load',()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const sim=sandbox.Omega.Simulation,session=sim.createSession({playerCountryId:'USA'});
+  const checkpoints=sandbox.Omega.EconomyPhaseCheckpoints;
+  const scope={domain:'resources',countryId:'USA',sessionId:session.sessionId};
+  checkpoints.begin({...scope,executionId:'SAVE-RECOVERY-1',targetTurn:5});
+  const key=checkpoints.idempotencyKey({...scope,executionId:'SAVE-RECOVERY-1',operationId:'MINE_OUTPUT'}).key;
+  checkpoints.reserveMutation({...scope,executionId:'SAVE-RECOVERY-1',operationId:'MINE_OUTPUT',key});
+  const saved=sim.saveState();
+  assert.equal(saved.worldState.simulation.economyPhaseArchitectureV1.checkpoints[
+    'resources|USA|'+encodeURIComponent(session.sessionId)].status,'RUNNING');
+  state.simulation.turn=99;
+  sim.loadState(saved);
+  const restored=checkpoints.get(scope);
+  assert.equal(restored.checkpoint.status,'RUNNING');
+  assert.equal(restored.checkpoint.pendingElapsedDays,5);
+  assert.equal(checkpoints.reserveMutation({...scope,executionId:'SAVE-RECOVERY-1',operationId:'MINE_OUTPUT',key}).status,'RECONCILIATION_REQUIRED');
+  assert.equal(sim.diagnostics().lastLoadIntegrity,'VERIFIED');
+});
+
+test('checkpoint foundation preserves player-country and active-session identity and keeps Food disabled',()=>{
+  const {sandbox}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const sim=sandbox.Omega.Simulation,session=sim.createSession({playerCountryId:'USA'});
+  const checkpoints=sandbox.Omega.EconomyPhaseCheckpoints;
+  assert.equal(checkpoints.begin({domain:'resources',countryId:'CAN',sessionId:session.sessionId,
+    executionId:'WRONG-COUNTRY',targetTurn:1}).reason,'PLAYER_SESSION_IDENTITY_MISMATCH');
+  assert.equal(checkpoints.begin({domain:'resources',countryId:'USA',sessionId:'OLD-SESSION',
+    executionId:'OLD-SESSION',targetTurn:1}).reason,'PLAYER_SESSION_IDENTITY_MISMATCH');
+  assert.equal(checkpoints.begin({domain:'food',countryId:'USA',sessionId:session.sessionId,
+    executionId:'FOOD-1',targetTurn:1}).reason,'DOMAIN_NOT_ENABLED');
+});
