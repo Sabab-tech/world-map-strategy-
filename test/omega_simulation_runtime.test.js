@@ -691,6 +691,28 @@ test('manual batch respects an external pause when the prior session was running
 });
 
 
+
+test('economy phase checkpoint seeds a legacy baseline once without replaying old turns',()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const sim=sandbox.Omega.Simulation,session=sim.createSession({playerCountryId:'USA',startTurn:27});
+  const checkpoints=sandbox.Omega.EconomyPhaseCheckpoints;
+  const scope={domain:'resources',countryId:'USA',sessionId:session.sessionId};
+  const seeded=checkpoints.seed({...scope,baselineTurn:27,source:'LEGACY_SAVE_MIGRATION'});
+  assert.equal(seeded.status,'SEEDED');
+  assert.equal(seeded.checkpoint.lastProcessedTurn,27);
+  assert.equal(seeded.checkpoint.pendingElapsedDays,0);
+  assert.equal(state.simulation.economyPhaseArchitectureV1.checkpoints[
+    'resources|USA|'+encodeURIComponent(session.sessionId)
+  ]?.baseline?.turn,27);
+  assert.equal(checkpoints.seed({...scope,baselineTurn:27,source:'LEGACY_SAVE_MIGRATION'}).status,'ALREADY_SEEDED');
+  assert.equal(checkpoints.seed({...scope,baselineTurn:12,source:'LEGACY_SAVE_MIGRATION'}).status,'ALREADY_INITIALIZED');
+  const next=checkpoints.begin({...scope,executionId:'RES-USA-28',targetTurn:29});
+  assert.equal(next.status,'STARTED');
+  assert.equal(next.execution.fromTurn,28,'legacy turns before the seeded baseline must never be replayed');
+  assert.equal(next.checkpoint.pendingElapsedDays,2);
+});
+
 test('economy phase checkpoints accumulate elapsed turns without skipping pending days',()=>{
   const {sandbox,state}=makeSandbox();
   loadScript('omega_simulation_runtime.js',sandbox);
