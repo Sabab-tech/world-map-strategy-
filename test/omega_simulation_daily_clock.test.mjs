@@ -343,7 +343,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(lifecycle, /function updateClockProgress\(\)/);
   assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
     'the compact two-button HUD must not repaint its hidden progress row on every paced clock frame');
-  assert.match(lifecycle, /function queueHudUpdate\(\)/,
+  assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/,
     'bursty lifecycle events must share one animation-frame HUD refresh');
   assert.match(coordinator, /OMEGA_SIMULATION_CLOCK_TICK/);
   const topHeaderStart = index.indexOf('id="top-status-bar"');
@@ -939,12 +939,12 @@ test('compact gameplay clock dock exposes only play and pause actions', () => {
   assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
   assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
   assert.match(serviceWorker, /omega-offline-atlas-shell-v151/);
-  assert.match(lifecycle, /function queueHudUpdate\(\)/);
+  assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/);
   assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
   assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
     'the hidden progress row must not trigger DOM writes twice per second');
-  const hudStart = lifecycle.indexOf('function updateHud()');
-  const hudEnd = lifecycle.indexOf('function queueHudUpdate()', hudStart);
+  const hudStart = lifecycle.indexOf('function updateHud(');
+  const hudEnd = lifecycle.indexOf('function queueHudUpdate(', hudStart);
   assert.ok(hudStart >= 0 && hudEnd > hudStart);
   assert.doesNotMatch(lifecycle.slice(hudStart, hudEnd), /updateClockProgress\(\)/,
     'a committed-turn HUD update must not repaint a hidden clock-progress row');
