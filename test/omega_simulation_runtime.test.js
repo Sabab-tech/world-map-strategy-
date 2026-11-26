@@ -48,7 +48,7 @@ function makeSandbox(){
 }
 
 test('canonical simulation authority owns the clock and ordered turn pipeline',async()=>{
-  const {sandbox,state}=makeSandbox();
+  const {sandbox,state,events}=makeSandbox();
   loadScript('omega_simulation_runtime.js',sandbox);
 
   let worldSteps=0;
