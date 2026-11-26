@@ -3452,7 +3452,7 @@
       // World market data may be read as a shared reference; state-changing trade,
       // inventory and production ticks are invoked only for the player country.
       if(g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.rebuildCountry==='function'){
-        try{measure('global-market-rebuild-country',function(){return g.OmegaGlobalMarket.rebuildCountry(cid);});}catch(_){}
+        try{await measure('global-market-rebuild-country',function(){return g.OmegaGlobalMarket.rebuildCountry(cid);});}catch(_){}
       }
       if(g.OmegaGlobalTrade&&typeof g.OmegaGlobalTrade.processCountry==='function'){
         try{measure('global-trade-process-country',function(){return g.OmegaGlobalTrade.processCountry(cid);});}catch(_){}

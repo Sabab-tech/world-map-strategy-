@@ -382,7 +382,7 @@ test('Audit #1, #2, #3, #6: Price provenance blocks fake reference-price sales, 
   assert.equal(restored.state.finance.BGD.available, 47650);
 });
 
-test('Audit #7: Company market research queue resolves in Global Market and syncs into Private Enterprise Lifecycle', () => {
+test('Audit #7: Company market research queue resolves in Global Market and syncs into Private Enterprise Lifecycle', async () => {
   const initialState = {
     simulation: { turn: 10, session: { playerCountryId: 'BGD' } },
     finance: { BGD: { available: 100000, currencyCode: 'BDT' } },
@@ -419,7 +419,7 @@ test('Audit #7: Company market research queue resolves in Global Market and sync
   };
 
   // rebuild triggers automatic resolveCompanyResearch
-  market.rebuildCountry('BGD');
+  await market.rebuildCountry('BGD');
   const resolvedQueue = market.getCompanyResearchRequests('BGD', 'APEX');
   assert.equal(resolvedQueue[0].status, 'RESOLVED');
   assert.equal(resolvedQueue[0].responseStatus, 'MARKET_EVIDENCE_OBSERVED');

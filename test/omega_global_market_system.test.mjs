@@ -328,4 +328,60 @@ assert.equal(repeatedResearchSubmission.duplicate,true,'the same research reques
 assert.equal(market.getCompanyResearchRequests('BGD','AURORA_INDUSTRIAL_GROUP').length,1);
 assert.equal(globalThis.Game.state.trade.BGD.importRequests.length,requestsBefore);
 
+
+const refreshTurn=Number(globalThis.Game.state.simulation.turn||0)+1;
+globalThis.Game.state.simulation.turn=refreshTurn;
+const refreshPlayerCountryId=identity.resolveCountry('BGD')?.id||'BGD';
+globalThis.Game.state.simulation.session={playerCountryId:refreshPlayerCountryId};
+const nativeMarketSetTimeout=globalThis.setTimeout;
+const marketPerformance=globalThis.performance;
+const originalMarketPerformanceNow=Object.getOwnPropertyDescriptor(marketPerformance,'now');
+let marketPerformanceNow=0,marketRefreshYieldCount=0;
+try{
+  Object.defineProperty(marketPerformance,'now',{configurable:true,value:()=>++marketPerformanceNow});
+}catch(_){}
+globalThis.setTimeout=function marketRefreshYieldProbe(callback,delay,...args){
+  if(Number(delay)===0)marketRefreshYieldCount++;
+  return nativeMarketSetTimeout(callback,delay,...args);
+};
+let countryRefresh;
+try{
+  const pendingRefresh=market.rebuildCountry(refreshPlayerCountryId);
+  assert.equal(typeof pendingRefresh?.then,'function',
+    'the committed-day market refresh must be asynchronous and yield instead of blocking all ministries');
+  countryRefresh=await pendingRefresh;
+}finally{
+  globalThis.setTimeout=nativeMarketSetTimeout;
+  try{
+    if(originalMarketPerformanceNow)Object.defineProperty(marketPerformance,'now',originalMarketPerformanceNow);
+    else delete marketPerformance.now;
+  }catch(_){}
+}
+assert.equal(countryRefresh.status,'COMPLETED',JSON.stringify(countryRefresh));
+assert.equal(countryRefresh.turn,refreshTurn);
+assert.ok(countryRefresh.refresh?.countryCount>=2,JSON.stringify(countryRefresh.refresh));
+assert.ok(countryRefresh.refresh?.resourceCount>0,JSON.stringify(countryRefresh.refresh));
+assert.ok(countryRefresh.refresh?.yieldCount>0,JSON.stringify(countryRefresh.refresh));
+assert.ok(marketRefreshYieldCount>0,'the market refresh must yield control to the browser between workload slices');
+assert.equal(market.diagnostics().lastCountryRefresh?.scheduler,'COOPERATIVE_MAIN_THREAD_SLICES');
+const committedBooks=globalThis.__OmegaMarketBooks;
+const secondRefreshTurn=refreshTurn+1;
+globalThis.Game.state.simulation.turn=secondRefreshTurn;
+const secondDayTask=market.rebuildCountry(refreshPlayerCountryId);
+assert.equal(typeof secondDayTask?.then,'function');
+assert.equal(market.rebuild(),committedBooks,
+  'a synchronous ministry/UI market read must keep the last committed snapshot while a new day refresh is in flight');
+const [secondDayRefresh,concurrentSecondDayRefresh]=await Promise.all([
+  secondDayTask,market.rebuildCountry(refreshPlayerCountryId)
+]);
+assert.equal(secondDayRefresh.status,'COMPLETED',JSON.stringify(secondDayRefresh));
+assert.equal(secondDayRefresh.turn,secondRefreshTurn);
+assert.deepEqual(concurrentSecondDayRefresh,secondDayRefresh,
+  'concurrent day refresh requests must share one committed market build');
+assert.ok(secondDayRefresh.refresh?.yieldCount>0,JSON.stringify(secondDayRefresh.refresh));
+assert.equal((await market.rebuildCountry(refreshPlayerCountryId)).status,'ALREADY_UPDATED',
+  'a committed day cannot rebuild or publish the same market twice');
+assert.equal(market.getCompanyResearchRequests(refreshPlayerCountryId,'AURORA_INDUSTRIAL_GROUP')[0]?.status,'RESOLVED',
+  'queued market research must still resolve after the cooperative refresh');
+
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
