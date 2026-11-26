@@ -2485,16 +2485,14 @@
   function processStorageDeteriorationHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},policy=p.policy||{},c=canonical(ctx.countryId),t=turn();
     if(policy.simulationOnly!==true)return{accepted:false,reason:'STORAGE_DETERIORATION_POLICY_MUST_BE_SIMULATION_ONLY'};
-    var inventory=ctx.stateTransaction.get('resource.inventory')||{},
-      batchesBefore=ctx.stateTransaction.get('resource.batches'),
+    var inventory=ctx.stateTransaction.peek('resource.inventory')||{},
+      batchesBefore=ctx.stateTransaction.peek('resource.batches'),
       batches=Array.isArray(batchesBefore)?batchesBefore:[],
       known=Array.isArray(p.knownResourceIds)?p.knownResourceIds:[],
       profiles=policy.profiles&&typeof policy.profiles==='object'?policy.profiles:{},
       defaultProfile=policy.defaultProfile&&typeof policy.defaultProfile==='object'?policy.defaultProfile:{},
-      observations=Array.isArray(ctx.stateTransaction.get('resource.storageDeteriorationLedger'))
-        ?ctx.stateTransaction.get('resource.storageDeteriorationLedger').slice():[],
-      ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))
-        ?ctx.stateTransaction.get('resource.inventoryLedger').slice():[],
+      observationRows=ctx.stateTransaction.peek('resource.storageDeteriorationLedger'),
+      observations=Array.isArray(observationRows)?observationRows.slice():[],
       seen={},measured=0,measuredZero=0,lossEventsCommitted=0;
     var resourceIds=known.slice();
     Object.keys(inventory).forEach(function(rid){if(!resourceIds.some(function(value){return tok(value)===tok(rid);}))resourceIds.push(rid);});
@@ -2547,7 +2545,7 @@
     }
     // Re-read the post-write-off batch ledger before adding fractional carry.
     // Starting from the pre-write-off snapshot here would silently restore stock.
-    var persistedBatches=ctx.stateTransaction.get('resource.batches'),
+    var persistedBatches=ctx.stateTransaction.peek('resource.batches'),
       updatedBatches=Array.isArray(persistedBatches)?persistedBatches.slice():batches.slice();
     updatedBatches.forEach(function(batch,index){
       var carry=fractionalByBatch[batch&&batch.batchId];
