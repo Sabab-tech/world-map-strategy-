@@ -965,6 +965,8 @@ test('bursty finance, resource and turn events coalesce to one HUD refresh per a
   };
   const { lifecycle } = attachLifecycle(win, sim);
   await lifecycle.restore();
+  sim.clock.turn = 1;
+  gameState.simulation.turn = 1;
   resourceHudUpdates = 0;
 
   const event = type => win.dispatchEvent(new win.CustomEvent(type));
@@ -990,8 +992,8 @@ test('bursty finance, resource and turn events coalesce to one HUD refresh per a
   assert.equal(resourceHudUpdates, 1,
     'Finance updates during the same game turn must not rebuild the resource HUD');
 
-  sim.clock.turn = 1;
-  gameState.simulation.turn = 1;
+  sim.clock.turn = 2;
+  gameState.simulation.turn = 2;
   event('OMEGA_SIMULATION_TURN_COMMITTED');
   assert.equal(queuedFrames.length, 1);
   queuedFrames.shift()();
@@ -1023,8 +1025,8 @@ test('the game-time HUD updates budget balance and macro stability only from com
   };
   const { lifecycle } = attachLifecycle(win,sim,nodes);
   lifecycle.updateHud();
-  assert.match(economyNode.textContent,/Budget balance -\\$125K/);
-  assert.match(economyNode.textContent,/Stability 61\\.5\\/100/);
+  assert.match(economyNode.textContent,/Budget balance -\$125K/);
+  assert.match(economyNode.textContent,/Stability 61\.5\/100/);
 
   indicators = {
     gdpUsd:9400000,
@@ -1037,7 +1039,7 @@ test('the game-time HUD updates budget balance and macro stability only from com
   win.dispatchEvent(new win.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED',{detail:{simulationTurn:1}}));
   assert.equal(queuedFrames.length,1,'the committed turn should schedule a single HUD frame');
   queuedFrames.shift()();
-  assert.match(economyNode.textContent,/Budget balance \\$275K/);
-  assert.match(economyNode.textContent,/Stability 74\\.2\\/100/);
+  assert.match(economyNode.textContent,/Budget balance \$275K/);
+  assert.match(economyNode.textContent,/Stability 74\.2\/100/);
   assert.match(economyNode.textContent,/STABLE/);
 });
