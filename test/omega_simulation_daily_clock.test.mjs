@@ -993,6 +993,7 @@ test('bursty finance, resource and turn events coalesce to one HUD refresh per a
     'Finance updates during the same game turn must not rebuild the resource HUD');
 
   event('RESOURCE_STATE_UPDATED');
+  event('OMEGA_RESOURCE_ECONOMY_UPDATED');
   event('RESOURCE_STATE_UPDATED');
   assert.equal(queuedFrames.length, 1,
     'same-turn resource change events must share one scheduled HUD refresh');
