@@ -1290,6 +1290,39 @@ test('a buyer bid arriving after factory output upgrades the player seller offer
 });
 
 
+test('flat inventory snapshots copy scalar balances directly while preserving nested isolation',()=>{
+  const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  const start=source.indexOf('function clone(v,seen){');
+  const end=source.indexOf('function num(v)',start);
+  assert.ok(start>=0&&end>start,'the economy runtime must define its inventory copy helpers');
+  const helpers=source.slice(start,end);
+  const cloneInventory=vm.runInNewContext('(function(){'+helpers+';return cloneInventoryQuantities;})()');
+  const nested={value:7};nested.self=nested;
+  const input={crude_oil:125,iron_ore:50,unknown:null,nested};
+  Object.defineProperty(input,'__proto__',{value:{polluted:true},enumerable:true});
+  Object.defineProperty(input,'constructor',{value:{unsafe:true},enumerable:true});
+  input.ignored=undefined;
+  input.fn=function ignored(){};
+  const snapshot=cloneInventory(input);
+  assert.notEqual(snapshot,input,'the quantity map itself must be detached');
+  assert.deepEqual(JSON.parse(JSON.stringify(snapshot)),{
+    crude_oil:125,iron_ore:50,unknown:null,nested:{value:7,self:'[Circular]'}
+  },'scalar quantities remain unchanged and nested legacy values remain serializable');
+  assert.notEqual(snapshot.nested,nested,'nested object values retain deep isolation');
+  assert.equal(snapshot.nested.self,snapshot.nested,'nested cycles remain supported');
+  assert.equal(Object.prototype.hasOwnProperty.call(snapshot,'__proto__'),false);
+  assert.equal(Object.prototype.hasOwnProperty.call(snapshot,'constructor'),false);
+  assert.equal(Object.prototype.hasOwnProperty.call(snapshot,'ignored'),false);
+  assert.equal(Object.prototype.hasOwnProperty.call(snapshot,'fn'),false);
+  assert.equal(nested.value,7,'snapshotting must not mutate authoritative inventory entries');
+  assert.match(source,/inv=cloneInventoryQuantities\(invBefore\)/,
+    'resource transactions must use the specialized copy for flat inventory maps');
+  assert.match(source,/inventory-snapshot-before'[\s\S]{0,180}cloneInventoryQuantities\(rs\.inventory/,
+    'finalization must avoid recursive cloning for the before inventory snapshot');
+  assert.match(source,/inventory-snapshot-after'[\s\S]{0,180}cloneInventoryQuantities\(afterState\.inventory/,
+    'finalization must avoid recursive cloning for the after inventory snapshot');
+});
+
 test('industrial production phase is session-scoped, sequential and warehouse-reconciled before checkpoint commit',()=>{
   const simulationSource=readFileSync('omega_simulation_runtime.js','utf8');
   const industrialSource=readFileSync('omega_resource_industrial_network_v1.js','utf8');
