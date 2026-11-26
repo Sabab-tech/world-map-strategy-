@@ -3019,6 +3019,7 @@
       var batchQuantity=num(batch?.quantity??batch?.remainingQuantity);
       var lotQuantity=num(lot?.quantity??lot?.remainingQuantity);
       if(matchingBatches.length!==1||!lot||!storedBatchIds.has(batchId)||
+         String(batch?.productionPeriodId||'')!==periodId||String(lot?.productionPeriodId||'')!==periodId||
          batchQuantity===null||lotQuantity===null||
          Math.abs(batchQuantity-quantity)>Math.max(1e-8,Math.abs(quantity)*1e-9)||
          Math.abs(lotQuantity-quantity)>Math.max(1e-8,Math.abs(quantity)*1e-9))
