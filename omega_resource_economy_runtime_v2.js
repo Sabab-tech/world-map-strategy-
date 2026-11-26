@@ -79,6 +79,45 @@
     if(Array.isArray(source.receipts))out.receipts=source.receipts.slice();
     return out;
   }
+  function resolveInventoryKey(base,pending,resourceId){
+    var key=String(resourceId??'').trim();
+    if(!key)return key;
+    if(Object.prototype.hasOwnProperty.call(pending||{},key)||Object.prototype.hasOwnProperty.call(base||{},key))return key;
+    var keys=Object.keys(base||{});
+    for(var i=0;i<keys.length;i++)if(tok(keys[i])===tok(key))return keys[i];
+    keys=Object.keys(pending||{});
+    for(var j=0;j<keys.length;j++)if(tok(keys[j])===tok(key))return keys[j];
+    return key;
+  }
+  function readInventoryQuantity(base,pending,key){
+    return Object.prototype.hasOwnProperty.call(pending||{},key)
+      ?pending[key]:(base||{})[key];
+  }
+  function stageInventoryQuantity(ctx,base,key,value){
+    var name=String(key??'').trim();
+    if(!name||name==='__proto__'||name==='constructor')return false;
+    if(name.indexOf('.')>=0){
+      var snapshot=cloneInventoryQuantities(base||{});
+      Object.defineProperty(snapshot,name,{value:value,writable:true,enumerable:true,configurable:true});
+      ctx.stateTransaction.set('resource.inventory',snapshot);
+      return true;
+    }
+    ctx.stateTransaction.set('resource.inventory.'+name,value);
+    return true;
+  }
+  function stageInventoryQuantities(ctx,base,changes){
+    var keys=Object.keys(changes||{});
+    if(!keys.length)return true;
+    if(keys.some(function(key){return !key||key==='__proto__'||key==='constructor';}))return false;
+    if(keys.some(function(key){return key.indexOf('.')>=0;})){
+      var snapshot=cloneInventoryQuantities(base||{});
+      keys.forEach(function(key){Object.defineProperty(snapshot,key,{value:changes[key],writable:true,enumerable:true,configurable:true});});
+      ctx.stateTransaction.set('resource.inventory',snapshot);
+      return true;
+    }
+    keys.forEach(function(key){ctx.stateTransaction.set('resource.inventory.'+key,changes[key]);});
+    return true;
+  }
   function num(v){if(v===null||v===undefined||v===''||typeof v==='boolean')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
   function id(v){return String(v==null?'':v).trim().toUpperCase();}
   function tok(v){return String(v==null?'':v).normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
