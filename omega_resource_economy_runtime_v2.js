@@ -2564,16 +2564,16 @@
     var p=cmd&&cmd.payload||{},c=canonical(ctx.countryId),eventId=String(p.eventId||'').trim(),
       shipmentId=String(p.shipmentId||'').trim(),rid=String(p.resourceId||'').trim(),q=num(p.quantity);
     if(!c||!eventId||!shipmentId||!rid||q===null||q<=0)return{accepted:false,reason:'SHIPMENT_LOSS_INPUT_INVALID'};
-    var existing=Array.isArray(ctx.stateTransaction.get('resource.stockLossLedger'))
-      ?ctx.stateTransaction.get('resource.stockLossLedger'):[];
+    var existingRows=ctx.stateTransaction.peek('resource.stockLossLedger'),
+      existing=Array.isArray(existingRows)?existingRows:[];
     var prior=existing.find(function(row){return String(row&&row.eventId||'')===eventId;});
     if(prior){
       if(String(prior.shipmentId||'')!==shipmentId||String(prior.resourceId||'')!==rid||
         Math.abs((num(prior.quantity)||0)-q)>1e-9)return{accepted:false,reason:'STOCK_LOSS_EVENT_IDEMPOTENCY_COLLISION'};
       return{accepted:true,duplicate:true,noStateChangeAccepted:true,event:clone(prior),remainingShipmentQuantity:prior.remainingShipmentQuantity};
     }
-    var networkBefore=ctx.stateTransaction.get('resource.industrialNetwork')||{},
-      network=clone(networkBefore),shipments=Array.isArray(network.shipments)?network.shipments:[],
+    var network=clone(ctx.stateTransaction.peek('resource.industrialNetwork')||{}),
+      shipments=Array.isArray(network.shipments)?network.shipments:[],
       shipmentIndex=shipments.findIndex(function(row){return String(row&&row.shipmentId||'')===shipmentId;});
     if(shipmentIndex<0)return{accepted:false,reason:'SHIPMENT_LOSS_SHIPMENT_NOT_FOUND',shipmentId:shipmentId};
     var shipment=Object.assign({},shipments[shipmentIndex]),shipmentType=String(shipment.shipmentType||'').toUpperCase(),
@@ -2585,12 +2585,12 @@
     var isMineHaul=shipmentType==='MINE_TO_WAREHOUSE',
       isProcessed=shipmentType==='FACTORY_INPUT'||String(shipment.sourceWarehouseId||shipment.warehouseId||'').toUpperCase().includes('PROCESSED'),
       warehousePath=isProcessed?'resource.processedWarehouse':'resource.warehouse',
-      warehouseBefore=ctx.stateTransaction.get(warehousePath)||null,
-      warehouse=warehouseBefore?clone(warehouseBefore):null,
-      invBefore=ctx.stateTransaction.get('resource.inventory')||{},inv=cloneInventoryQuantities(invBefore),
-      inventoryKey=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(function(key){return tok(key)===tok(rid);}),
-      batchesBefore=ctx.stateTransaction.get('resource.batches'),batches=Array.isArray(batchesBefore)?batchesBefore.slice():[],
-      lotsBefore=ctx.stateTransaction.get('resource.inventoryLots')||{},lots=Object.assign({},lotsBefore);
+      warehouseBefore=ctx.stateTransaction.peek(warehousePath)||null,
+      warehouse=warehouseBefore,
+      invBefore=ctx.stateTransaction.peek('resource.inventory')||{},
+      inventoryKey=resolveInventoryKey(invBefore,null,rid),
+      batchesBefore=ctx.stateTransaction.peek('resource.batches'),batches=Array.isArray(batchesBefore)?batchesBefore.slice():[],
+      lotsBefore=ctx.stateTransaction.peek('resource.inventoryLots')||{},lots=copyMapShallow(lotsBefore);
     var resourceBoundary=boundary()?.validateResourceCollection?.(batches,c);
     if(resourceBoundary&&!resourceBoundary.ok)return{accepted:false,reason:'CROSS_COUNTRY_RESOURCE_BREACH',detail:clone(resourceBoundary)};
     var sourceWarehouseBoundary=boundary()?.validateWarehouse?.(warehouse,c);
@@ -2619,7 +2619,8 @@
         flow.lastMineHeldLossTurn=turn();flowRows[flowIndex]=flow;
       }
     }else{
-      if(inventoryKey===undefined||num(inv[inventoryKey])===null||num(inv[inventoryKey])+1e-9<q)
+      var inventoryAvailable=num(invBefore[inventoryKey]);
+      if(inventoryAvailable===null||inventoryAvailable+1e-9<q)
         return{accepted:false,reason:'SHIPMENT_LOSS_INVENTORY_INSUFFICIENT'};
       if(!warehouse)return{accepted:false,reason:'SHIPMENT_LOSS_SOURCE_WAREHOUSE_UNAVAILABLE'};
       var available=warehouse.availableByResource||{},reserved=warehouse.reservedByResource||{},
@@ -2629,7 +2630,9 @@
       if(totalAvailable===null||totalAvailable+1e-9<q||totalReserved+1e-9<q)
         return{accepted:false,reason:'SHIPMENT_LOSS_WAREHOUSE_RESERVATION_MISMATCH',
           available:totalAvailable,reserved:totalReserved,requested:q};
-      inv[inventoryKey]=Math.max(0,num(inv[inventoryKey])-q);
+      var inventoryNextQuantity=Math.max(0,inventoryAvailable-q);
+      if(!stageInventoryQuantity(ctx,invBefore,inventoryKey,inventoryNextQuantity))
+        return{accepted:false,reason:'RESOURCE_INVENTORY_KEY_INVALID',resourceId:rid};
       var nextAvailable=Object.assign({},available),nextReserved=Object.assign({},reserved);
       nextAvailable[stockKey]=Math.max(0,totalAvailable-q);
       nextReserved[reserveKey]=Math.max(0,totalReserved-q);
@@ -2665,13 +2668,13 @@
       evidenceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'};
     var appended=appendStockLoss(ctx,event);
     if(!appended.accepted)return appended;
-    var inventoryLedger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))
-      ?ctx.stateTransaction.get('resource.inventoryLedger').slice():[];
+    var inventoryLedgerRows=ctx.stateTransaction.peek('resource.inventoryLedger'),
+      inventoryLedger=Array.isArray(inventoryLedgerRows)?inventoryLedgerRows.slice():[];
     inventoryLedger.push({type:'TRANSPORT_LOSS_COMMITTED',eventId:eventId,shipmentId:shipmentId,batchId:batchId,
       resourceId:rid,quantity:q,turn:turn(),periodId:'GAME_TURN_'+String(turn()),shipmentType:shipmentType});
     while(inventoryLedger.length>(num(rules().runtime.maxLedgerEntries)||2048))inventoryLedger.shift();
     ctx.stateTransaction.set('resource.batches',batches);ctx.stateTransaction.set('resource.inventoryLots',lots);
-    if(!isMineHaul){ctx.stateTransaction.set('resource.inventory',inv);ctx.stateTransaction.set(warehousePath,warehouse);}
+    if(!isMineHaul)ctx.stateTransaction.set(warehousePath,warehouse);
     ctx.stateTransaction.set('resource.industrialNetwork',network);
     ctx.stateTransaction.set('resource.inventoryLedger',inventoryLedger);
     emit('OMEGA_RESOURCE_INVENTORY_CHANGED',c,{eventId:eventId,shipmentId:shipmentId,resourceId:rid,delta:isMineHaul?0:-q,
