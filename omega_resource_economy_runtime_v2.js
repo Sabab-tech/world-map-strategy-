@@ -2893,7 +2893,7 @@
       catch(error){nationalDemand={countryId:cid,turn:turn(),status:'FAILED',reason:String(error&&error.message||error)};emit('OMEGA_RESOURCE_DEMAND_RUNTIME_HEALTH',cid,nationalDemand,'resource-economy');}
     }
     afterState=bucket(cid,'resource')||{};
-    after=measureFinalizationPhase('inventory-snapshot-after',function(){return clone(afterState.inventory||{});});
+    after=measureFinalizationPhase('inventory-snapshot-after',function(){return cloneInventoryQuantities(afterState.inventory||{});});
     Object.keys(before).forEach(function(k){keys[k]=true;});Object.keys(after).forEach(function(k){keys[k]=true;});Object.keys(keys).forEach(function(k){delta[k]=(num(after[k])||0)-(num(before[k])||0);});
     measureFinalizationPhase('publish-resource-runtime',function(){
       return dispatch('resource','OMEGA_RESOURCE_ECON_PUBLISH_RESOURCE_RUNTIME',cid,{
