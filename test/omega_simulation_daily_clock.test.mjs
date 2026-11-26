@@ -938,7 +938,7 @@ test('compact gameplay clock dock exposes only play and pause actions', () => {
   assert.match(hudCss, /button\[data-omega-speed\] \{\s*display: none !important;/);
   assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
   assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v152/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v153/);
   assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/);
   assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
   assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
@@ -1219,4 +1219,75 @@ test('resource updates do not repaint a hidden legacy Country IOS chapter or dup
   modal.style.display = 'none';
   frameCallbacks.shift()();
   assert.equal(renders, 1, 'a queued refresh must recheck visibility before repainting');
+});
+
+
+test('repainting the active resource chapter does not replay tab-scroll animation or static advisor work', () => {
+  const countryIosSource = fs.readFileSync(path.join(root, 'country-ios.js'), 'utf8');
+  const chapterTabs = [];
+  const stage = { innerHTML:'' };
+  let scrollCalls = 0;
+  const makeTab = chapter => ({
+    classList: { add() {}, remove() {} },
+    getAttribute(name) { return name === 'data-chapter' ? String(chapter) : null; },
+    scrollIntoView() { scrollCalls += 1; }
+  });
+  chapterTabs.push(makeTab(4), makeTab(5));
+  const document = {
+    addEventListener() {},
+    querySelectorAll(selector) { return selector === '.chapter-tab' ? chapterTabs : []; },
+    getElementById(id) { return id === 'ios-chapter-stage' ? stage : null; }
+  };
+  const win = {
+    Game: {
+      state: {
+        economy:{ BGD:{} },
+        population:{ BGD:{} },
+        relations:{ BGD:{} }
+      }
+    },
+    addEventListener() {}
+  };
+  win.window = win;
+  const context = vm.createContext({ window:win, document, console, Number, String, Math, Object, Array, Set, Promise, Intl });
+  vm.runInContext(countryIosSource, context, { filename:'country-ios.js' });
+
+  const ios = win.CountryIOS;
+  ios.activeCountry = 'BGD';
+  ios.activeChapter = 1;
+  let resourceRenders = 0;
+  let economyRenders = 0;
+  let actionBindings = 0;
+  let advisorUpdates = 0;
+  ios.renderChapter5_Resources = () => { resourceRenders += 1; return '<resource-view>'; };
+  ios.renderChapter4_Economy = () => { economyRenders += 1; return '<economy-view>'; };
+  ios.bindQuickActions = () => { actionBindings += 1; };
+  ios.updateAdvisor = () => { advisorUpdates += 1; };
+
+  // First navigation to Chapter 5 still centres the active tab and updates advice.
+  ios.switchChapter(5);
+  assert.equal(scrollCalls, 1);
+  assert.equal(resourceRenders, 1);
+  assert.equal(advisorUpdates, 1);
+  assert.equal(actionBindings, 1);
+
+  // Resource data repaint rebuilds the chapter content but does not restart
+  // the tab animation or recompute the unchanged Chapter 5 advisor copy.
+  ios.switchChapter(5);
+  assert.equal(scrollCalls, 1);
+  assert.equal(resourceRenders, 2);
+  assert.equal(advisorUpdates, 1);
+  assert.equal(actionBindings, 2);
+
+  // Genuine navigation to another chapter keeps its normal scroll and advice.
+  ios.switchChapter(4);
+  assert.equal(scrollCalls, 2);
+  assert.equal(economyRenders, 1);
+  assert.equal(advisorUpdates, 2);
+
+  // Returning to Chapter 5 is a real chapter transition and restores navigation behavior.
+  ios.switchChapter(5);
+  assert.equal(scrollCalls, 3);
+  assert.equal(resourceRenders, 3);
+  assert.equal(advisorUpdates, 3);
 });
