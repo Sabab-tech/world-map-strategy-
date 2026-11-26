@@ -6997,7 +6997,8 @@ function runCountryTurn(countryValue,options={}){
       };
       network.industrialProductionPeriods[periodId]={
         ...network.industrialProductionPeriods[periodId],
-        status:'COMPLETED',completedAt:new Date().toISOString(),
+        // Execution is not checkpoint-complete until warehouse and ledger evidence reconciles.
+        status:'EXECUTED',executedAt:new Date().toISOString(),
         result:{
           shipmentStatus:shipments?.status||null,
           delivered:Number(shipments?.delivered||0),
@@ -7037,14 +7038,27 @@ function runCountryTurn(countryValue,options={}){
   while(countryTurnRuns.size>16)countryTurnRuns.delete(countryTurnRuns.keys().next().value);
   return tracked;
 }
+function markProductionPeriodRecovery(countryId,periodId,reason){
+  const cid=canonicalCountry(countryId),key=String(periodId||'').trim();
+  if(!cid||!key)return{status:'INVALID',reason:'INDUSTRIAL_PERIOD_RECOVERY_INPUT_INVALID'};
+  const network=netState(cid);
+  const journal=network.industrialProductionPeriods?.[key];
+  if(!journal)return{status:'MISSING',reason:'INDUSTRIAL_PERIOD_JOURNAL_MISSING'};
+  const lastError=String(reason||'INDUSTRIAL_PERIOD_RECONCILIATION_FAILED');
+  network.industrialProductionPeriods[key]={
+    ...journal,status:'RECOVERY_REQUIRED',lastError,failedAt:new Date().toISOString()
+  };
+  return{status:'RECOVERY_REQUIRED',periodId:key,lastError};
+}
 function reconcileProductionPeriod(countryId,periodTurn,periodId,runResult){
   const cid=canonicalCountry(countryId),targetTurn=num(periodTurn),key=String(periodId||'').trim();
   if(!cid||targetTurn===null||!Number.isSafeInteger(targetTurn)||targetTurn<0||!key)
     return{ok:false,reason:'INDUSTRIAL_PERIOD_RECONCILIATION_INPUT_INVALID'};
   const resource=resourceState(cid)||{},network=netState(cid);
   const journal=network.industrialProductionPeriods?.[key];
-  if(!journal||journal.status!=='COMPLETED'||Number(journal.turn)!==targetTurn)
-    return{ok:false,reason:'INDUSTRIAL_PERIOD_EXECUTION_NOT_COMPLETED',journalStatus:journal?.status||'MISSING'};
+  if(!journal||!['EXECUTED','RECOVERY_REQUIRED','COMPLETED'].includes(String(journal.status||''))||
+     Number(journal.turn)!==targetTurn)
+    return{ok:false,reason:'INDUSTRIAL_PERIOD_EXECUTION_NOT_READY',journalStatus:journal?.status||'MISSING'};
   if(runResult&&runResult.status&&runResult.status!=='COMPLETED')
     return{ok:false,reason:'INDUSTRIAL_PERIOD_RUN_RESULT_NOT_COMPLETED'};
   const ledger=(Array.isArray(resource.finishedGoodsLedger)?resource.finishedGoodsLedger:[])
@@ -7118,6 +7132,10 @@ function reconcileProductionPeriod(countryId,periodTurn,periodId,runResult){
   if(receipts.length!==expectedBatchIds.size)
     return{ok:false,reason:'INDUSTRIAL_PERIOD_EXTRA_WAREHOUSE_RECEIPT'};
   const evidenceId='INDUSTRIAL_RECONCILIATION:'+cid+':'+key+':'+ledgerTransactions.size+':'+expectedBatchIds.size+':'+Number(totalQuantity.toFixed(6));
+  network.industrialProductionPeriods[key]={
+    ...journal,status:'COMPLETED',completedAt:journal.completedAt||new Date().toISOString(),
+    reconciliationEvidenceId:evidenceId,lastError:null
+  };
   return{ok:true,status:'RECONCILED',evidenceId,periodTurn:targetTurn,productionPeriodId:key,
     ledgerRows:ledger.length,receiptRows:receipts.length,batchCount:expectedBatchIds.size,
     totalQuantity:Number(totalQuantity.toFixed(6)),factoryRunCount:ledgerTransactions.size};
@@ -7261,7 +7279,7 @@ function evaluateTransportCoverage(countryId){
   };
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,runCountryTurn,reconcileProductionPeriod,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,registerStartingFactoryAssets,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,allocateFactoryInputProportionally,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,resourceMethod,buildRoute,getTerminalBuyerRoutes,getByProductLifecycle,processByProductLifecycle,reserveBatchesForCommitment,releaseBatchReservation,evaluateTransportCoverage});
+  return Object.freeze({VERSION,loadCatalog,runCountryTurn,reconcileProductionPeriod,markProductionPeriodRecovery,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,registerStartingFactoryAssets,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,allocateFactoryInputProportionally,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,resourceMethod,buildRoute,getTerminalBuyerRoutes,getByProductLifecycle,processByProductLifecycle,reserveBatchesForCommitment,releaseBatchReservation,evaluateTransportCoverage});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 

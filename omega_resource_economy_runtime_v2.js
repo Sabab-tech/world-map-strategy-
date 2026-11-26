@@ -2996,6 +2996,7 @@
     if(!api||typeof api.get!=='function'||typeof api.seed!=='function'||
        typeof api.begin!=='function'||typeof api.commit!=='function'||
        typeof industrial.reconcileProductionPeriod!=='function'||
+       typeof industrial.markProductionPeriodRecovery!=='function'||
        !sessionId||!session.playerCountryId||canonical(session.playerCountryId)!==cid){
       return industrial.runCountryTurn(cid);
     }
@@ -3044,6 +3045,8 @@
       }
       var reconciliation=industrial.reconcileProductionPeriod(cid,periodTurn,periodId,runResult);
       if(!reconciliation?.ok){
+        industrial.markProductionPeriodRecovery(cid,periodId,
+          reconciliation?.reason||'INDUSTRIAL_PERIOD_RECONCILIATION_FAILED');
         api.fail(Object.assign({},scope,{executionId,error:reconciliation?.reason||'INDUSTRIAL_PERIOD_RECONCILIATION_FAILED'}));
         return{status:'FAILED',reason:reconciliation?.reason||'INDUSTRIAL_PERIOD_RECONCILIATION_FAILED',
           periodTurn,runResult,reconciliation,checkpoint:api.get(scope)?.checkpoint||checkpoint};

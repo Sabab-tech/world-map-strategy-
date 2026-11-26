@@ -1319,3 +1319,24 @@ test('industrial production phase is session-scoped, sequential and warehouse-re
   assert.match(simulationSource,/ECONOMY_PHASE_DOMAINS=new Set\(\['resources','industrial','fiscal'\]\)/,
     'the industrial phase must reuse the existing authoritative checkpoint domain');
 });
+
+
+test('industrial journal completion follows reconciliation; failed reconciliation remains retryable',()=>{
+  const industrialSource=readFileSync('omega_resource_industrial_network_v1.js','utf8');
+  const runner=industrialSource.slice(industrialSource.indexOf('function runCountryTurn(countryValue,options={})'),
+    industrialSource.indexOf('function markProductionPeriodRecovery'));
+  const recovery=industrialSource.slice(industrialSource.indexOf('function markProductionPeriodRecovery'),
+    industrialSource.indexOf('function reconcileProductionPeriod'));
+  const reconcile=industrialSource.slice(industrialSource.indexOf('function reconcileProductionPeriod'),
+    industrialSource.indexOf('function reserveBatchesForCommitment'));
+  assert.ok(runner.includes("status:'EXECUTED'"),
+    'the runner must not mark a day completed before reconciliation');
+  assert.ok(!runner.includes("status:'COMPLETED',completedAt"),
+    'the pre-reconciliation journal must remain in the EXECUTED state');
+  assert.ok(recovery.includes("status:'RECOVERY_REQUIRED'"),
+    'a failed reconciliation must mark the industrial journal recoverable');
+  assert.ok(reconcile.includes("['EXECUTED','RECOVERY_REQUIRED','COMPLETED']"),
+    'recovery and already-completed periods must be eligible for reconciliation');
+  assert.ok(reconcile.includes("status:'COMPLETED',completedAt"),
+    'only a successful reconciliation promotes the journal to COMPLETED');
+});

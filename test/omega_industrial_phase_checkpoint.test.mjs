@@ -13,6 +13,7 @@ test('industrial period execution is idempotent and cannot replay a completed pr
   assert.match(periodRunner,/network\.industrialProductionPeriods\[periodId\]/);
   assert.match(periodRunner,/existing\?\.status==='COMPLETED'/);
   assert.match(periodRunner,/status:'RECOVERY_REQUIRED'/);
+  assert.match(periodRunner,/status:'EXECUTED'/);
   assert.match(periodRunner,/countryTurnRuns\.delete\(key\)/);
   assert.match(periodRunner,/activeIndustrialProductionPeriod=periodExecution/);
   assert.ok(periodRunner.indexOf('try{') < periodRunner.indexOf('network=netState(cid)'),
@@ -29,7 +30,7 @@ test('period reconciliation requires exact finished-goods ledger, processed-ware
     'productionPeriodId','inventoryLedger','storedBatchIds','inventoryLots',
     'INDUSTRIAL_PERIOD_LEDGER_RECEIPT_COUNT_MISMATCH',
     'INDUSTRIAL_PERIOD_BATCH_WAREHOUSE_STATE_MISMATCH',
-    'INDUSTRIAL_PERIOD_LEDGER_RECEIPT_QUANTITY_MISMATCH'
+    'INDUSTRIAL_PERIOD_LEDGER_RECEIPT_QUANTITY_MISMATCH','markProductionPeriodRecovery'
   ]) assert.ok(reconciler.includes(token),'missing reconciliation contract: '+token);
 });
 
@@ -53,6 +54,7 @@ test('industrial catch-up uses the existing resources/industrial/fiscal checkpoi
   assert.ok(economy.includes("domain:'industrial',countryId:cid,sessionId"));
   assert.ok(economy.includes("phase:'INDUSTRIAL_PRODUCTION'"));
   assert.ok(economy.includes("runCheckpointedIndustrialProduction(cid,industrial)"));
+  assert.ok(economy.includes("industrial.markProductionPeriodRecovery(cid,periodId"));
   assert.ok(economy.indexOf('runCheckpointedResourceExtraction(cid,endowment)') <
     economy.indexOf('runCheckpointedIndustrialProduction(cid,industrial)'));
 });
