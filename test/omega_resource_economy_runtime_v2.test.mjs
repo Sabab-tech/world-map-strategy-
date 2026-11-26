@@ -1292,6 +1292,58 @@ test('a buyer bid arriving after factory output upgrades the player seller offer
 });
 
 
+test('resource balance copy-on-write stages only touched keys and preserves legacy dotted IDs',()=>{
+  const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  const helperStart=source.indexOf('function clone(v,seen){');
+  const helperEnd=source.indexOf('function state()',helperStart);
+  assert.ok(helperStart>=0&&helperEnd>helperStart,'economy runtime copy helpers must be present');
+  const helpersSource=source.slice(helperStart,helperEnd);
+  const helpers=vm.runInNewContext('(function(){'+helpersSource+';return {'+
+    'cloneInventoryQuantities,copyMapShallow,cloneWarehouseForMutation,'+
+    'resolveInventoryKey,readInventoryQuantity,stageInventoryQuantity,stageInventoryQuantities};})()');
+  const writes=[];
+  const context={stateTransaction:{set(path,value){writes.push({path,value});}}};
+  const base={IRON_ORE:20,COPPER_ORE:15,'legacy.resource.id':3};
+  const resolved=helpers.resolveInventoryKey(base,null,'iron-ore');
+  assert.equal(resolved,'IRON_ORE','legacy aliases must resolve to the existing resource key');
+  assert.equal(helpers.readInventoryQuantity(base,null,resolved),20);
+  assert.equal(helpers.stageInventoryQuantity(context,base,'IRON_ORE',12),true);
+  assert.equal(writes[0].path,'resource.inventory.IRON_ORE',
+    'a normal single-resource debit/credit must stage only its touched key');
+  assert.equal(writes[0].value,12);
+  assert.equal(helpers.stageInventoryQuantities(context,base,{IRON_ORE:10,COPPER_ORE:8}),true);
+  assert.equal(writes[1].path,'resource.inventory.IRON_ORE');
+  assert.equal(writes[2].path,'resource.inventory.COPPER_ORE');
+  assert.equal(helpers.stageInventoryQuantity(context,base,'legacy.resource.id',9),true);
+  assert.equal(writes[3].path,'resource.inventory',
+    'a dotted legacy resource identity must use the whole-map compatibility fallback');
+  assert.equal(writes[3].value['legacy.resource.id'],9);
+  assert.equal(writes[3].value.IRON_ORE,20,'fallback must preserve untouched balances');
+  assert.equal(helpers.stageInventoryQuantity(context,base,'__proto__',1),false,
+    'prototype keys must be rejected rather than staged as inventory identities');
+  assert.equal(helpers.stageInventoryQuantities(context,base,{constructor:1}),false);
+  assert.equal(writes.length,4,'rejected keys must not create transaction writes');
+  assert.equal(base.IRON_ORE,20,'staging must not mutate authoritative inventory');
+  assert.equal(base['legacy.resource.id'],3);
+});
+
+test('factory production stages balance deltas and copies only mutated batch rows',()=>{
+  const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  const start=source.indexOf('function applyProductionHandler(cmd,ctx){');
+  const end=source.indexOf('function addInventoryHandler(cmd,ctx){',start);
+  assert.ok(start>=0&&end>start,'factory production transaction handler must exist');
+  const handler=source.slice(start,end);
+  assert.match(handler,/inventoryBase=ctx\.stateTransaction\.peek\('resource\.inventory'\)/);
+  assert.match(handler,/inventoryChanges=Object\.create\(null\)/);
+  assert.match(handler,/stageInventoryQuantities\(ctx,inventoryBase,inventoryChanges\)/);
+  assert.doesNotMatch(handler,/cloneInventoryQuantities\(ctx\.stateTransaction/);
+  assert.match(handler,/working=Array\.isArray\(batchRows\)\?batchRows\.slice\(\):\[\]/);
+  assert.match(handler,/working\[b\]=batch;/,
+    'only a batch row actually consumed by production is replaced with a detached copy');
+  assert.match(handler,/inventoryLots=copyMapShallow\(lotRows\)/);
+  assert.match(handler,/ledger=Array\.isArray\(ledgerRows\)\?ledgerRows\.slice\(\):\[\]/);
+});
+
 test('StateTransaction.peek is zero-copy until staged child writes, and parent reads include those writes',()=>{
   const source=readFileSync('omega_ministry_state_transaction.js','utf8');
   const state={resource:{BGD:{inventory:{crude_oil:10,iron_ore:20}}}};
