@@ -984,6 +984,19 @@ assert.ok(Number(siteReferenceSourceIndexDiagnostics?.canonicalIndexedCountryCou
   'the canonical catalog country index must contain indexed country rows');
 assert.match(endowmentRuntimeSource,/const controllerKeyBySiteId=new Map/);
 assert.match(endowmentRuntimeSource,/PLAYER_COUNTRY_SCOPE_VIOLATION/);
+assert.match(endowmentRuntimeSource,/const requestedPeriodTurn=n\(cmd\?\.payload\?\.productionPeriodTurn\)/,
+  'resource extraction commands must carry an explicit historical production period without changing the world clock');
+assert.match(endowmentRuntimeSource,/simulationTick:productionPeriodTurn,timeWindowDurationHours:windowHours/,
+  'each catch-up day must receive its own P5 extraction tick and retain the existing capacity window');
+assert.match(endowmentRuntimeSource,/receivedFrom:'MINE_EXTRACTION',simulationTurn:productionPeriodTurn,productionPeriodId/,
+  'raw warehouse receipts must retain the same stable period identity as their source extraction');
+assert.match(endowmentRuntimeSource,/warehouseId:batch\.warehouseId,turn:productionPeriodTurn,productionPeriodId/,
+  'mine production ledger rows must preserve legacy turn fields and add period identity');
+assert.match(endowmentRuntimeSource,/const samePeriod=row=>row\?\.productionPeriodId/,
+  'duplicate suppression must use period identity instead of treating every elapsed day as one current turn');
+assert.match(endowmentRuntimeSource,/extractCountry\(c,slice,\{productionPeriodTurn:t,productionPeriodId\}\)/,
+  'sliced extraction must preserve the same period identity across every occurrence batch');
+
 globalThis.Game.state.simulation.playerCountryId='BGD';
 globalThis.Game.state.simulation.session=globalThis.Game.state.simulation.session||{};
 globalThis.Game.state.simulation.session.playerCountryId='BGD';
