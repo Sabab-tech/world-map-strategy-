@@ -83,6 +83,31 @@
     return null;
   }
 
+  function eventAffectsPlayerCountry(event) {
+    var player = countryCode(playerCountry(runtime()));
+    if (!player) return true;
+    var detail = event && event.detail && typeof event.detail === 'object' ? event.detail : {};
+    var affected = [];
+    if (Array.isArray(detail.updatedCountryCodes)) {
+      affected = detail.updatedCountryCodes.map(countryCode).filter(Boolean);
+      return affected.indexOf(player) >= 0;
+    }
+    ['countryCode', 'countryId', 'iso3'].forEach(function (key) {
+      var value = countryCode(detail[key]);
+      if (value) affected.push(value);
+    });
+    if (!affected.length) {
+      var legacyPlayerCode = countryCode(detail.playerCountryCode);
+      if (legacyPlayerCode) affected.push(legacyPlayerCode);
+    }
+    // Older callers sometimes omit country identity. Preserve their refresh behavior.
+    return !affected.length || affected.indexOf(player) >= 0;
+  }
+
+  function queuePlayerCountryHudUpdate(event) {
+    if (eventAffectsPlayerCountry(event)) queueHudUpdate();
+  }
+
   function safeCall(fn) {
     try { return fn(); } catch (_) { return null; }
   }
@@ -1084,8 +1109,8 @@
       queueHudUpdate();
     });
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_COMPLETED', queueHudUpdate);
-    g.addEventListener && g.addEventListener('OMEGA_FINANCE_STATE_UPDATED', queueHudUpdate);
-    g.addEventListener && g.addEventListener('OMEGA_MACRO_STABILITY_TURN_PROCESSED', queueHudUpdate);
+    g.addEventListener && g.addEventListener('OMEGA_FINANCE_STATE_UPDATED', queuePlayerCountryHudUpdate);
+    g.addEventListener && g.addEventListener('OMEGA_MACRO_STABILITY_TURN_PROCESSED', queuePlayerCountryHudUpdate);
     [
       'MINISTRY_STATE_CHANGED', 'RESOURCE_STATE_UPDATED', 'OMEGA_FINANCE_STATE_UPDATED',
       'FINANCE_STATE_UPDATED', 'DECISION_ENACTED', 'POLICY_VOTE_CAST',
