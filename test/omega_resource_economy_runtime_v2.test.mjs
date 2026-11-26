@@ -90,6 +90,8 @@ function createContext(){
       if(bucket===undefined)return undefined;
       return parts.reduce((cur,key)=>cur==null?undefined:cur[key],bucket);
     },
+    // The test transaction exposes the same zero-copy read-only path as production.
+    peek(path){ return this.get(path); },
     set(path,value){
       const parts=String(path).split('.');
       const domain=parts.shift();
