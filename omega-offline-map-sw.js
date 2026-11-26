@@ -166,7 +166,7 @@ const LAZY_SCREEN_ASSETS = [
   "./omega_ui_v2/screens/police-fleet.js",
   "./omega_ui_v2/screens/reports.js",
   "./omega_ui_v2/screens/autonomous-development.js"
-
+];
 
 function isShellAsset(value) {
   try {
