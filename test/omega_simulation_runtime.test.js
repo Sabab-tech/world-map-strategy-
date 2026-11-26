@@ -107,7 +107,7 @@ test('canonical simulation authority owns the clock and ordered turn pipeline',a
 });
 
 test('real-time frame drops excess elapsed time instead of running a multi-turn catch-up burst',async()=>{
-  const {sandbox,state}=makeSandbox();
+  const {sandbox,state,events}=makeSandbox();
   loadScript('omega_simulation_runtime.js',sandbox);
   sandbox.Omega.Simulation.configure({state,worldEngine:{setAuthoritativeState(){},processSimulationTick(){return {advanced:true};}}});
   const sim=sandbox.Omega.Simulation;

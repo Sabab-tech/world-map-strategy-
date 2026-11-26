@@ -298,9 +298,9 @@ test('slow simulation frames and data-heavy ministry panels bound repeated UI wo
   assert.match(simulation, /MAX_PENDING_REAL_DELTA_MS\s*=\s*STEP_MS/);
   assert.match(simulation, /const accumulated=this\.pendingRealDeltaMs\+delta/);
   assert.match(simulation, /const retained=Math\.min\(MAX_PENDING_REAL_DELTA_MS,accumulated\)/);
-  assert.match(simulation, /const scaledDropped=dropped\\*Math\\.max/);
-  assert.match(simulation, /this\\.clock\\.droppedScaledTimeMs\\+=scaledDropped/);
-  assert.match(simulation, /recordDroppedScaledTime\\(scaledDropped,'IN_FLIGHT_FRAME_QUEUE_CAP'\\)/);
+  assert.match(simulation, /const scaledDropped=dropped\*Math\.max/);
+  assert.match(simulation, /this\.clock\.droppedScaledTimeMs\+=scaledDropped/);
+  assert.match(simulation, /recordDroppedScaledTime\(scaledDropped,'IN_FLIGHT_FRAME_QUEUE_CAP'\)/);
   assert.match(simulation, /this\.pendingRealDeltaMs=0;/,
     'pausing during an in-flight frame must discard its queued wall-clock time');
 
