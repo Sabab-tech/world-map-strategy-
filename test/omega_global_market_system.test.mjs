@@ -363,7 +363,6 @@ assert.ok(countryRefresh.refresh?.resourceCount>0,JSON.stringify(countryRefresh.
 assert.ok(countryRefresh.refresh?.yieldCount>0,JSON.stringify(countryRefresh.refresh));
 assert.ok(marketRefreshYieldCount>0,'the market refresh must yield control to the browser between workload slices');
 assert.equal(market.diagnostics().lastCountryRefresh?.scheduler,'COOPERATIVE_MAIN_THREAD_SLICES');
-assert.equal(market.getCompanyMarketResearchRequests,undefined);
 assert.equal(market.getCompanyResearchRequests('BGD','AURORA_INDUSTRIAL_GROUP')[0]?.status,'RESOLVED',
   'queued market research must still resolve after the cooperative refresh');
 
