@@ -1832,8 +1832,38 @@ document.addEventListener('DOMContentLoaded', () => {
     window.CountryIOS.init();
 });
 
-window.addEventListener('RESOURCE_STATE_UPDATED', () => {
-    if (window.CountryIOS && window.CountryIOS.activeChapter === 5 && window.CountryIOS.activeCountry) {
-        window.CountryIOS.switchChapter(5);
+var legacyResourceChapterRefreshPending = false;
+
+function isLegacyResourceChapterVisible() {
+    const modal = document.getElementById('command-hub-modal');
+    if (!modal || modal.hidden === true || (modal.style && modal.style.display === 'none')) return false;
+    if (typeof window.getComputedStyle === 'function') {
+        try {
+            const style = window.getComputedStyle(modal);
+            if (style && (style.display === 'none' || style.visibility === 'hidden')) return false;
+        } catch (_) {}
     }
+    return true;
+}
+
+window.addEventListener('RESOURCE_STATE_UPDATED', () => {
+    // Resource Economy v2 owns the normal coalesced repaint. This listener is
+    // only a fallback for isolated legacy sessions where that runtime is absent.
+    if (window.OmegaResourceEconomy || (window.Omega && window.Omega.ResourceEconomy)) return;
+    const countryIOS = window.CountryIOS;
+    if (!countryIOS || Number(countryIOS.activeChapter) !== 5 || !countryIOS.activeCountry) return;
+    if (!isLegacyResourceChapterVisible() || legacyResourceChapterRefreshPending) return;
+
+    legacyResourceChapterRefreshPending = true;
+    const refresh = () => {
+        legacyResourceChapterRefreshPending = false;
+        const active = window.CountryIOS;
+        if (!active || Number(active.activeChapter) !== 5 || !active.activeCountry ||
+            !isLegacyResourceChapterVisible() ||
+            window.OmegaResourceEconomy || (window.Omega && window.Omega.ResourceEconomy)) return;
+        active.switchChapter(5);
+    };
+    if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(refresh);
+    else if (typeof window.setTimeout === 'function') window.setTimeout(refresh, 0);
+    else refresh();
 });
