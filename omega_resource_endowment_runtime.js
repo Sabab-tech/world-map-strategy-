@@ -1851,7 +1851,7 @@ function batchFromExtraction(x,record){
   }
   function extractHandler(cmd,ctx){
     const requestedPeriodTurn=n(cmd?.payload?.productionPeriodTurn);
-    const productionPeriodTurn=requestedPeriodTurn===null?productionPeriodTurn:requestedPeriodTurn;
+    const productionPeriodTurn=requestedPeriodTurn===null?turn():requestedPeriodTurn;
     const productionPeriodId=String(cmd?.payload?.productionPeriodId||('GAME_DAY_'+productionPeriodTurn)).trim();
     if(!Number.isSafeInteger(productionPeriodTurn)||productionPeriodTurn<0||productionPeriodTurn>turn()||
        !productionPeriodId||productionPeriodId.length>192)
