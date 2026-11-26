@@ -1671,7 +1671,7 @@
     const session=rootSession();
     const sessionId=String(input.sessionId||'').trim();
     if(!ECONOMY_PHASE_DOMAINS.has(domain))return{error:domain==='food'?'DOMAIN_NOT_ENABLED':'INVALID_DOMAIN'};
-    if(!/^[A-Z0-9]{2,12}$/.test(countryId))return{error:'CANONICAL_COUNTRY_ID_REQUIRED'};
+    if(!/^[A-Z0-9]{2,3}$/.test(countryId))return{error:'CANONICAL_COUNTRY_ID_REQUIRED'};
     if(!sessionId)return{error:'SESSION_ID_REQUIRED'};
     if(domain==='resources'||domain==='industrial'){
       if(!session||!session.sessionId||!session.playerCountryId)return{error:'ACTIVE_PLAYER_SESSION_REQUIRED'};
@@ -1694,7 +1694,7 @@
     const existing=simulation.world.state?.simulation?.economyPhaseArchitectureV1;
     if(existing&&Number(existing.schemaVersion)!==ECONOMY_PHASE_CHECKPOINT_SCHEMA)
       return{status:'UNSUPPORTED_SCHEMA',reason:'ECONOMY_PHASE_CHECKPOINT_SCHEMA_UNSUPPORTED'};
-    const row=existing?.checkpoints?.[scope.key]||null;
+    const row=existing?economyPhaseState().checkpoints[scope.key]||null:null;
     return{status:'OK',checkpoint:clone(row||economyPhaseDefaultCheckpoint(scope))};
   }
   function economyPhaseBegin(input={}){
@@ -1825,7 +1825,7 @@
     if(!existing)return[];
     if(Number(existing.schemaVersion)!==ECONOMY_PHASE_CHECKPOINT_SCHEMA)
       throw new Error('ECONOMY_PHASE_CHECKPOINT_SCHEMA_UNSUPPORTED');
-    const store=existing;
+    const store=economyPhaseState();
     return Object.keys(store.checkpoints).map(key=>store.checkpoints[key])
       .filter(row=>row&&row.status!=='READY'&&row.status!=='COMPLETED')
       .map(row=>clone(row));
