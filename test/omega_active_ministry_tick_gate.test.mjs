@@ -28,6 +28,9 @@ test('the simulation ministry pump dispatches at most the currently visible mini
   assert.match(coordinator,/OmegaUIV2App\?\.getActiveContext/);
   assert.match(coordinator,/viewToRuntimeId/);
   assert.match(coordinator,/viewToRuntimeId\[key\]/);
+  assert.match(coordinator,/taxes:"finance"/);
+  assert.match(coordinator,/central_bank:"finance"/);
+  assert.match(coordinator,/laws:"projects"/);
   assert.doesNotMatch(coordinator,/MINISTRIES\.forEach\(id\s*=>\s*\{\s*if\s*\(typeof kernel\.pumpOrchestratedPipelineTick/);
   assert.match(coordinator,/if \(!id\) return results;/);
 });

@@ -120,6 +120,7 @@
                                 interior_security:"interior", infrastructure:"transport",
                                 energy_mining:"resource", health_welfare:"health",
                                 education:"education", science_research:"technology",
+                                taxes:"finance", central_bank:"finance", laws:"projects",
                                 mega_projects:"projects", culture:"culture", statistics:"statistics"
                             };
                             const key = String(viewId || "").trim().toLowerCase();
