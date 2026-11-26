@@ -104,7 +104,7 @@ test('Industry runtime updates do not route through navigation scheduling', () =
   const source = fs.readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
   assert.match(source, /function refreshIndustryRuntimeInPlace/);
   assert.ok(source.includes('var result = render(root, options);'));
-  assert.match(source, /bindIndustryRuntimeEvents(root, options)/);
+  assert.ok(source.includes('bindIndustryRuntimeEvents(root, options)'));
   assert.doesNotMatch(source.slice(source.indexOf('function scheduleIndustryRuntimeRefresh'), source.indexOf('function bindIndustryRuntimeEvents')), /scheduleRender\(/);
   assert.equal(typeof h.api.scheduleRuntimeRefresh, 'function');
 });

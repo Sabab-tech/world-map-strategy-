@@ -233,7 +233,7 @@ test('resource extraction phase catches up one stable game-day at a time and rec
   assert.match(economySource,/phase:'RESOURCE_EXTRACTION',\s*lastProcessedEventId:periodId,\s*reconciliation:\{status:'RECONCILED'/,
     'the resource checkpoint must advance only with reconciliation evidence');
   const resourcePhase=economySource.indexOf("runCheckpointedResourceExtraction(cid,endowment)");
-  const industrialPhase=economySource.indexOf("industrial.runCountryTurn(cid)",resourcePhase);
+  const industrialPhase=economySource.indexOf("runCheckpointedIndustrialProduction(cid,industrial)",resourcePhase);
   assert.ok(resourcePhase>=0&&industrialPhase>resourcePhase,
     'the existing industrial phase must remain after the resource extraction phase');
 });
