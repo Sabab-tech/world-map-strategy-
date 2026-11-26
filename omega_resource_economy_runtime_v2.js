@@ -3201,7 +3201,16 @@
 
   function refreshUI(){
     try{
-      if(!g.CountryIOS)return;
+      if(!g.CountryIOS||!g.document||typeof g.document.getElementById!=='function')return;
+      // The legacy Country IOS renderer is only a compatibility surface. Do
+      // not rebuild its large resource dashboard behind a closed modal or a
+      // different UI v2 screen.
+      var modal=g.document.getElementById('command-hub-modal');
+      if(!modal||modal.hidden===true||(modal.style&&modal.style.display==='none'))return;
+      if(typeof g.getComputedStyle==='function'){
+        var style=g.getComputedStyle(modal);
+        if(style&&(style.display==='none'||style.visibility==='hidden'))return;
+      }
       var active=g.CountryIOS.activeChapter;
       if((active===5||active==='5')&&typeof g.CountryIOS.switchChapter==='function')g.CountryIOS.switchChapter(5);
     }catch(_){}
