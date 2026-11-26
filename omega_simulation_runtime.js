@@ -525,6 +525,13 @@
     }catch(_){}
   }
 
+  function monotonicNow(){
+    try{
+      if(global.performance&&typeof global.performance.now==='function')return global.performance.now();
+    }catch(_){}
+    return Date.now();
+  }
+
   class SimulationClock{
     constructor(options={}){
       this.version=VERSION;
@@ -815,6 +822,9 @@
       this.turnParticipants=new Map();
       this.turnParticipantSequence=0;
       this.lastTurnParticipantResults=[];
+      // Bounded, process-local diagnostics do not enter the durable simulation snapshot.
+      this.participantTimings=new Map();
+      this.timeDropDiagnostics={count:0,last:null};
       this.turnFinalizers=new Map();
       this.turnFinalizerSequence=0;
       this.lastTurnFinalizerResults=[];
@@ -856,6 +866,7 @@
       try{
       for(const entry of rows){
         if(this.turnParticipants.get(entry.id)!==entry)continue;
+        const participantStartedAt=monotonicNow();
         try{
           const value=await entry.handler.call(global,browserEvent,{
             turn,
@@ -867,11 +878,13 @@
             clock:this.clock,
             simulation:this
           });
+          const durationMs=this.recordParticipantDuration(entry.id,monotonicNow()-participantStartedAt);
           this.world.state.simulation.subsystemTurns=this.world.state.simulation.subsystemTurns||{};
           this.world.state.simulation.subsystemTurns[entry.id]=turn;
-          results.push({id:entry.id,turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
+          results.push({id:entry.id,turn,status:'COMPLETED',durationMs,result:value===undefined?null:clone(value)});
         }catch(error){
-          const failure={id:entry.id,turn,status:'FAILED',error:String(error?.message||error)};
+          const durationMs=this.recordParticipantDuration(entry.id,monotonicNow()-participantStartedAt);
+          const failure={id:entry.id,turn,status:'FAILED',durationMs,error:String(error?.message||error)};
           results.push(failure);
           // Stop the world immediately rather than silently let one sector miss a day.
           this.status='ERROR';
@@ -959,10 +972,58 @@
         .map(entry=>({id:entry.id,priority:entry.priority,sequence:entry.sequence}));
     }
 
+    recordParticipantDuration(id,duration){
+      const durationMs=Math.round(Math.max(0,finite(duration,0))*100)/100;
+      let row=this.participantTimings.get(id);
+      if(!row){
+        row={count:0,totalMs:0,maxMs:0,lastMs:0,samples:[]};
+        this.participantTimings.set(id,row);
+      }
+      row.count+=1;
+      row.totalMs+=durationMs;
+      row.lastMs=durationMs;
+      row.maxMs=Math.max(row.maxMs,durationMs);
+      row.samples.push(durationMs);
+      if(row.samples.length>32)row.samples.shift();
+      while(this.participantTimings.size>256)
+        this.participantTimings.delete(this.participantTimings.keys().next().value);
+      return durationMs;
+    }
+
+    recordDroppedScaledTime(amount,source){
+      const droppedScaledMs=Math.max(0,finite(amount,0));
+      if(!(droppedScaledMs>0))return null;
+      const detail={
+        droppedScaledMs:Number(droppedScaledMs.toFixed(2)),
+        totalDroppedScaledMs:Number(this.clock.droppedScaledTimeMs.toFixed(2)),
+        turn:this.clock.turn,
+        speed:this.clock.speed,
+        source:String(source||'CLOCK_CATCH_UP_CAP'),
+        timestamp:Date.now()
+      };
+      this.timeDropDiagnostics.count+=1;
+      this.timeDropDiagnostics.last=detail;
+      dispatchRuntimeEvent('OMEGA_SIMULATION_TIME_DROPPED',detail);
+      return detail;
+    }
+
     participantDiagnostics(){
       return [...this.turnParticipants.values()]
         .sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence)
-        .map(entry=>({id:entry.id,priority:entry.priority,sequence:entry.sequence}));
+        .map(entry=>{
+          const timing=this.participantTimings.get(entry.id);
+          const samples=timing?timing.samples.slice().sort((a,b)=>a-b):[];
+          const p95=samples.length?samples[Math.min(samples.length-1,Math.ceil(samples.length*0.95)-1)]:0;
+          return {
+            id:entry.id,priority:entry.priority,sequence:entry.sequence,
+            sampleCount:timing?timing.count:0,
+            lastDurationMs:timing?timing.lastMs:null,
+            averageDurationMs:timing?Number((timing.totalMs/timing.count).toFixed(2)):null,
+            maxDurationMs:timing?timing.maxMs:null,
+            p95DurationMs:timing?Number(p95.toFixed(2)):null,
+            rollingSampleCount:samples.length
+          };
+        });
     }
 
     installDefaultHandlers(){
@@ -1212,7 +1273,11 @@
           const retained=Math.min(MAX_PENDING_REAL_DELTA_MS,accumulated);
           this.pendingRealDeltaMs=retained;
           const dropped=accumulated-retained;
-          if(dropped>0)this.clock.droppedScaledTimeMs+=dropped*Math.max(0,finite(this.clock.speed,0));
+          if(dropped>0){
+            const scaledDropped=dropped*Math.max(0,finite(this.clock.speed,0));
+            this.clock.droppedScaledTimeMs+=scaledDropped;
+            this.recordDroppedScaledTime(scaledDropped,'IN_FLIGHT_FRAME_QUEUE_CAP');
+          }
         }
         return {steps:0,turn:this.clock.turn,status:this.status,busy:true};
       }
@@ -1223,7 +1288,10 @@
         // Sub-day clock frames only accumulate elapsed time and must not rescan world roots.
         const combinedDelta=delta+this.pendingRealDeltaMs;
         this.pendingRealDeltaMs=0;
+        const droppedBefore=this.clock.droppedScaledTimeMs;
         const scheduledSteps=this.clock.consumeRealDelta(combinedDelta);
+        const newlyDropped=this.clock.droppedScaledTimeMs-droppedBefore;
+        if(newlyDropped>0)this.recordDroppedScaledTime(newlyDropped,'CLOCK_MAX_STEPS_PER_FRAME');
         let completedSteps=0,last=null;
         for(let i=0;i<scheduledSteps&&this.status==='RUNNING';i++){
           last=await this.step();
@@ -1636,6 +1704,11 @@
         turnParticipantCount:this.turnParticipants.size,
         turnParticipants:this.participantDiagnostics(),
         lastTurnParticipantResults:clone(this.lastTurnParticipantResults),
+        timeDiscards:{
+          totalScaledMs:Number(this.clock.droppedScaledTimeMs.toFixed(2)),
+          eventCount:this.timeDropDiagnostics.count,
+          last:clone(this.timeDropDiagnostics.last)
+        },
         turnFinalizerCount:this.turnFinalizers.size,
         turnFinalizers:this.finalizerDiagnostics(),
         lastTurnFinalizerResults:clone(this.lastTurnFinalizerResults)

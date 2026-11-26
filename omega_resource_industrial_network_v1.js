@@ -26,7 +26,16 @@ const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
 const id=v=>String(v??'').trim().toUpperCase();
 const tok=v=>String(v??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
 const state=()=>g.Game?.state||g.gameState||{};
-const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn)??0;
+let activeIndustrialProductionPeriod=null;
+const turn=()=>activeIndustrialProductionPeriod
+  ?activeIndustrialProductionPeriod.turn
+  :(num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn)??0);
+const productionPeriodId=()=>String(activeIndustrialProductionPeriod?.productionPeriodId||('GAME_DAY_'+turn()));
+const productionPeriodContext=()=>activeIndustrialProductionPeriod?{
+  countryId:activeIndustrialProductionPeriod.countryId,
+  turn:activeIndustrialProductionPeriod.turn,
+  productionPeriodId:activeIndustrialProductionPeriod.productionPeriodId
+}:null;
 const daysPerTurn=()=>{
   const clock=g.Omega?.Simulation?.clock;
   const explicit=num(clock?.gameDaysPerTurn??clock?.daysPerTurn);
@@ -45,14 +54,29 @@ function factoryDateOnly(value){
   return m[1]+'-'+m[2]+'-'+m[3];
 }
 function factoryCurrentGameDate(){
-  // The simulation clock is the authoritative calendar. Game.state.simulation.date
-  // is a compatibility mirror and can lag behind a committed turn while older
-  // browser listeners reconcile their own state. Preferring that mirror can leave
-  // an otherwise due factory cycle IN_PROGRESS forever even after its finishTurn.
+  // Historical catch-up periods are evaluated against the same canonical
+  // Simulation clock epoch and one-day step, without mutating that clock.
   const simulation=g.Omega?.Simulation||g.OmegaSimulationRuntime||null;
+  const clock=simulation?.clock||null;
+  const period=activeIndustrialProductionPeriod;
+  if(period){
+    const startEpoch=num(clock?.startEpochMs);
+    const stepMs=num(clock?.stepDurationMs);
+    if(startEpoch!==null&&stepMs!==null&&stepMs>0){
+      try{return new Date(startEpoch+period.turn*stepMs).toISOString().slice(0,10);}catch(_){}
+    }
+    try{
+      const currentDate=typeof clock?.simulationDate==='function'
+        ?factoryDateOnly(clock.simulationDate()):null;
+      const currentTurn=num(clock?.turn);
+      if(currentDate&&currentTurn!==null)
+        return factoryAddGameDays(currentDate,period.turn-currentTurn);
+    }catch(_){}
+  }
+  // The Simulation clock is authoritative; Game.state.simulation.date is a mirror.
   try{
-    const clockDate=typeof simulation?.clock?.simulationDate==='function'
-      ?factoryDateOnly(simulation.clock.simulationDate()):null;
+    const clockDate=typeof clock?.simulationDate==='function'
+      ?factoryDateOnly(clock.simulationDate()):null;
     if(clockDate)return clockDate;
   }catch(_){}
   const s=state()||{},sim=s.simulation||{};
@@ -3798,12 +3822,15 @@ function advanceProjects(c,options={}){
   // authoritative central clock's ordinary daysPerTurn() value.
   const technologyCompleted=constructionDaysOverride!==null&&constructionDaysOverride>0
     ?[]:advanceTechnologyProjects(cid);
+  const activePeriodId=productionPeriodId();
   for(const p of n.projects){
     if(p.status!=='UNDER_CONSTRUCTION')continue;
     if(selectedProjectIds&&!selectedProjectIds.has(String(p.projectId||'')))continue;
+    if(p.lastProgressPeriodId===activePeriodId)continue;
     const step=(constructionDaysOverride!==null&&constructionDaysOverride>0
       ?constructionDaysOverride:daysPerTurn())*(p.contractorType==='FOREIGN_EPC'?1.10:1);
     p.progressDays=Math.min(num(p.durationDays)||1,(num(p.progressDays)||0)+step);
+    p.lastProgressPeriodId=activePeriodId;
     p.progressPct=Math.min(1,p.progressDays/(num(p.durationDays)||1));
     p.remainingDays=Math.max(0,Math.ceil((num(p.durationDays)||1)-p.progressDays));
     if(p.projectType==='MINE_CONSTRUCTION'&&p.progressPct<1){
@@ -4483,6 +4510,7 @@ function commitFactoryCycleImmediately(input={}){
     r.inventory[inventoryKey]=(num(r.inventory[inventoryKey])||0)+outQty;
     const batchId='OUTPUT:'+transactionId+':'+outputId,roots=[...new Set(sourceBatchIds.filter(Boolean))],unit=outputUnitPlan.units[outputId];
     const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',status:'AVAILABLE',countryId:cid,
+      productionPeriodId:productionPeriodId(),
       sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
       ownerCompanyId:ownershipParties.ownerCompanyId,operatorCompanyId:ownershipParties.operatorCompanyId,
       ownerAttributionStatus:ownershipParties.ownerAttributionStatus,
@@ -4491,7 +4519,8 @@ function commitFactoryCycleImmediately(input={}){
       sourcePrivateFundingId:asset.sourcePrivateFundingId||null,sourcePrivatePermitId:asset.privatePermitId||null,
       provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'SIMULATED_PROCESSING_YIELD',processingAuthority:'SIMULATED',status:'FINISHED_GOODS_CREATED',transactionId,factoryId:fid,sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourcePrivatePermitId:asset.privatePermitId||null,sourceBatchIds:roots,simulationTurn:turn()}};
     batches.push(row);created.push(row);
-    inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',countryId:cid,warehouseId:row.warehouseId,
+    inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',countryId:cid,
+      productionPeriodId:productionPeriodId(),warehouseId:row.warehouseId,
       locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,operatorCompanyId:row.operatorCompanyId,
       ownerAttributionStatus:row.ownerAttributionStatus,sourceFactoryId:fid,
       sourcePrivateProposalId:row.sourcePrivateProposalId,sourcePrivateDecisionId:row.sourcePrivateDecisionId,
@@ -4501,10 +4530,12 @@ function commitFactoryCycleImmediately(input={}){
     finishedWarehouse.availableByResource[warehouseKey]=(num(finishedWarehouse.availableByResource[warehouseKey])||0)+outQty;
     writeFactoryOutputUnit(r,finishedWarehouse,outputId,unit);
     if(!finishedWarehouse.storedBatchIds.includes(batchId))finishedWarehouse.storedBatchIds.push(batchId);
-    finishedWarehouse.receipts.push({receiptId:'WH-REC-'+batchId,warehouseId:row.warehouseId,countryId:cid,batchId,resourceId:outputId,quantity:outQty,unit,simulationTurn:turn(),status:'RECEIVED'});
+    finishedWarehouse.receipts.push({receiptId:'WH-REC-'+batchId,warehouseId:row.warehouseId,countryId:cid,batchId,resourceId:outputId,
+      quantity:outQty,unit,simulationTurn:turn(),productionPeriodId:productionPeriodId(),status:'RECEIVED'});
   }
   while(finishedWarehouse.receipts.length>2048)finishedWarehouse.receipts.shift();while(batches.length>8192)batches.shift();
   const record={transactionId,countryId:cid,factoryId:fid,companyId:ownershipParties.operatorCompanyId,
+    productionPeriodId:productionPeriodId(),
     operatorCompanyId:ownershipParties.operatorCompanyId,ownerCompanyId:ownershipParties.ownerCompanyId,
     ownerAttributionStatus:ownershipParties.ownerAttributionStatus,resourceId:rid,
     inputQuantity:need,inputQuantities:{[rid]:need},requestedProduction:requested,outputs:output,outputQuantities:clone(output),recipe:clone(recipe),
@@ -4522,10 +4553,13 @@ function commitFactoryCycleImmediately(input={}){
   r.finishedGoodsLedger.push({transactionId,countryId:cid,factoryId:fid,companyId:record.companyId,
     operatorCompanyId:record.operatorCompanyId,ownerCompanyId:record.ownerCompanyId,ownerAttributionStatus:record.ownerAttributionStatus,
     sourceBatchIds:record.sourceBatchIds,outputQuantities:clone(output),
-    createdBatchIds:record.createdBatchIds,turn:turn(),authority:'SIMULATED_PROCESSING_YIELD',status:'AVAILABLE_TO_ECONOMY'});
+    createdBatchIds:record.createdBatchIds,turn:turn(),productionPeriodId:productionPeriodId(),
+    authority:'SIMULATED_PROCESSING_YIELD',status:'AVAILABLE_TO_ECONOMY'});
   while(r.finishedGoodsLedger.length>2048)r.finishedGoodsLedger.shift();
   const inventoryLedger=Array.isArray(r.inventoryLedger)?r.inventoryLedger:[];
-  inventoryLedger.push({type:'FACTORY_PROCESSING_COMMITTED',transactionId,factoryId:fid,resourceId:rid,inputQuantity:need,outputs:clone(output),sourceBatchIds:record.sourceBatchIds,createdBatchIds:record.createdBatchIds,turn:turn()});
+  inventoryLedger.push({type:'FACTORY_PROCESSING_COMMITTED',transactionId,factoryId:fid,resourceId:rid,inputQuantity:need,
+    outputs:clone(output),sourceBatchIds:record.sourceBatchIds,createdBatchIds:record.createdBatchIds,
+    turn:turn(),productionPeriodId:productionPeriodId()});
   while(inventoryLedger.length>2048)inventoryLedger.shift();r.inventoryLedger=inventoryLedger;
   n.factoryRuntime[fid]=record;n.events.push(record);n.events=n.events.slice(-MAX_EVENTS);
   factorySetProductionHealth(asset,requested+1e-6<ratedCapacity?'REDUCED':'RUNNING',requested,ratedCapacity,
@@ -4704,7 +4738,8 @@ function commitMultiInputFactoryCycleImmediately(input={}){
     r.inventory[inventoryKey]=(num(r.inventory[inventoryKey])||0)+outQty;
     const batchId='OUTPUT:'+transactionId+':'+outputId;
     const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnitPlan.units[outputId],
-      stage:'FINISHED',status:'AVAILABLE',countryId:cid,sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
+      stage:'FINISHED',status:'AVAILABLE',countryId:cid,productionPeriodId:productionPeriodId(),
+      sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
       ownerCompanyId:ownershipParties.ownerCompanyId,operatorCompanyId:ownershipParties.operatorCompanyId,
       ownerAttributionStatus:ownershipParties.ownerAttributionStatus,
       sourceBatchIds:roots,sourceSiteIds:sites,sourceFactoryId:fid,warehouseId:'WH-'+cid+'-PROCESSED',
@@ -4716,7 +4751,7 @@ function commitMultiInputFactoryCycleImmediately(input={}){
         sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourcePrivatePermitId:asset.privatePermitId||null,sourceBatchIds:roots,sourceSiteIds:sites,simulationTurn:turn()}};
     batches.push(row);created.push(row);
     inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnitPlan.units[outputId],stage:'FINISHED',
-      countryId:cid,warehouseId:row.warehouseId,locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,
+      countryId:cid,productionPeriodId:productionPeriodId(),warehouseId:row.warehouseId,locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,
       operatorCompanyId:row.operatorCompanyId,ownerAttributionStatus:row.ownerAttributionStatus,sourceFactoryId:fid,
       sourcePrivateProposalId:row.sourcePrivateProposalId,sourcePrivateDecisionId:row.sourcePrivateDecisionId,
       sourcePrivateFundingId:row.sourcePrivateFundingId,sourcePrivatePermitId:row.sourcePrivatePermitId,sourceBatchIds:roots,sourceSiteIds:sites,status:'AVAILABLE',
@@ -4726,13 +4761,15 @@ function commitMultiInputFactoryCycleImmediately(input={}){
     writeFactoryOutputUnit(r,finished,outputId,outputUnitPlan.units[outputId]);
     if(!finished.storedBatchIds.includes(batchId))finished.storedBatchIds.push(batchId);
     finished.receipts.push({receiptId:'WH-REC-'+batchId,warehouseId:row.warehouseId,countryId:cid,batchId,resourceId:outputId,
-      quantity:outQty,unit:outputUnitPlan.units[outputId],simulationTurn:turn(),status:'RECEIVED'});
+      quantity:outQty,unit:outputUnitPlan.units[outputId],simulationTurn:turn(),
+      productionPeriodId:productionPeriodId(),status:'RECEIVED'});
   }
   while(finished.receipts.length>2048)finished.receipts.shift();
   while(batches.length>8192)batches.shift();
   const inputQuantities=Object.fromEntries(needs.map(x=>[x.resourceId,x.required]));
   const totalInput=needs.reduce((sum,x)=>sum+x.required,0);
   const record={transactionId,countryId:cid,factoryId:fid,factoryType:asset.factoryType||recipe.factoryType||null,
+    productionPeriodId:productionPeriodId(),
     recipeId:recipe.recipeId||asset.recipeId||null,recipeMode:'MULTI_INPUT',companyId,
     operatorCompanyId:ownershipParties.operatorCompanyId,ownerCompanyId:ownershipParties.ownerCompanyId,
     ownerAttributionStatus:ownershipParties.ownerAttributionStatus,resourceId:requestedResource,
@@ -4752,12 +4789,14 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   r.finishedGoodsLedger.push({transactionId,countryId:cid,factoryId:fid,companyId,
     operatorCompanyId:record.operatorCompanyId,ownerCompanyId:record.ownerCompanyId,ownerAttributionStatus:record.ownerAttributionStatus,
     sourceBatchIds:roots,sourceSiteIds:sites,
-    outputQuantities:clone(output),createdBatchIds:record.createdBatchIds,turn:turn(),authority:'SIMULATED_DOWNSTREAM_PRODUCTION',
+    outputQuantities:clone(output),createdBatchIds:record.createdBatchIds,turn:turn(),
+    productionPeriodId:productionPeriodId(),authority:'SIMULATED_DOWNSTREAM_PRODUCTION',
     recipeId:record.recipeId,status:'AVAILABLE_TO_ECONOMY'});
   while(r.finishedGoodsLedger.length>2048)r.finishedGoodsLedger.shift();
   r.inventoryLedger=Array.isArray(r.inventoryLedger)?r.inventoryLedger:[];
   r.inventoryLedger.push({type:'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED',transactionId,factoryId:fid,recipeId:record.recipeId,
-    inputQuantities:clone(inputQuantities),outputs:clone(output),sourceBatchIds:roots,createdBatchIds:record.createdBatchIds,turn:turn()});
+    inputQuantities:clone(inputQuantities),outputs:clone(output),sourceBatchIds:roots,
+    createdBatchIds:record.createdBatchIds,turn:turn(),productionPeriodId:productionPeriodId()});
   while(r.inventoryLedger.length>2048)r.inventoryLedger.shift();
   n.factoryRuntime=n.factoryRuntime||{};n.factoryRuntime[fid]=record;
   n.events=Array.isArray(n.events)?n.events:[];n.events.push(record);n.events=n.events.slice(-MAX_EVENTS);
@@ -5256,8 +5295,7 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
     transferCount:transfers.length,transfers,blocked};
 }
 function factoryCycleDue(cycle){
-  const clock=g.Omega?.Simulation?.clock||null;
-  const currentTurn=num(clock?.turn)??turn();
+  const currentTurn=turn();
   const finishTurn=num(cycle?.finishTurn);
   const turnReached=finishTurn!==null&&currentTurn>=finishTurn;
   const now=factoryCurrentGameDate();
@@ -5323,6 +5361,7 @@ function startFactoryProductionCycle(input={}){
   const finishTurn=turn()+Math.max(1,Math.ceil(durationDays/Math.max(daysPerTurn(),1/86400000)));
   const cycleSequence=(Number(n.factoryProductionCycleSequence)||0)+1;n.factoryProductionCycleSequence=cycleSequence;
   const cycle={cycleId:'FACTORYCYCLE:'+cid+':'+fid+':T'+turn()+':'+cycleSequence,countryId:cid,factoryId:fid,
+    productionPeriodId:productionPeriodId(),startedProductionPeriodId:productionPeriodId(),
     investmentId:asset.investmentId||asset.sourceInvestmentId||null,
     constructionProjectId:asset.constructionProjectId||null,
     sourceProposalId:asset.sourceProposalId||null,
@@ -5365,6 +5404,7 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
     return{status:'PAUSED',countryId:cid,factoryId:String(cycle.factoryId||asset?.id||asset?.assetId||asset?.projectId||''),cycleId:cycle.cycleId,reason:cycle.lastBlockedReason,detail:result};
   }
   cycle.status='COMPLETED';cycle.completedTurn=turn();
+  cycle.completedProductionPeriodId=productionPeriodId();
   const completionDate=factoryCurrentGameDate();
   cycle.actualCompletionDate=cycle.finishDate&&(!completionDate||!factoryDateReached(completionDate,cycle.finishDate))
     ?cycle.finishDate:(completionDate||cycle.finishDate);
@@ -6905,23 +6945,200 @@ function gameplayPipelineDiagnostics(countryScope){
 }
 const countryTurnRuns=new Map();
 let countryTurnTail=Promise.resolve();
-function runCountryTurn(countryValue){
+function pruneIndustrialProductionPeriods(network){
+  const rows=Object.entries(network.industrialProductionPeriods||{});
+  if(rows.length<=512)return;
+  const completed=rows.filter(([,row])=>row&&row.status==='COMPLETED')
+    .sort((a,b)=>(num(a[1].turn)||0)-(num(b[1].turn)||0));
+  while(Object.keys(network.industrialProductionPeriods).length>512&&completed.length){
+    const [periodId]=completed.shift();
+    delete network.industrialProductionPeriods[periodId];
+  }
+}
+function runCountryTurn(countryValue,options={}){
   const cid=canonicalCountry(countryValue);
   if(!cid)return Promise.resolve({status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn()});
-  const key=String(turn())+':'+cid;
+  const requestedPeriodTurn=num(options?.productionPeriodTurn);
+  const liveTurn=num(g.Omega?.Simulation?.clock?.turn??state()?.simulation?.turn??turn())??turn();
+  if(requestedPeriodTurn!==null&&(!Number.isSafeInteger(requestedPeriodTurn)||requestedPeriodTurn<0||requestedPeriodTurn>liveTurn))
+    return Promise.resolve({status:'BLOCKED',reason:'INDUSTRIAL_PRODUCTION_PERIOD_TURN_INVALID',turn:turn()});
+  const periodTurn=requestedPeriodTurn===null?turn():requestedPeriodTurn;
+  const requestedPeriodId=String(options?.productionPeriodId||'').trim();
+  const periodId=requestedPeriodId||('GAME_DAY_'+periodTurn);
+  if(periodId.length>192)return Promise.resolve({status:'BLOCKED',reason:'INDUSTRIAL_PRODUCTION_PERIOD_ID_INVALID',turn:periodTurn});
+  const periodExecution=requestedPeriodTurn===null?null:{countryId:cid,turn:periodTurn,productionPeriodId:periodId};
+  const key=cid+':'+periodTurn+':'+periodId;
   if(countryTurnRuns.has(key))return countryTurnRuns.get(key);
   const task=countryTurnTail.catch(()=>undefined).then(async()=>{
-    await loadCatalog();
-    const shipments=await advanceShipments(cid);
-    const projects=await advanceProjects(cid);
-    const factory=await processPendingFactoryInputs(cid);
-    return{status:'COMPLETED',countryId:cid,turn:turn(),shipments,projects,factory,
-      employment:factory.employmentSummary||null};
+    const previousContext=activeIndustrialProductionPeriod;
+    if(periodExecution)activeIndustrialProductionPeriod=periodExecution;
+    let network=null;
+    try{
+      network=netState(cid);
+      if(!network.industrialProductionPeriods||typeof network.industrialProductionPeriods!=='object'||
+         Array.isArray(network.industrialProductionPeriods))network.industrialProductionPeriods={};
+      const existing=network.industrialProductionPeriods[periodId];
+      if(existing?.status==='COMPLETED'){
+        return{status:'COMPLETED',countryId:cid,turn:periodTurn,productionPeriodId:periodId,
+          idempotent:true,journal:clone(existing.result||{})};
+      }
+      network.industrialProductionPeriods[periodId]={
+        ...(existing||{}),countryId:cid,turn:periodTurn,productionPeriodId:periodId,
+        status:'STARTED',attemptCount:Math.max(0,Math.floor(num(existing?.attemptCount)||0))+1,
+        startedAt:existing?.startedAt||new Date().toISOString(),lastAttemptAt:new Date().toISOString()
+      };
+      await loadCatalog();
+      const shipments=await advanceShipments(cid);
+      const projects=await advanceProjects(cid);
+      const factory=await processPendingFactoryInputs(cid);
+      const result={
+        status:'COMPLETED',countryId:cid,turn:periodTurn,productionPeriodId:periodId,
+        shipments,projects,factory,employment:factory.employmentSummary||null
+      };
+      network.industrialProductionPeriods[periodId]={
+        ...network.industrialProductionPeriods[periodId],
+        // Execution is not checkpoint-complete until warehouse and ledger evidence reconciles.
+        status:'EXECUTED',executedAt:new Date().toISOString(),
+        result:{
+          shipmentStatus:shipments?.status||null,
+          delivered:Number(shipments?.delivered||0),
+          mineDelivered:Number(shipments?.mineDelivered||0),
+          completedProjects:Array.isArray(projects?.completed)?projects.completed.length:0,
+          completedFactories:Array.isArray(factory?.completed)?factory.completed.length:0,
+          startedFactories:Array.isArray(factory?.started)?factory.started.length:0,
+          blockedFactories:Array.isArray(factory?.blocked)?factory.blocked.length:0
+        }
+      };
+      pruneIndustrialProductionPeriods(network);
+      return result;
+    }catch(error){
+      if(network&&network.industrialProductionPeriods&&
+         network.industrialProductionPeriods[periodId]&&
+         network.industrialProductionPeriods[periodId].status!=='COMPLETED'){
+        network.industrialProductionPeriods[periodId]={
+          ...network.industrialProductionPeriods[periodId],
+          status:'RECOVERY_REQUIRED',lastError:String(error?.message||error),
+          failedAt:new Date().toISOString()
+        };
+      }
+      throw error;
+    }finally{
+      // Also restore the context when netState/journal setup fails before the
+      // domain work starts. A stale historical turn must never leak into the
+      // next player action or another country's runtime.
+      activeIndustrialProductionPeriod=previousContext;
+    }
   });
-  countryTurnTail=task.then(()=>undefined,()=>undefined);
-  countryTurnRuns.set(key,task);
-  while(countryTurnRuns.size>8)countryTurnRuns.delete(countryTurnRuns.keys().next().value);
-  return task;
+  const tracked=task.catch(error=>{
+    if(countryTurnRuns.get(key)===tracked)countryTurnRuns.delete(key);
+    throw error;
+  });
+  countryTurnTail=tracked.then(()=>undefined,()=>undefined);
+  countryTurnRuns.set(key,tracked);
+  while(countryTurnRuns.size>16)countryTurnRuns.delete(countryTurnRuns.keys().next().value);
+  return tracked;
+}
+function markProductionPeriodRecovery(countryId,periodId,reason){
+  const cid=canonicalCountry(countryId),key=String(periodId||'').trim();
+  if(!cid||!key)return{status:'INVALID',reason:'INDUSTRIAL_PERIOD_RECOVERY_INPUT_INVALID'};
+  const network=netState(cid);
+  const journal=network.industrialProductionPeriods?.[key];
+  if(!journal)return{status:'MISSING',reason:'INDUSTRIAL_PERIOD_JOURNAL_MISSING'};
+  const lastError=String(reason||'INDUSTRIAL_PERIOD_RECONCILIATION_FAILED');
+  network.industrialProductionPeriods[key]={
+    ...journal,status:'RECOVERY_REQUIRED',lastError,failedAt:new Date().toISOString()
+  };
+  return{status:'RECOVERY_REQUIRED',periodId:key,lastError};
+}
+function reconcileProductionPeriod(countryId,periodTurn,periodId,runResult){
+  const cid=canonicalCountry(countryId),targetTurn=num(periodTurn),key=String(periodId||'').trim();
+  if(!cid||targetTurn===null||!Number.isSafeInteger(targetTurn)||targetTurn<0||!key)
+    return{ok:false,reason:'INDUSTRIAL_PERIOD_RECONCILIATION_INPUT_INVALID'};
+  const resource=resourceState(cid)||{},network=netState(cid);
+  const journal=network.industrialProductionPeriods?.[key];
+  if(!journal||!['EXECUTED','RECOVERY_REQUIRED','COMPLETED'].includes(String(journal.status||''))||
+     Number(journal.turn)!==targetTurn)
+    return{ok:false,reason:'INDUSTRIAL_PERIOD_EXECUTION_NOT_READY',journalStatus:journal?.status||'MISSING'};
+  if(runResult&&runResult.status&&runResult.status!=='COMPLETED')
+    return{ok:false,reason:'INDUSTRIAL_PERIOD_RUN_RESULT_NOT_COMPLETED'};
+  const ledger=(Array.isArray(resource.finishedGoodsLedger)?resource.finishedGoodsLedger:[])
+    .filter(row=>String(row?.productionPeriodId||'')===key&&num(row?.turn)===targetTurn);
+  const warehouse=resource.processedWarehouse&&typeof resource.processedWarehouse==='object'
+    ?resource.processedWarehouse:{};
+  const receipts=(Array.isArray(warehouse.receipts)?warehouse.receipts:[])
+    .filter(row=>String(row?.productionPeriodId||'')===key&&num(row?.simulationTurn)===targetTurn);
+  const inventoryLedger=Array.isArray(resource.inventoryLedger)?resource.inventoryLedger:[];
+  const batches=Array.isArray(resource.batches)?resource.batches:[];
+  const lots=resource.inventoryLots&&typeof resource.inventoryLots==='object'?resource.inventoryLots:{};
+  const stored=new Set(Array.isArray(warehouse.storedBatchIds)?warehouse.storedBatchIds.map(String):[]);
+  const ledgerTransactions=new Set();
+  const expectedBatchIds=new Set();
+  let totalQuantity=0;
+  const outputByResource={};
+  for(const row of ledger){
+    const transactionId=String(row?.transactionId||'').trim();
+    if(!transactionId||ledgerTransactions.has(transactionId))
+      return{ok:false,reason:'INDUSTRIAL_PERIOD_LEDGER_TRANSACTION_INVALID'};
+    ledgerTransactions.add(transactionId);
+    const outputs=row.outputQuantities&&typeof row.outputQuantities==='object'?row.outputQuantities:{};
+    for(const [resourceId,value] of Object.entries(outputs)){
+      const quantity=num(value);
+      if(quantity===null||quantity<0)return{ok:false,reason:'INDUSTRIAL_PERIOD_LEDGER_OUTPUT_INVALID',transactionId,resourceId};
+      outputByResource[resourceId]=(outputByResource[resourceId]||0)+quantity;
+    }
+    const created=Array.isArray(row.createdBatchIds)?row.createdBatchIds:[];
+    for(const batchIdRaw of created){
+      const batchId=String(batchIdRaw||'').trim();
+      if(!batchId||expectedBatchIds.has(batchId))
+        return{ok:false,reason:'INDUSTRIAL_PERIOD_LEDGER_BATCH_INVALID',batchId};
+      expectedBatchIds.add(batchId);
+    }
+    const posted=inventoryLedger.some(entry=>String(entry?.transactionId||'')===transactionId&&
+      String(entry?.productionPeriodId||'')===key&&num(entry?.turn)===targetTurn&&
+      ['FACTORY_PROCESSING_COMMITTED','FACTORY_MULTI_INPUT_PROCESSING_COMMITTED'].includes(String(entry?.type||'')));
+    if(!posted)return{ok:false,reason:'INDUSTRIAL_PERIOD_INVENTORY_LEDGER_MISMATCH',transactionId};
+  }
+  const receiptByBatch=new Map();
+  for(const receipt of receipts){
+    const batchId=String(receipt?.batchId||'').trim(),quantity=num(receipt?.quantity);
+    if(!batchId||quantity===null||quantity<=0||receiptByBatch.has(batchId))
+      return{ok:false,reason:'INDUSTRIAL_PERIOD_WAREHOUSE_RECEIPT_INVALID',batchId};
+    receiptByBatch.set(batchId,receipt);totalQuantity+=quantity;
+    const resourceId=String(receipt?.resourceId||'');
+    outputByResource['__RECEIPT__'+resourceId]=(outputByResource['__RECEIPT__'+resourceId]||0)+quantity;
+  }
+  if(receiptByBatch.size!==expectedBatchIds.size)
+    return{ok:false,reason:'INDUSTRIAL_PERIOD_LEDGER_RECEIPT_COUNT_MISMATCH',
+      ledgerBatches:expectedBatchIds.size,warehouseReceipts:receiptByBatch.size};
+  for(const batchId of expectedBatchIds){
+    const receipt=receiptByBatch.get(batchId);
+    const matching=batches.filter(row=>String(row?.batchId||'')===batchId);
+    const batch=matching[0]||null,lot=lots[batchId]||null;
+    if(!receipt||matching.length!==1||!batch||!lot||!stored.has(batchId)||
+       String(batch.productionPeriodId||'')!==key||String(lot.productionPeriodId||'')!==key||
+       tok(batch.resourceId||batch.materialIdentity)!==tok(receipt.resourceId)||
+       tok(lot.resourceId||lot.materialIdentity)!==tok(receipt.resourceId)||
+       Math.abs((num(batch.quantity)||0)-(num(receipt.quantity)||0))>Math.max(1e-8,Math.abs(num(receipt.quantity)||0)*1e-9)||
+       Math.abs((num(lot.quantity)||0)-(num(receipt.quantity)||0))>Math.max(1e-8,Math.abs(num(receipt.quantity)||0)*1e-9))
+      return{ok:false,reason:'INDUSTRIAL_PERIOD_BATCH_WAREHOUSE_STATE_MISMATCH',batchId};
+  }
+  for(const [resourceId,expected] of Object.entries(Object.fromEntries(
+    Object.entries(outputByResource).filter(([key])=>!key.startsWith('__RECEIPT__'))
+  ))){
+    const received=outputByResource['__RECEIPT__'+resourceId]||0;
+    if(Math.abs(expected-received)>Math.max(1e-8,Math.abs(expected)*1e-9))
+      return{ok:false,reason:'INDUSTRIAL_PERIOD_LEDGER_RECEIPT_QUANTITY_MISMATCH',resourceId,expected,received};
+  }
+  if(receipts.length!==expectedBatchIds.size)
+    return{ok:false,reason:'INDUSTRIAL_PERIOD_EXTRA_WAREHOUSE_RECEIPT'};
+  const evidenceId='INDUSTRIAL_RECONCILIATION:'+cid+':'+key+':'+ledgerTransactions.size+':'+expectedBatchIds.size+':'+Number(totalQuantity.toFixed(6));
+  network.industrialProductionPeriods[key]={
+    ...journal,status:'COMPLETED',completedAt:journal.completedAt||new Date().toISOString(),
+    reconciliationEvidenceId:evidenceId,lastError:null
+  };
+  return{ok:true,status:'RECONCILED',evidenceId,periodTurn:targetTurn,productionPeriodId:key,
+    ledgerRows:ledger.length,receiptRows:receipts.length,batchCount:expectedBatchIds.size,
+    totalQuantity:Number(totalQuantity.toFixed(6)),factoryRunCount:ledgerTransactions.size};
 }
 function reserveBatchesForCommitment(countryId,commitmentId,batchAllocations,metadata={}){
   const cid=canonicalCountry(countryId),net=netState(cid);
@@ -7062,7 +7279,7 @@ function evaluateTransportCoverage(countryId){
   };
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,runCountryTurn,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,registerStartingFactoryAssets,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,allocateFactoryInputProportionally,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,resourceMethod,buildRoute,getTerminalBuyerRoutes,getByProductLifecycle,processByProductLifecycle,reserveBatchesForCommitment,releaseBatchReservation,evaluateTransportCoverage});
+  return Object.freeze({VERSION,loadCatalog,runCountryTurn,reconcileProductionPeriod,markProductionPeriodRecovery,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,registerStartingFactoryAssets,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,allocateFactoryInputProportionally,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,resourceMethod,buildRoute,getTerminalBuyerRoutes,getByProductLifecycle,processByProductLifecycle,reserveBatchesForCommitment,releaseBatchReservation,evaluateTransportCoverage});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 

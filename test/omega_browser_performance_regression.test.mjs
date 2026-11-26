@@ -298,7 +298,9 @@ test('slow simulation frames and data-heavy ministry panels bound repeated UI wo
   assert.match(simulation, /MAX_PENDING_REAL_DELTA_MS\s*=\s*STEP_MS/);
   assert.match(simulation, /const accumulated=this\.pendingRealDeltaMs\+delta/);
   assert.match(simulation, /const retained=Math\.min\(MAX_PENDING_REAL_DELTA_MS,accumulated\)/);
-  assert.match(simulation, /this\.clock\.droppedScaledTimeMs\+=dropped\*Math\.max/);
+  assert.match(simulation, /const scaledDropped=dropped\*Math\.max/);
+  assert.match(simulation, /this\.clock\.droppedScaledTimeMs\+=scaledDropped/);
+  assert.match(simulation, /recordDroppedScaledTime\(scaledDropped,'IN_FLIGHT_FRAME_QUEUE_CAP'\)/);
   assert.match(simulation, /this\.pendingRealDeltaMs=0;/,
     'pausing during an in-flight frame must discard its queued wall-clock time');
 
@@ -339,7 +341,10 @@ test('UI v2 screen transitions schedule heavy rendering after paint and cancel s
 test('simulation coordinator throttles asynchronous work and pauses cleanly in the background', () => {
   const root = read('omega_enterprise_composition_root_v10.js');
   assert.match(root, /SIMULATION_FRAME_INTERVAL_MS\s*=\s*500/);
-  assert.match(root, /MAX_FRAME_DELTA_MS\s*=\s*15000/);
+  assert.doesNotMatch(root, /MAX_FRAME_DELTA_MS/,
+    'the coordinator must not discard elapsed time before the Simulation clock can measure it');
+  assert.match(root, /const dt = Math\.max\(0, now - lastTime\);/,
+    'the full elapsed interval must reach Simulation.frame for bounded catch-up and dropped-time telemetry');
   assert.match(root, /async function engineLoop\(\)/);
   assert.match(root, /await simulation\.frame\(dt\)/);
   assert.match(root, /scheduleEngineLoop\(SIMULATION_FRAME_INTERVAL_MS\)/);

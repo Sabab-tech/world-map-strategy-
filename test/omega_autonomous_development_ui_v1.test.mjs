@@ -79,7 +79,12 @@ test('autonomous screen is wired to the shared route and offline shell',()=>{
  const manifest=JSON.parse(readFileSync(new URL('../omega_ui_v2/manifest.json',import.meta.url),'utf8'));
  assert.match(app,/autonomous-development/);
  assert.match(app,/Autonomous Trade Command/);
- assert.match(index,/<script src="omega_ui_v2\/screens\/autonomous-development\.js" defer><\/script>/);
+ const moduleLoader=readFileSync(new URL('../omega_ui_v2/module-loader.js',import.meta.url),'utf8');
+ assert.ok(index.includes('<script src="omega_ui_v2/module-loader.js" defer></script>'));
+ assert.ok(index.indexOf('omega_ui_v2/module-loader.js')<index.indexOf('omega_ui_v2/app.js'),
+   'the route loader must execute before UI v2 mounts');
+ assert.ok(moduleLoader.includes('omega_ui_v2/screens/autonomous-development.js'),
+   'the autonomous screen must be loaded through its route manifest');
  const shellCacheMatch = sw.match(/CACHE_NAME = "omega-offline-atlas-shell-v([0-9]+)"/);
  assert.ok(shellCacheMatch && Number(shellCacheMatch[1]) > 129,
    'the offline shell must invalidate the previously cached v129 assets');

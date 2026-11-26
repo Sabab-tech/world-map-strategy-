@@ -90,6 +90,8 @@ function createContext(){
       if(bucket===undefined)return undefined;
       return parts.reduce((cur,key)=>cur==null?undefined:cur[key],bucket);
     },
+    // The test transaction exposes the same zero-copy read-only path as production.
+    peek(path){ return this.get(path); },
     set(path,value){
       const parts=String(path).split('.');
       const domain=parts.shift();
@@ -233,7 +235,7 @@ test('resource extraction phase catches up one stable game-day at a time and rec
   assert.match(economySource,/phase:'RESOURCE_EXTRACTION',\s*lastProcessedEventId:periodId,\s*reconciliation:\{status:'RECONCILED'/,
     'the resource checkpoint must advance only with reconciliation evidence');
   const resourcePhase=economySource.indexOf("runCheckpointedResourceExtraction(cid,endowment)");
-  const industrialPhase=economySource.indexOf("industrial.runCountryTurn(cid)",resourcePhase);
+  const industrialPhase=economySource.indexOf("runCheckpointedIndustrialProduction(cid,industrial)",resourcePhase);
   assert.ok(resourcePhase>=0&&industrialPhase>resourcePhase,
     'the existing industrial phase must remain after the resource extraction phase');
 });
@@ -1287,4 +1289,195 @@ test('a buyer bid arriving after factory output upgrades the player seller offer
   await Promise.resolve();
   assert.equal(rebuildCount,rebuildsBeforeOffScopeRequest,
     'an inactive non-player seller must not trigger another country offer refresh');
+});
+
+
+test('resource balance copy-on-write stages only touched keys and preserves legacy dotted IDs',()=>{
+  const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  const helperStart=source.indexOf('function clone(v,seen){');
+  const helperEnd=source.indexOf('function state()',helperStart);
+  assert.ok(helperStart>=0&&helperEnd>helperStart,'economy runtime copy helpers must be present');
+  const helpersSource=source.slice(helperStart,helperEnd);
+  const helpers=vm.runInNewContext('(function(){'+helpersSource+';return {'+
+    'cloneInventoryQuantities,copyMapShallow,cloneWarehouseForMutation,'+
+    'resolveInventoryKey,readInventoryQuantity,stageInventoryQuantity,stageInventoryQuantities};})()');
+  const writes=[];
+  const context={stateTransaction:{set(path,value){writes.push({path,value});}}};
+  const base={IRON_ORE:20,COPPER_ORE:15,'legacy.resource.id':3};
+  const resolved=helpers.resolveInventoryKey(base,null,'iron-ore');
+  assert.equal(resolved,'IRON_ORE','legacy aliases must resolve to the existing resource key');
+  assert.equal(helpers.readInventoryQuantity(base,null,resolved),20);
+  assert.equal(helpers.stageInventoryQuantity(context,base,'IRON_ORE',12),true);
+  assert.equal(writes[0].path,'resource.inventory.IRON_ORE',
+    'a normal single-resource debit/credit must stage only its touched key');
+  assert.equal(writes[0].value,12);
+  assert.equal(helpers.stageInventoryQuantities(context,base,{IRON_ORE:10,COPPER_ORE:8}),true);
+  assert.equal(writes[1].path,'resource.inventory.IRON_ORE');
+  assert.equal(writes[2].path,'resource.inventory.COPPER_ORE');
+  assert.equal(helpers.stageInventoryQuantity(context,base,'legacy.resource.id',9),true);
+  assert.equal(writes[3].path,'resource.inventory',
+    'a dotted legacy resource identity must use the whole-map compatibility fallback');
+  assert.equal(writes[3].value['legacy.resource.id'],9);
+  assert.equal(writes[3].value.IRON_ORE,20,'fallback must preserve untouched balances');
+  assert.equal(helpers.stageInventoryQuantity(context,base,'__proto__',1),false,
+    'prototype keys must be rejected rather than staged as inventory identities');
+  assert.equal(helpers.stageInventoryQuantities(context,base,{constructor:1}),false);
+  assert.equal(writes.length,4,'rejected keys must not create transaction writes');
+  assert.equal(base.IRON_ORE,20,'staging must not mutate authoritative inventory');
+  assert.equal(base['legacy.resource.id'],3);
+});
+
+test('factory production stages balance deltas and copies only mutated batch rows',()=>{
+  const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  const start=source.indexOf('function applyProductionHandler(cmd,ctx){');
+  const end=source.indexOf('function addInventoryHandler(cmd,ctx){',start);
+  assert.ok(start>=0&&end>start,'factory production transaction handler must exist');
+  const handler=source.slice(start,end);
+  assert.match(handler,/inventoryBase=ctx\.stateTransaction\.peek\('resource\.inventory'\)/);
+  assert.match(handler,/inventoryChanges=Object\.create\(null\)/);
+  assert.match(handler,/stageInventoryQuantities\(ctx,inventoryBase,inventoryChanges\)/);
+  assert.doesNotMatch(handler,/cloneInventoryQuantities\(ctx\.stateTransaction/);
+  assert.match(handler,/working=Array\.isArray\(batchRows\)\?batchRows\.slice\(\):\[\]/);
+  assert.match(handler,/working\[b\]=batch;/,
+    'only a batch row actually consumed by production is replaced with a detached copy');
+  assert.match(handler,/inventoryLots=copyMapShallow\(lotRows\)/);
+  assert.match(handler,/ledger=Array\.isArray\(ledgerRows\)\?ledgerRows\.slice\(\):\[\]/);
+});
+
+test('StateTransaction.peek is zero-copy until staged child writes, and parent reads include those writes',()=>{
+  const source=readFileSync('omega_ministry_state_transaction.js','utf8');
+  const state={resource:{BGD:{inventory:{crude_oil:10,iron_ore:20}}}};
+  const win={Game:{state},gameState:state,console};
+  win.window=win;
+  const context=vm.createContext({window:win,globalThis:win,console,Date,JSON,Number,String,Math,Object,Array,Set,Map,WeakMap,Promise});
+  vm.runInContext(source,context,{filename:'omega_ministry_state_transaction.js'});
+  const api=win.Omega&&win.Omega.MinistryStateTransaction;
+  assert.ok(api,'the canonical state transaction API must load');
+  const transaction=api.create('resource','BGD',1,'INVENTORY-PEEK-01',state);
+  const basePeek=transaction.peek('resource.inventory');
+  assert.equal(basePeek,state.resource.BGD.inventory,
+    'an unchanged read-only peek should not allocate another inventory snapshot');
+  const detached=transaction.get('resource.inventory');
+  assert.notEqual(detached,basePeek,'get() must preserve its detached-copy contract');
+  detached.crude_oil=999;
+  assert.equal(basePeek.crude_oil,10,'mutating get() must not affect authoritative state');
+
+  transaction.set('resource.inventory.crude_oil',7);
+  const effective=transaction.peek('resource.inventory');
+  assert.notEqual(effective,basePeek,'a parent read after a child write must materialize an overlay');
+  assert.equal(effective.crude_oil,7,'parent reads must include staged child-path writes');
+  assert.equal(effective.iron_ore,20,'unmodified balances must remain unchanged');
+  assert.equal(transaction.peek('resource.inventory.crude_oil'),7,
+    'the exact child read must see its staged value');
+  effective.iron_ore=123;
+  assert.equal(state.resource.BGD.inventory.iron_ore,20,
+    'a materialized overlay must remain detached from the authoritative base');
+
+  transaction.set('resource.inventory.iron_ore',18);
+  const finalRead=transaction.get('resource.inventory');
+  assert.equal(finalRead.crude_oil,7);
+  assert.equal(finalRead.iron_ore,18);
+  transaction.commit();
+  assert.equal(state.resource.BGD.inventory.crude_oil,7);
+  assert.equal(state.resource.BGD.inventory.iron_ore,18);
+});
+
+test('flat inventory snapshots copy scalar balances directly while preserving nested isolation',()=>{
+  const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  const start=source.indexOf('function clone(v,seen){');
+  const end=source.indexOf('function num(v)',start);
+  assert.ok(start>=0&&end>start,'the economy runtime must define its inventory copy helpers');
+  const helpers=source.slice(start,end);
+  const cloneInventory=vm.runInNewContext('(function(){'+helpers+';return cloneInventoryQuantities;})()');
+  const nested={value:7};nested.self=nested;
+  const shared={detail:9};
+  const input={crude_oil:125,iron_ore:50,unknown:null,nested,sharedA:shared,sharedB:shared};
+  input.rootReference=input;
+  Object.defineProperty(input,'__proto__',{value:{polluted:true},enumerable:true});
+  Object.defineProperty(input,'constructor',{value:{unsafe:true},enumerable:true});
+  input.ignored=undefined;
+  input.fn=function ignored(){};
+  const snapshot=cloneInventory(input);
+  assert.notEqual(snapshot,input,'the quantity map itself must be detached');
+  assert.equal(snapshot.crude_oil,125);
+  assert.equal(snapshot.iron_ore,50);
+  assert.equal(snapshot.unknown,null);
+  assert.equal(snapshot.nested.value,7,
+    'scalar quantities remain unchanged and nested legacy values remain available');
+  assert.notEqual(snapshot.nested,nested,'nested object values retain deep isolation');
+  assert.equal(snapshot.nested.self,snapshot.nested,'nested cycles remain supported');
+  assert.equal(snapshot.rootReference,snapshot,'the snapshot must preserve references back to its root');
+  assert.equal(snapshot.sharedA,snapshot.sharedB,'shared nested values must retain their shared identity');
+  assert.equal(Object.prototype.hasOwnProperty.call(snapshot,'__proto__'),false);
+  assert.equal(Object.prototype.hasOwnProperty.call(snapshot,'constructor'),false);
+  assert.equal(Object.prototype.hasOwnProperty.call(snapshot,'ignored'),false);
+  assert.equal(Object.prototype.hasOwnProperty.call(snapshot,'fn'),false);
+  assert.equal(nested.value,7,'snapshotting must not mutate authoritative inventory entries');
+  assert.match(source,/inv=cloneInventoryQuantities\(invBefore\)/,
+    'resource transactions must use the specialized copy for flat inventory maps');
+  assert.match(source,/inventory-snapshot-before'[\s\S]{0,180}cloneInventoryQuantities\(rs\.inventory/,
+    'finalization must avoid recursive cloning for the before inventory snapshot');
+  assert.match(source,/inventory-snapshot-after'[\s\S]{0,180}cloneInventoryQuantities\(afterState\.inventory/,
+    'finalization must avoid recursive cloning for the after inventory snapshot');
+});
+
+test('industrial production phase is session-scoped, sequential and warehouse-reconciled before checkpoint commit',()=>{
+  const simulationSource=readFileSync('omega_simulation_runtime.js','utf8');
+  const industrialSource=readFileSync('omega_resource_industrial_network_v1.js','utf8');
+  const economySource=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  assert.match(economySource,/function industrialPhasePeriodIdentity\(sessionId,periodTurn\)/,
+    'industrial production needs a stable identity scoped to the active Simulation session');
+  assert.match(economySource,/for\(var periodTurn=lastProcessed\+1;periodTurn<=targetTurn;periodTurn\+\+\)/,
+    'missed industrial game days must be processed sequentially');
+  assert.match(economySource,/productionPeriodTurn:periodTurn,productionPeriodId:periodId/,
+    'the same period identity must reach the existing industrial runner');
+  assert.match(economySource,/domain:'industrial',countryId:cid,sessionId/,
+    'industrial checkpoints must use the canonical player country and active session');
+  assert.match(economySource,/if\(!simulation\)return industrial\.runCountryTurn\(cid\);/,
+    'only legacy hosts without canonical Simulation may use the direct industrial runner');
+  assert.match(economySource,/INDUSTRIAL_PHASE_CHECKPOINT_API_UNAVAILABLE/,
+    'a live Simulation must fail closed when the durable industrial checkpoint API is unavailable');
+  assert.match(economySource,/INDUSTRIAL_PHASE_ACTIVE_SESSION_IDENTITY_MISMATCH/,
+    'industrial execution must reject a mismatched active session/player country');
+  assert.match(economySource,/RESOURCE_PHASE_CHECKPOINT_API_UNAVAILABLE/,
+    'a live Simulation must not run extraction outside the resource checkpoint API');
+  assert.match(economySource,/RESOURCE_PHASE_ACTIVE_SESSION_IDENTITY_MISMATCH/,
+    'resource extraction must reject a mismatched active session/player country');
+  assert.match(economySource,/phase:'INDUSTRIAL_PRODUCTION',\s*lastProcessedEventId:periodId/,
+    'the industrial checkpoint advances only after the period-specific reconciliation');
+  assert.match(economySource,/if\(!reconciliation\?\.ok\)\{\s*industrial\.markProductionPeriodRecovery\(cid,periodId,[\s\S]{0,240}?\);\s*api\.fail\(/,
+    'failed output reconciliation must mark the industrial journal recoverable and leave its checkpoint pending');
+  assert.match(industrialSource,/function reconcileProductionPeriod\(countryId,periodTurn,periodId,runResult\)/,
+    'the industrial authority must reconcile finished goods against existing warehouse and ledgers');
+  assert.match(industrialSource,/productionPeriodId:productionPeriodId\(\)/,
+    'finished output records must retain their creation/completion game-day identity');
+  assert.match(industrialSource,/INDUSTRIAL_PERIOD_BATCH_WAREHOUSE_STATE_MISMATCH/,
+    'warehouse receipt, batch and inventory-lot identities must agree');
+  assert.match(industrialSource,/lastProgressPeriodId===activePeriodId/,
+    'construction progress must not be incremented twice when an industrial period is retried');
+  assert.match(industrialSource,/RECOVERY_REQUIRED/,
+    'partial period execution must retain a recoverable journal instead of clearing the period');
+  assert.match(simulationSource,/ECONOMY_PHASE_DOMAINS=new Set\(\['resources','industrial','fiscal'\]\)/,
+    'the industrial phase must reuse the existing authoritative checkpoint domain');
+});
+
+
+test('industrial journal completion follows reconciliation; failed reconciliation remains retryable',()=>{
+  const industrialSource=readFileSync('omega_resource_industrial_network_v1.js','utf8');
+  const runner=industrialSource.slice(industrialSource.indexOf('function runCountryTurn(countryValue,options={})'),
+    industrialSource.indexOf('function markProductionPeriodRecovery'));
+  const recovery=industrialSource.slice(industrialSource.indexOf('function markProductionPeriodRecovery'),
+    industrialSource.indexOf('function reconcileProductionPeriod'));
+  const reconcile=industrialSource.slice(industrialSource.indexOf('function reconcileProductionPeriod'),
+    industrialSource.indexOf('function reserveBatchesForCommitment'));
+  assert.ok(runner.includes("status:'EXECUTED'"),
+    'the runner must not mark a day completed before reconciliation');
+  assert.ok(!runner.includes("status:'COMPLETED',completedAt"),
+    'the pre-reconciliation journal must remain in the EXECUTED state');
+  assert.ok(recovery.includes("status:'RECOVERY_REQUIRED'"),
+    'a failed reconciliation must mark the industrial journal recoverable');
+  assert.ok(reconcile.includes("['EXECUTED','RECOVERY_REQUIRED','COMPLETED']"),
+    'recovery and already-completed periods must be eligible for reconciliation');
+  assert.ok(reconcile.includes("status:'COMPLETED',completedAt"),
+    'only a successful reconciliation promotes the journal to COMPLETED');
 });

@@ -206,19 +206,70 @@
       return existing;
     }
 
+    _readEffectivePath(path){
+      const p=String(path||''),ref=this._countryContainer(p,false);
+      let value;
+      if(ref){
+        value=ref.container;
+        for(const part of ref.parts){
+          if(value==null||!Object.prototype.hasOwnProperty.call(Object(value),part)){value=undefined;break;}
+          value=value[part];
+        }
+      }
+      // A staged ancestor (for example resource.inventory) replaces the live
+      // value from that point onward. Resolve it before considering more specific
+      // staged writes so parent reads always include their transaction's children.
+      let lastAncestorIndex=-1;
+      for(let i=0;i<this.operations.length;i++){
+        const op=this.operations[i],opPath=String(op.path||'');
+        if(opPath!==p&&!p.startsWith(opPath+'.'))continue;
+        lastAncestorIndex=i;
+        if(op.op==='DELETE'){value=undefined;continue;}
+        value=op.after;
+        if(opPath!==p){
+          const suffix=p.slice(opPath.length+1).split('.');
+          for(const part of suffix){
+            if(value==null||!Object.prototype.hasOwnProperty.call(Object(value),part)){value=undefined;break;}
+            value=value[part];
+          }
+        }
+      }
+      // If a child path has been staged, materialize just this requested subtree
+      // and overlay those writes. Unchanged reads remain zero-copy.
+      let needsOverlay=false;
+      for(let i=lastAncestorIndex+1;i<this.operations.length;i++){
+        if(String(this.operations[i].path||'').startsWith(p+'.')){needsOverlay=true;break;}
+      }
+      if(!needsOverlay)return value;
+      let out=value&&typeof value==='object'?clone(value):{};
+      for(let i=lastAncestorIndex+1;i<this.operations.length;i++){
+        const op=this.operations[i],opPath=String(op.path||'');
+        if(!opPath.startsWith(p+'.'))continue;
+        const parts=opPath.slice(p.length+1).split('.');
+        let target=out;
+        for(let j=0;j<parts.length-1;j++){
+          const part=parts[j];
+          if(!target[part]||typeof target[part]!=='object')target[part]={};
+          target=target[part];
+        }
+        const leaf=parts[parts.length-1];
+        if(op.op==='SET')target[leaf]=clone(op.after);
+        else if(op.op==='DELETE')delete target[leaf];
+      }
+      return out;
+    }
+
+    // Read-only fast path for trusted internal consumers that immediately
+    // create their own copy or only inspect the value. Do not mutate the returned
+    // reference; use get() when a detached mutable value is required.
+    peek(path){
+      this._assertOpen();
+      return this._readEffectivePath(path);
+    }
+
     get(path){
       this._assertOpen();
-      const p=String(path||'');
-      const staged=[...this.operations].reverse().find(op=>op.path===p);
-      if(staged)return clone(staged.after);
-      const ref=this._countryContainer(p,false);
-      if(!ref)return undefined;
-      let cur=ref.container;
-      for(const part of ref.parts){
-        if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
-        cur=cur[part];
-      }
-      return clone(cur);
+      return clone(this._readEffectivePath(path));
     }
 
     commit(){

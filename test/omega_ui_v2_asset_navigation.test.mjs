@@ -209,3 +209,45 @@ test("UI v2 navigation and deferred section refresh use the shared action progre
   assert.ok(app.includes("disposeCurrentScreen(root, state);"),
     "unmount must also dispose active-screen subscriptions and timers");
 });
+
+
+test("UI v2 screen renderers are lazy-loaded and cached on first use with upgrade migration", () => {
+  const html = read("index.html");
+  const worker = read("omega-offline-map-sw.js");
+  const loaderPath = "omega_ui_v2/module-loader.js";
+  const lazyScreens = [
+    "omega_ui_v2/screens/government.js",
+    "omega_ui_v2/screens/ministry-detail.js",
+    "omega_ui_v2/screens/economy.js",
+    "omega_ui_v2/screens/resource-ministry.js",
+    "omega_ui_v2/screens/mine-detail.js",
+    "omega_ui_v2/screens/industry.js",
+    "omega_ui_v2/screens/home-affairs.js",
+    "omega_ui_v2/screens/police-fleet.js",
+    "omega_ui_v2/screens/reports.js",
+    "omega_ui_v2/screens/autonomous-development.js",
+  ];
+  assert.ok(html.includes('<script src="' + loaderPath + '" defer></script>'),
+    "the screen loader must be available before UI v2 mounts");
+  assert.ok(html.indexOf(loaderPath) < html.indexOf("omega_ui_v2/app.js"),
+    "the loader must execute before the UI host");
+  const core = worker.slice(worker.indexOf("const CORE_ASSETS"), worker.indexOf("];", worker.indexOf("const CORE_ASSETS")));
+  const lazy = worker.slice(worker.indexOf("const LAZY_SCREEN_ASSETS"), worker.indexOf("];", worker.indexOf("const LAZY_SCREEN_ASSETS")));
+  assert.ok(core.includes('"./' + loaderPath + '"'), "the loader itself must be cached offline");
+  assert.ok(worker.includes("const LAZY_SCREEN_ASSETS = ["),
+    "screen renderers must be managed separately from the core shell");
+  for (const file of lazyScreens) {
+    assert.equal(html.includes('src="' + file + '"'), false,
+      file + " must not execute from the initial HTML shell");
+    assert.equal(core.includes('"./' + file + '"'), true,
+      file + " must remain precached for offline use without being referenced by the initial HTML shell");
+    assert.ok(lazy.includes('"./' + file + '"'),
+      file + " must be registered for lazy cache migration");
+  }
+  assert.ok(worker.includes("const previousShellCaches = (await caches.keys())"),
+    "previously cached screen modules must survive service-worker upgrades");
+  assert.ok(worker.includes("await previousCache.match(url)"),
+    "the upgrade must migrate existing on-device renderer copies");
+  assert.ok(worker.includes("const response = await fetchAndCache(cache, url.href)"),
+    "first-time route requests must be cached by the fetch handler");
+});

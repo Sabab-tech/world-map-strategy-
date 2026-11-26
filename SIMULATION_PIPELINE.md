@@ -2,7 +2,7 @@
 
 ## One authority for time
 
-The clock owned by `Omega.Simulation` is the sole authority for in-game time. At 1x speed, one completed turn advances one calendar day after 10 seconds of wall-clock time. 2x and 5x are multipliers applied to the same clock; they do not create separate sector clocks.
+The clock owned by `Omega.Simulation` is the sole authority for in-game time. At 1x speed, one completed turn advances one calendar day after 15 seconds of wall-clock time. 2x and 5x are multipliers applied to the same clock; they do not create separate sector clocks.
 
 Every completed turn uses the same `turn`, `stepDurationMs`, `simulationDate`, player country, and authoritative `Game.state`. Domain runtimes must derive elapsed game time from `context.stepDurationMs` or `Omega.Simulation.clock.stepDurationMs`. Do not interpret a turn as an hour or month, and do not run an independent game-time `setInterval`.
 

@@ -4327,6 +4327,124 @@
     });
   }
 
+  var INDUSTRY_RUNTIME_EVENT_TABS = Object.freeze({
+    OMEGA_RESOURCE_EXTRACTION_COMPLETED:['factories','inventory','logistics','projects','production-lines'],
+    OMEGA_RESOURCE_SITE_FLOW_DISPATCHED:['factories','inventory','logistics','production-lines'],
+    OMEGA_RESOURCE_INVENTORY_CHANGED:['factories','inventory','production-lines'],
+    OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE:['factories','inventory','production-lines'],
+    OMEGA_RESOURCE_PROCESSING_COMPLETED:['factories','inventory','production-lines'],
+    OMEGA_RESOURCE_TECHNOLOGY_PROJECT_STARTED:['projects','factories'],
+    OMEGA_INFRASTRUCTURE_PROJECT_STARTED:['projects','logistics'],
+    OMEGA_RESOURCE_MINE_PROJECT_STARTED:['projects','logistics'],
+    OMEGA_RESOURCE_MINE_COMMISSIONED:['projects','logistics','factories'],
+    OMEGA_RESOURCE_MINE_CAPACITY_CHANGED:['logistics','factories'],
+    OMEGA_SIMULATION_TURN_COMMITTED:['factories','inventory','logistics','projects','companies','production-lines'],
+    OMEGA_FACTORY_CAPACITY_CHANGED:['factories','production-lines'],
+    OMEGA_FACTORY_DECOMMISSIONED:['factories','production-lines'],
+    OMEGA_COUNTRY_STARTING_FACTORY_ASSETS_REGISTERED:['factories','companies','production-lines'],
+    OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY:['factories','companies','production-lines'],
+    OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED:['factories','companies','production-lines'],
+    OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY:['companies','production-lines'],
+    OMEGA_PRIVATE_ENTERPRISE_BASELINE_FAILED:['companies','production-lines']
+  });
+
+  function industryEventAffectsTab(eventName, tab) {
+    var tabs = INDUSTRY_RUNTIME_EVENT_TABS[eventName];
+    return !!(tabs && tabs.indexOf(String(tab || 'factories')) >= 0);
+  }
+
+  function industryEventCountry(event) {
+    var detail = event && event.detail !== undefined ? event.detail : null;
+    if (detail && detail.payload && typeof detail.payload === 'object' &&
+        !detail.countryId && !detail.playerCountryId && !detail.sourceCountryId) detail = detail.payload;
+    var value = detail && (detail.countryId || detail.playerCountryId || detail.sourceCountryId);
+    return value == null || String(value).trim() === '' ? '' : canonicalCountry(value);
+  }
+
+  function refreshIndustryRuntimeInPlace(root) {
+    if (!root || !root.querySelector ||
+        !root.querySelector('.omega-v2-industry-command, .omega-v2-factory-command')) return false;
+    var options = Object.assign({}, root.__omegaV2IndustryOptions || {}, {
+      countryId:root.__omegaV2IndustryCountryId || root.__omegaV2IndustryOptions?.countryId,
+      tab:root.__omegaV2IndustryTab || root.__omegaV2IndustryOptions?.tab || 'factories'
+    });
+    // Runtime events refresh the mounted screen in place. They do not enter the
+    // navigation progress/loading path and never execute factory or economy actions.
+    var result = render(root, options);
+    if (result && result.ok) {
+      var lifecycle = g.OmegaPrivateEnterpriseLifecycleV1 ||
+        (g.Omega && g.Omega.PrivateEnterpriseLifecycleV1) || null;
+      if (lifecycle && typeof lifecycle.renderIndustryPanel === 'function') {
+        lifecycle.renderIndustryPanel(root, Object.assign({}, options, {
+          countryId:root.__omegaV2IndustryCountryId || options.countryId,
+          tab:root.__omegaV2IndustryTab || options.tab || 'factories'
+        }));
+      }
+    }
+    return !!(result && result.ok);
+  }
+
+  function scheduleIndustryRuntimeRefresh(root, eventName) {
+    if (!root || !root.__omegaV2IndustryEventsBound ||
+        !industryEventAffectsTab(eventName, root.__omegaV2IndustryTab || 'factories')) return false;
+    if (!root.querySelector || !root.querySelector('.omega-v2-industry-command, .omega-v2-factory-command')) return false;
+    var schedule = typeof g.setTimeout === 'function' ? g.setTimeout.bind(g) : null;
+    if (!schedule) return false;
+    var pending = root.__omegaV2IndustryRefreshEvents ||
+      (root.__omegaV2IndustryRefreshEvents = Object.create(null));
+    pending[eventName] = true;
+    if (root.__omegaV2IndustryRefreshTimer !== null &&
+        root.__omegaV2IndustryRefreshTimer !== undefined) return true;
+    root.__omegaV2IndustryRefreshTimer = schedule(function () {
+      root.__omegaV2IndustryRefreshTimer = null;
+      root.__omegaV2IndustryRefreshEvents = Object.create(null);
+      refreshIndustryRuntimeInPlace(root);
+    }, 180);
+    return true;
+  }
+
+  function bindIndustryRuntimeEvents(root, options) {
+    options = options || {};
+    if (!root || root.__omegaV2IndustryEventsBound ||
+        typeof g.addEventListener !== 'function') return function () {};
+    root.__omegaV2IndustryOptions = options;
+    var names = Object.keys(INDUSTRY_RUNTIME_EVENT_TABS);
+    var handlers = [];
+    var disposed = false;
+    function cleanup() {
+      if (disposed) return;
+      disposed = true;
+      if (root.__omegaV2IndustryRefreshTimer !== null &&
+          root.__omegaV2IndustryRefreshTimer !== undefined &&
+          typeof g.clearTimeout === 'function') {
+        try { g.clearTimeout(root.__omegaV2IndustryRefreshTimer); } catch (_) {}
+      }
+      root.__omegaV2IndustryRefreshTimer = null;
+      root.__omegaV2IndustryRefreshEvents = Object.create(null);
+      handlers.forEach(function (row) {
+        try { if (typeof g.removeEventListener === 'function') g.removeEventListener(row.type, row.callback); } catch (_) {}
+      });
+      root.__omegaV2IndustryRuntimeEventHandlers = [];
+      root.__omegaV2IndustryEventsBound = false;
+    }
+    names.forEach(function (eventName) {
+      var handler = function (event) {
+        var sourceCountry = industryEventCountry(event);
+        var selectedCountry = canonicalCountry(root.__omegaV2IndustryCountryId ||
+          root.__omegaV2IndustryOptions?.countryId || '');
+        if (sourceCountry && selectedCountry && sourceCountry !== selectedCountry) return;
+        scheduleIndustryRuntimeRefresh(root, eventName);
+      };
+      handler.__omegaIndustryRuntimeRefreshHandler = true;
+      handlers.push({ type:eventName, callback:handler });
+      g.addEventListener(eventName, handler);
+    });
+    root.__omegaV2IndustryRuntimeEventHandlers = handlers.slice();
+    root.__omegaV2IndustryEventsBound = true;
+    if (typeof options.onRegisterCleanup === 'function') options.onRegisterCleanup(cleanup);
+    return cleanup;
+  }
+
   function render(root, options) {
     options = options || {};
     if (!root) return { ok: false, code: 'INDUSTRY_ROOT_REQUIRED' };
@@ -5299,22 +5417,7 @@
       });
       root.__omegaV2IndustryBound = true;
     }
-    if (!root.__omegaV2IndustryEventsBound && typeof g.addEventListener === 'function') {
-      ['OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_SITE_FLOW_DISPATCHED','OMEGA_RESOURCE_INVENTORY_CHANGED',
-       'OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_RESOURCE_TECHNOLOGY_PROJECT_STARTED',
-       'OMEGA_INFRASTRUCTURE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED',
-       'OMEGA_RESOURCE_MINE_CAPACITY_CHANGED','OMEGA_SIMULATION_TURN_COMMITTED',
-       'OMEGA_FACTORY_CAPACITY_CHANGED','OMEGA_FACTORY_DECOMMISSIONED',
-       'OMEGA_COUNTRY_STARTING_FACTORY_ASSETS_REGISTERED','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED',
-       'OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY','OMEGA_PRIVATE_ENTERPRISE_BASELINE_FAILED',
-       ].forEach(function (eventName) {
-        g.addEventListener(eventName, function () {
-          if (!root.querySelector || !root.querySelector('.omega-v2-industry-command, .omega-v2-factory-command')) return;
-          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
-        });
-      });
-      root.__omegaV2IndustryEventsBound = true;
-    }
+    bindIndustryRuntimeEvents(root, options);
     root.__omegaV2IndustryOptions = options;
     root.__omegaV2IndustryModel = model;
     if (active !== 'factories') root.__omegaV2IndustryNotice = '';
@@ -5335,6 +5438,9 @@
     version:'1.2.0',
     buildViewModel:buildViewModel,
     render:render,
+    bindRuntimeEvents:bindIndustryRuntimeEvents,
+    scheduleRuntimeRefresh:scheduleIndustryRuntimeRefresh,
+    runtimeEventNames:Object.keys(INDUSTRY_RUNTIME_EVENT_TABS),
     recordFactoryInputCoverage:updateFactoryInputCoverageSnapshotV1,
     resourceIconPath:factoryResourceIconPath,
     formatFactoryDetailAmount:factoryDetailFormatAmount,

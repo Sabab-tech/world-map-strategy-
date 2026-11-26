@@ -778,10 +778,22 @@ test('Resource Economy registers as one ordered simulation subsystem instead of 
   gameState.resource.BGD = { inventory: {}, batches: [], mines: [] };
   gameState.economy.BGD = { productionAssets: [] };
   win.Omega.ResourceIndustrialNetwork = {
-    async runCountryTurn(countryId) {
+    async runCountryTurn(countryId, options) {
       industrialCalls += 1;
       assert.equal(countryId, 'BGD');
-      return { countryId, factory: { completed: [], blocked: [] } };
+      assert.ok(options && options.productionPeriodId,
+        'the checkpointed runner must pass its stable industrial period identity');
+      return { status:'COMPLETED', countryId, factory: { completed: [], blocked: [] } };
+    },
+    reconcileProductionPeriod(countryId, periodTurn, periodId, result) {
+      assert.equal(countryId, 'BGD');
+      assert.ok(periodId.startsWith('OMEGA_INDUSTRIAL_DAY:'), 'reconciliation must receive the stable session/day period ID');
+      assert.ok(Number.isInteger(periodTurn));
+      assert.equal(result.status, 'COMPLETED');
+      return { ok:true, evidenceId:'TEST-INDUSTRIAL-RECONCILIATION:' + periodId };
+    },
+    markProductionPeriodRecovery(countryId, periodId, reason) {
+      return { status:'RECOVERY_REQUIRED', countryId, periodId, reason };
     }
   };
 
@@ -949,7 +961,7 @@ test('compact gameplay clock keeps date, Treasury and a live accessible day-prog
   assert.match(activeDockCss, /\.ogth-advanced:not\(\[open\]\) > \.ogth-advanced-content \{ display: none !important; \}/);
   assert.match(activeDockCss, /\.ogth-clock-progress-row[\s\S]*?display: flex !important;/);
   assert.match(activeDockCss, /height: 30px !important;/);
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v156/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v157/);
   assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/);
   assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
   assert.match(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,

@@ -96,6 +96,18 @@ function makeHarness(initialState = {}) {
   function txFactory(countryId) {
     const normalizePath = p => String(p || '').split('.').filter(Boolean);
     return {
+      // Match the production transaction contract: peek is a read-only view
+      // and does not allocate a detached copy; get() remains defensive.
+      peek(pathStr) {
+        const parts = normalizePath(pathStr);
+        if (!parts.length) return undefined;
+        let cur = state[parts[0]]?.[countryId];
+        for (let i = 1; i < parts.length; i++) {
+          if (cur == null) return undefined;
+          cur = cur[parts[i]];
+        }
+        return cur;
+      },
       get(pathStr) {
         const parts = normalizePath(pathStr);
         if (!parts.length) return undefined;
