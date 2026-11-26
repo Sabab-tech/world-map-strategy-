@@ -152,3 +152,48 @@ Regression coverage is added to:
 - `test/omega_resource_economy_runtime_v2.test.mjs` — sequential catch-up, ledger/warehouse reconciliation, and resource-before-industrial ordering contracts.
 
 This implementation's GitHub Actions regression results must be checked on the exact PR head before merge. Browser end-to-end and Android tests remain excluded from this milestone.
+
+
+## 12. M1–M4 runtime smoothness and industrial phase update — 2026-11-26
+
+This addendum supersedes the earlier statement that industrial phase separation remains future E4 work. M1–M4 are implemented on the current development branch; merge remains gated by the exact-head regression checks.
+
+### M1 — Controlled UI screen loading
+
+- Ten UI v2 presentation renderers are removed from the initial HTML script list and loaded by `omega_ui_v2/module-loader.js` from the selected route manifest.
+- The initial script list changes from 153 references to 144. The referenced JavaScript source estimate changes from 10,132,428 bytes to 9,309,447 bytes (822,981 fewer bytes, approximately 8.12%).
+- Simulation, resource, economy, industrial, trade, country-data, save and compatibility scripts remain in their existing static order.
+- Concurrent requests are coalesced; loaded renderers are reused; dependencies are loaded in order; failed loads can be retried; stale navigation generations cannot render over a newer route.
+- The loader is part of the offline shell. Route renderers are cached when first requested, and copies already present in the previous shell cache are migrated during an app update. A route never visited online before an offline session may not yet have a local renderer copy; its first offline request receives the normal asset-unavailable fallback rather than pretending the module exists.
+
+### M2 — Active Industry screen freshness
+
+- Industry runtime events are mapped to the tabs they can affect.
+- Relevant events are coalesced into a 180 ms in-place refresh rather than routing through the navigation/loading overlay.
+- Events scoped to another country are ignored.
+- Screen cleanup cancels pending refresh work and removes only the listeners registered by this screen. Existing factory-coverage listeners remain untouched.
+
+### M3 — Runtime observability
+
+- Each ordered Simulation turn participant records last, average, maximum and rolling p95 execution duration.
+- Rolling samples are bounded to 32 per participant and the diagnostic map is bounded to 256 participant records.
+- Dropped scaled time is exposed in Simulation diagnostics and emitted as `OMEGA_SIMULATION_TIME_DROPPED` for both the clock's one-step-per-frame cap and the in-flight frame queue cap.
+- Timing samples remain process-local diagnostics; they are not a second save-state authority.
+- The documented authoritative 1x day cadence is 15 seconds, matching `STEP_MS` and the composition root.
+
+### M4 — Checkpointed elapsed-time industrial production
+
+- The existing Resource Economy participant remains the only production-phase orchestrator. It runs resource extraction first, then industrial production, with no additional clock or scheduler.
+- Industrial checkpoints use the existing `Omega.EconomyPhaseCheckpoints` API under the existing `industrial` domain and are scoped by the active Simulation session and canonical player country.
+- Missed industrial days are processed sequentially with stable session/day period IDs. Existing shipping, construction, factory-input and cycle functions remain the execution authority.
+- Factory cycles, output batches, inventory lots, processed-warehouse receipts, finished-goods ledger rows and inventory ledger rows carry the same production-period identity.
+- Construction progress has a per-period idempotency guard. Factory output continues to use the existing recipe, transaction, resource and warehouse identities.
+- The period journal is bounded. A completed period is idempotent; failed partial execution remains `RECOVERY_REQUIRED` and is retried under the same period identity.
+- The industrial checkpoint advances only after finished-goods ledger rows, inventory-ledger transactions, warehouse receipts, stored batch IDs, batches and inventory lots reconcile by identity and quantity.
+- A legacy save baseline starts from its reliable session execution boundary; missing evidence does not retroactively create years of output. Catch-up is bounded to 365 periods per execution attempt.
+
+### M1–M4 validation boundary
+
+- Focused UI, clock, resource, industrial, economy, save and architecture regressions are run on the exact PR head.
+- Browser E2E and Android device/WebView tests remain excluded for this milestone. Android APK compilation, when run by CI, is a build only and is not an Android test.
+- A failed checkpoint or reconciliation remains a failure; no checkpoint is advanced by a green-looking UI or a later market phase.
