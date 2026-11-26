@@ -331,7 +331,8 @@ assert.equal(globalThis.Game.state.trade.BGD.importRequests.length,requestsBefor
 
 const refreshTurn=Number(globalThis.Game.state.simulation.turn||0)+1;
 globalThis.Game.state.simulation.turn=refreshTurn;
-globalThis.Game.state.simulation.session={playerCountryId:'BDG'};
+const refreshPlayerCountryId=identity.resolveCountry('BGD')?.id||'BGD';
+globalThis.Game.state.simulation.session={playerCountryId:refreshPlayerCountryId};
 const nativeMarketSetTimeout=globalThis.setTimeout;
 const marketPerformance=globalThis.performance;
 const originalMarketPerformanceNow=Object.getOwnPropertyDescriptor(marketPerformance,'now');
@@ -345,7 +346,7 @@ globalThis.setTimeout=function marketRefreshYieldProbe(callback,delay,...args){
 };
 let countryRefresh;
 try{
-  const pendingRefresh=market.rebuildCountry('BGD');
+  const pendingRefresh=market.rebuildCountry(refreshPlayerCountryId);
   assert.equal(typeof pendingRefresh?.then,'function',
     'the committed-day market refresh must be asynchronous and yield instead of blocking all ministries');
   countryRefresh=await pendingRefresh;
@@ -363,7 +364,7 @@ assert.ok(countryRefresh.refresh?.resourceCount>0,JSON.stringify(countryRefresh.
 assert.ok(countryRefresh.refresh?.yieldCount>0,JSON.stringify(countryRefresh.refresh));
 assert.ok(marketRefreshYieldCount>0,'the market refresh must yield control to the browser between workload slices');
 assert.equal(market.diagnostics().lastCountryRefresh?.scheduler,'COOPERATIVE_MAIN_THREAD_SLICES');
-assert.equal(market.getCompanyResearchRequests('BGD','AURORA_INDUSTRIAL_GROUP')[0]?.status,'RESOLVED',
+assert.equal(market.getCompanyResearchRequests(refreshPlayerCountryId,'AURORA_INDUSTRIAL_GROUP')[0]?.status,'RESOLVED',
   'queued market research must still resolve after the cooperative refresh');
 
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
