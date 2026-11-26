@@ -1136,3 +1136,87 @@ test('NPC-only Finance and Macro events do not repaint the player HUD', async ()
   queuedFrames.shift()();
   assert.equal(financeReads, 2);
 });
+
+
+test('resource updates do not repaint a hidden legacy Country IOS chapter or duplicate the Resource Economy refresh', () => {
+  const countryIosSource = fs.readFileSync(path.join(root, 'country-ios.js'), 'utf8');
+  const resourceEconomySource = fs.readFileSync(path.join(root, 'omega_resource_economy_runtime_v2.js'), 'utf8');
+  const refreshStart = resourceEconomySource.indexOf('function refreshUI(){');
+  const refreshEnd = resourceEconomySource.indexOf('\n  function boot(){', refreshStart);
+  assert.ok(refreshStart >= 0 && refreshEnd > refreshStart, 'Resource Economy legacy refresh hook exists');
+  const refreshBody = resourceEconomySource.slice(refreshStart, refreshEnd);
+  assert.match(refreshBody, /getElementById\('command-hub-modal'\)/);
+  assert.match(refreshBody, /modal\.style\.display==='none'/);
+  assert.match(countryIosSource, /window\.OmegaResourceEconomy \|\| \(window\.Omega && window\.Omega\.ResourceEconomy\)/);
+
+  const windowListeners = new Map();
+  const documentListeners = new Map();
+  const frameCallbacks = [];
+  const modal = { hidden:false, style:{ display:'none' } };
+  const document = {
+    addEventListener(type, listener) {
+      const rows = documentListeners.get(type) || [];
+      rows.push(listener);
+      documentListeners.set(type, rows);
+    },
+    getElementById(id) { return id === 'command-hub-modal' ? modal : null; },
+    querySelectorAll() { return []; }
+  };
+  const win = {
+    document,
+    addEventListener(type, listener) {
+      const rows = windowListeners.get(type) || [];
+      rows.push(listener);
+      windowListeners.set(type, rows);
+    },
+    getComputedStyle(node) {
+      return { display:node.style.display || 'none', visibility:'visible' };
+    },
+    requestAnimationFrame(callback) {
+      frameCallbacks.push(callback);
+      return frameCallbacks.length;
+    }
+  };
+  win.window = win;
+  const context = vm.createContext({ window:win, document, console, Number, String, Math, Object, Array, Set, Promise });
+  vm.runInContext(countryIosSource, context, { filename:'country-ios.js' });
+
+  const ios = win.CountryIOS;
+  ios.activeCountry = 'BGD';
+  ios.activeChapter = 5;
+  let renders = 0;
+  ios.switchChapter = () => { renders += 1; };
+  const dispatchResourceUpdate = () => {
+    for (const listener of windowListeners.get('RESOURCE_STATE_UPDATED') || []) listener();
+  };
+
+  // Normal production mode: Resource Economy v2 schedules the sole repaint.
+  modal.style.display = 'flex';
+  win.OmegaResourceEconomy = {};
+  dispatchResourceUpdate();
+  assert.equal(frameCallbacks.length, 0, 'legacy listener must defer to Resource Economy v2');
+  assert.equal(renders, 0);
+
+  // If Resource Economy v2 is absent, a closed legacy modal must remain untouched.
+  win.OmegaResourceEconomy = null;
+  modal.style.display = 'none';
+  dispatchResourceUpdate();
+  assert.equal(frameCallbacks.length, 0, 'hidden legacy chapter must not schedule any render');
+  assert.equal(renders, 0);
+
+  // In an isolated legacy session, visible fallback rendering is coalesced per frame.
+  modal.style.display = 'flex';
+  dispatchResourceUpdate();
+  dispatchResourceUpdate();
+  assert.equal(frameCallbacks.length, 1, 'burst resource updates must schedule one fallback render');
+  assert.equal(renders, 0, 'fallback render must remain deferred until the scheduled frame');
+  frameCallbacks.shift()();
+  assert.equal(renders, 1, 'visible legacy fallback renders the chapter once');
+
+  // Closing the modal before the queued frame flushes cancels the stale paint.
+  dispatchResourceUpdate();
+  assert.equal(frameCallbacks.length, 1);
+  modal.style.display = 'none';
+  frameCallbacks.shift()();
+  assert.equal(renders, 1, 'a queued refresh must recheck visibility before repainting');
+});
