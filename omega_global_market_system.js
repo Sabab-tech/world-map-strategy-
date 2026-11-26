@@ -21,11 +21,51 @@
   const canonical=v=>{try{const r=registry()?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}return id(v);};
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
   const turn=()=>n(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
+  function marketNow(){
+    try{const value=Number(g.performance?.now?.());if(Number.isFinite(value))return value;}catch(_){}
+    return Date.now();
+  }
+  function yieldMarketRefresh(){
+    return new Promise(resolve=>{
+      if(typeof g.setTimeout==='function'){g.setTimeout(resolve,0);return;}
+      Promise.resolve().then(resolve);
+    });
+  }
+  function drainMarketWorkSync(iterator){
+    let next=iterator.next();
+    while(!next.done)next=iterator.next();
+    return next.value;
+  }
+  async function drainMarketWorkCooperatively(iterator,pacing){
+    let next=iterator.next();
+    while(!next.done){
+      const now=marketNow(),sliceMs=Math.max(0,now-pacing.sliceStartedAt);
+      if(sliceMs>=MARKET_REFRESH_SLICE_MS){
+        pacing.maxSliceMs=Math.max(pacing.maxSliceMs,sliceMs);
+        await yieldMarketRefresh();
+        pacing.yieldCount+=1;
+        pacing.sliceStartedAt=marketNow();
+      }
+      next=iterator.next();
+    }
+    return next.value;
+  }
+  async function yieldIfMarketSliceExpired(pacing){
+    const now=marketNow(),sliceMs=Math.max(0,now-pacing.sliceStartedAt);
+    if(sliceMs<MARKET_REFRESH_SLICE_MS)return false;
+    pacing.maxSliceMs=Math.max(pacing.maxSliceMs,sliceMs);
+    await yieldMarketRefresh();
+    pacing.yieldCount+=1;
+    pacing.sliceStartedAt=marketNow();
+    return true;
+  }
   // A market rebuild reads one stable world snapshot for every resource. Resolve each
   // country/domain bucket once so resource-by-resource clearing does not repeatedly scan
   // all country keys and re-resolve the same aliases.
   let activeMarketSnapshot=null;
   let activeProductIndex=null;
+  let rebuildCountryInFlight=null;
+  const MARKET_REFRESH_SLICE_MS=6;
   function createMarketSnapshot(){
     const root=state()||{},countryIds=new Set();
     const resolveRow=row=>{
@@ -288,9 +328,10 @@
   }
 
   function pushOrder(book,order){if(!order.resourceId||order.quantity<=0||order.price===null)return;const key=String(order.resourceId);if(!book[key])book[key]={bids:[],asks:[]};book[key][order.side].push(order);}
-  function collectOrders(rid){
-    const book={bids:[],asks:[]},product=describeProduct(rid);
-    for(const c of countries()){
+  function* collectOrdersWork(rid,countryRows){
+    const book={bids:[],asks:[]},product=describeProduct(rid),rows=Array.isArray(countryRows)?countryRows:countries();
+    for(let countryIndex=0;countryIndex<rows.length;countryIndex++){
+      const c=rows[countryIndex];
       const reqs=countryValue(c,'trade.importRequests');
       if(Array.isArray(reqs))for(const q of reqs.slice(-256)){
         if(token(q?.resourceId)!==token(rid)||!['SENT','COUNTER_OFFERED','ACCEPTED'].includes(id(q?.status)))continue;
@@ -324,11 +365,13 @@
         const usd=ref?toUsd(c,ref.price):null;
         if(ref&&usd!==null)pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:available,price:ref.price,priceUsd:usd,currency:currency(c),source:'OBSERVED_RESOURCE_LIQUIDITY_AT_REFERENCE',referenceOnly:true,productType:product.productType,productRole:product.productRole,unit:ref.unit||product.unit||null});
       }
+      if((countryIndex+1)%8===0)yield null;
     }
     book.bids=book.bids.slice(-MAX_ORDERS);book.asks=book.asks.slice(-MAX_ORDERS);
     return book;
   }
-  function clearResource(rid,orders,history=[]){
+  function collectOrders(rid){return drainMarketWorkSync(collectOrdersWork(rid));}
+  function* clearResourceWork(rid,orders,history=[]){
     const bids=[...orders.bids].sort((a,b)=>b.priceUsd-a.priceUsd||a.countryId.localeCompare(b.countryId)||String(a.requestId||'').localeCompare(String(b.requestId||'')));
     const asks=[...orders.asks].sort((a,b)=>a.priceUsd-b.priceUsd||a.countryId.localeCompare(b.countryId)||String(a.offerId||'').localeCompare(String(b.offerId||'')));
     let matched=0,lastBid=null,lastAsk=null,matches=[],blockedPairs=[];
@@ -337,8 +380,10 @@
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     // Match each buyer against price-eligible sellers independently. An embargoed pair
     // is skipped without discarding that seller's offer for other countries.
+    let pairOperations=0;
     for(const bid of bidRemain){
       for(const ask of askRemain){
+        if(++pairOperations>=128){pairOperations=0;yield null;}
         if(bid.remaining<=1e-9)break;
         if(ask.remaining<=1e-9)continue;
         // Resource inventory at a reference price is a quote signal, not a seller order.
@@ -360,6 +405,7 @@
             reason:stateDirective.reason||'STATE_SUPPLY_DIRECTIVE_BLOCKED',stateSupplyDirective:stateDirective});
           continue;
         }
+  function clearResource(rid,orders,history=[]){return drainMarketWorkSync(clearResourceWork(rid,orders,history));}
         matched+=q;lastBid=bid;lastAsk=ask;
         matches.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,quantity:q,bidPriceUsd:bid.priceUsd,askPriceUsd:ask.priceUsd,bidPrice:bid.price,askPrice:ask.price,referenceLiquidity:!!ask.referenceOnly,productType:bid.productType||ask.productType||describeProduct(rid).productType,productRole:bid.productRole||ask.productRole||null});
         bid.remaining-=q;ask.remaining-=q;
@@ -383,8 +429,35 @@
       bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.filter(x=>x.referenceOnly!==true).reduce((s,x)=>s+(n(x.quantity)||0),0),referenceAskDepth:asks.filter(x=>x.referenceOnly===true).reduce((s,x)=>s+(n(x.quantity)||0),0),
       priceDiscovery:clearing!==null?'ORDER_BOOK_CROSSING':(bestBid!==null&&bestAsk!==null?'NEGOTIATION_RANGE':ref?'REFERENCE_ONLY':'UNAVAILABLE'),
       referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,vwapUsd:vwap,spreadUsd:spread,volatilityUsd,
-      microstructure:{bidCount:bids.length,askCount:asks.filter(x=>x.referenceOnly!==true).length,referenceAskCount:asks.filter(x=>x.referenceOnly===true).length},
-      generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.filter(x=>x.referenceOnly!==true).length,referenceAsks:asks.filter(x=>x.referenceOnly===true).length}};
+      microstructure:{bidCount:bids.length,askCount:asks.filter(x=>x.referenceOnly!==true).length,referenceAskCount:asks.filter(x  async function rebuildCooperatively(){
+    const previousSnapshot=activeMarketSnapshot,previousProductIndex=activeProductIndex;
+    const startedAt=marketNow(),pacing={sliceStartedAt:startedAt,yieldCount:0,maxSliceMs:0};
+    activeMarketSnapshot=createMarketSnapshot();
+    activeProductIndex=buildProductIndex();
+    try{
+      const markets={},countryRows=activeMarketSnapshot.countryIds.slice(),resourceRows=resourceIds();
+      const seedCountry=countryRows[0];
+      const persisted=seedCountry?countryValue(seedCountry,'trade.marketHistory'):{};
+      for(let index=0;index<resourceRows.length;index++){
+        const rid=resourceRows[index];
+        const orders=await drainMarketWorkCooperatively(collectOrdersWork(rid,countryRows),pacing);
+        const h=Array.isArray(persisted?.[rid])?persisted[rid]:[];
+        const clearing=await drainMarketWorkCooperatively(clearResourceWork(rid,orders,h),pacing);
+        markets[rid]={orders,clearing,history:h.concat([{turn:turn(),...clearing}]).slice(-MAX_MARKET_HISTORY)};
+        await yieldIfMarketSliceExpired(pacing);
+      }
+      g.__OmegaMarketBooks=markets;
+      const completedAt=marketNow();
+      g.__omegaGlobalMarketRefreshDiagnostics={
+        status:'COMPLETED',turn:turn(),countryCount:countryRows.length,resourceCount:resourceRows.length,
+        yieldCount:pacing.yieldCount,durationMs:Number(Math.max(0,completedAt-startedAt).toFixed(2)),
+        maxSliceMs:Number(pacing.maxSliceMs.toFixed(2)),scheduler:'COOPERATIVE_MAIN_THREAD_SLICES'
+      };
+      return markets;
+    }finally{
+      activeMarketSnapshot=previousSnapshot;
+      activeProductIndex=previousProductIndex;
+    }
   }
   function rebuild(){
     const previousSnapshot=activeMarketSnapshot,previousProductIndex=activeProductIndex;
@@ -942,19 +1015,30 @@
     }
     return null;
   }
-  function rebuildCountry(countryId){
+  async function rebuildCountry(countryId){
     const selected=playerSimulationCountryId(),target=canonical(countryId||selected);
     if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
     if(target!==selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:target,playerCountryId:selected};
     const token=String(turn())+':'+selected;
     if(g.__omegaGlobalMarketProjectedToken===token)return{status:'ALREADY_UPDATED',countryId:selected,turn:turn()};
-    install();
-    const markets=rebuild();
-    const result=writeProjection(selected,markets);
-    const researchResolution=resolveCompanyResearch(selected);
-    try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',selected,'trade',{turn:turn(),resources:Object.keys(markets).length},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+selected});}catch(_){}
-    g.__omegaGlobalMarketProjectedToken=token;
-    return{status:'COMPLETED',countryId:selected,turn:turn(),resourceCount:Object.keys(markets).length,projection:result,researchResolution};
+    if(rebuildCountryInFlight){
+      if(rebuildCountryInFlight.token===token)return rebuildCountryInFlight.promise;
+      await rebuildCountryInFlight.promise.catch(()=>null);
+      return rebuildCountry(countryId);
+    }
+    const task=(async()=>{
+      install();
+      const markets=await rebuildCooperatively();
+      const result=writeProjection(selected,markets);
+      const researchResolution=resolveCompanyResearch(selected);
+      try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',selected,'trade',{turn:turn(),resources:Object.keys(markets).length},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+selected});}catch(_){}
+      g.__omegaGlobalMarketProjectedToken=token;
+      return{status:'COMPLETED',countryId:selected,turn:turn(),resourceCount:Object.keys(markets).length,
+        projection:result,researchResolution,refresh:clone(g.__omegaGlobalMarketRefreshDiagnostics||null)};
+    })();
+    rebuildCountryInFlight={token,promise:task};
+    try{return await task;}
+    finally{if(rebuildCountryInFlight?.promise===task)rebuildCountryInFlight=null;}
   }
   function onTurn(){
     const selected=playerSimulationCountryId();
@@ -963,7 +1047,7 @@
   }
   function diagnostics(){
     const markets=g.__OmegaMarketBooks||{},rows=Object.values(markets),catalogRows=productCatalog();
-    return{version:VERSION,handlerInstalled:!!interop()?.commandHandlers?.has?.('OMEGA_MARKET_PUBLISH_PROJECTION'),resourceMarkets:rows.length,clearedMarkets:rows.filter(x=>x.clearing?.status==='CLEARED').length,marketOrderCount:rows.reduce((s,x)=>s+(x.orders?.bids?.length||0)+(x.orders?.asks?.length||0),0),rawResourceProducts:catalogRows.filter(x=>x.productType==='RAW_RESOURCE').length,factoryProducts:catalogRows.filter(x=>x.productType==='FACTORY_PRODUCT').length,numeraire:'USD',settlementAuthority:'PRICE_DISCOVERY_ONLY'};
+    return{version:VERSION,handlerInstalled:!!interop()?.commandHandlers?.has?.('OMEGA_MARKET_PUBLISH_PROJECTION'),resourceMarkets:rows.length,clearedMarkets:rows.filter(x=>x.clearing?.status==='CLEARED').length,marketOrderCount:rows.reduce((s,x)=>s+(x.orders?.bids?.length||0)+(x.orders?.asks?.length||0),0),rawResourceProducts:catalogRows.filter(x=>x.productType==='RAW_RESOURCE').length,factoryProducts:catalogRows.filter(x=>x.productType==='FACTORY_PRODUCT').length,lastCountryRefresh:clone(g.__omegaGlobalMarketRefreshDiagnostics||null),refreshInFlight:!!rebuildCountryInFlight,numeraire:'USD',settlementAuthority:'PRICE_DISCOVERY_ONLY'};
   }
   function init(){
     install();
