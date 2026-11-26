@@ -1302,6 +1302,16 @@ test('industrial production phase is session-scoped, sequential and warehouse-re
     'the same period identity must reach the existing industrial runner');
   assert.match(economySource,/domain:'industrial',countryId:cid,sessionId/,
     'industrial checkpoints must use the canonical player country and active session');
+  assert.match(economySource,/if\(!simulation\)return industrial\.runCountryTurn\(cid\);/,
+    'only legacy hosts without canonical Simulation may use the direct industrial runner');
+  assert.match(economySource,/INDUSTRIAL_PHASE_CHECKPOINT_API_UNAVAILABLE/,
+    'a live Simulation must fail closed when the durable industrial checkpoint API is unavailable');
+  assert.match(economySource,/INDUSTRIAL_PHASE_ACTIVE_SESSION_IDENTITY_MISMATCH/,
+    'industrial execution must reject a mismatched active session/player country');
+  assert.match(economySource,/RESOURCE_PHASE_CHECKPOINT_API_UNAVAILABLE/,
+    'a live Simulation must not run extraction outside the resource checkpoint API');
+  assert.match(economySource,/RESOURCE_PHASE_ACTIVE_SESSION_IDENTITY_MISMATCH/,
+    'resource extraction must reject a mismatched active session/player country');
   assert.match(economySource,/phase:'INDUSTRIAL_PRODUCTION',\s*lastProcessedEventId:periodId/,
     'the industrial checkpoint advances only after the period-specific reconciliation');
   assert.match(economySource,/if\(!reconciliation\?\.ok\)\{\s*industrial\.markProductionPeriodRecovery\(cid,periodId,[\s\S]{0,240}?\);\s*api\.fail\(/,
