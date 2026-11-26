@@ -127,16 +127,6 @@ const CORE_ASSETS = [
   "./omega_ui_v2/autonomous-trade-command.css",
   "./omega_ui_v2/navigation-registry.js",
   "./omega_ui_v2/ministry-visual-registry.js",
-  "./omega_ui_v2/screens/government.js",
-  "./omega_ui_v2/screens/ministry-detail.js",
-  "./omega_ui_v2/screens/economy.js",
-  "./omega_ui_v2/screens/resource-ministry.js",
-  "./omega_ui_v2/screens/mine-detail.js",
-  "./omega_ui_v2/screens/industry.js",
-  "./omega_ui_v2/screens/home-affairs.js",
-  "./omega_ui_v2/screens/police-fleet.js",
-  "./omega_ui_v2/screens/reports.js",
-  "./omega_ui_v2/screens/autonomous-development.js",
   "./omega_ui_v2/app.js",
   "./omega_ui_v2/integration.js",
   "./omega_ui_v2/world-command-dock.js",
@@ -163,6 +153,20 @@ const CORE_ASSETS = [
   "./assets/ui-photos/education-university.svg",
 "./omega_ui_v2/module-loader.js",
   ];
+// Route renderers are deliberately excluded from CORE_ASSETS. They are cached when
+// first requested, while existing offline copies are migrated during an app update.
+const LAZY_SCREEN_ASSETS = [
+  "./omega_ui_v2/screens/government.js",
+  "./omega_ui_v2/screens/ministry-detail.js",
+  "./omega_ui_v2/screens/economy.js",
+  "./omega_ui_v2/screens/resource-ministry.js",
+  "./omega_ui_v2/screens/mine-detail.js",
+  "./omega_ui_v2/screens/industry.js",
+  "./omega_ui_v2/screens/home-affairs.js",
+  "./omega_ui_v2/screens/police-fleet.js",
+  "./omega_ui_v2/screens/reports.js",
+  "./omega_ui_v2/screens/autonomous-development.js"
+
 
 function isShellAsset(value) {
   try {
@@ -405,6 +409,19 @@ async function fetchAndCache(cache, url) {
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
+    // Preserve previously visited route renderers without prefetching every route
+    // on install. The fetch handler caches a renderer after its first real request.
+    const previousShellCaches = (await caches.keys()).filter(key =>
+      key.startsWith("omega-offline-atlas-shell-") && key !== CACHE_NAME);
+    for (const previousKey of previousShellCaches) {
+      const previousCache = await caches.open(previousKey);
+      for (const asset of LAZY_SCREEN_ASSETS) {
+        const url = new URL(asset, APP_BASE).href;
+        if (await cache.match(url)) continue;
+        const previousResponse = await previousCache.match(url);
+        if (previousResponse) await cache.put(url, previousResponse.clone());
+      }
+    }
     const assets = new Set(CORE_ASSETS.filter(isShellAsset).map(asset => new URL(asset, APP_BASE).href));
     const htmlResponse = await fetchAndCache(cache, INDEX_URL);
     if (htmlResponse && htmlResponse.ok) {
