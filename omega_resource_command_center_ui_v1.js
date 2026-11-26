@@ -2861,30 +2861,12 @@
     return PANELS.some(function (p) { return p.id === id; }) ? id : 'matrix';
   }
   let resourceDataWarmupAttempted = false, resourceDataWarmupPromise = null, resourceDataRefreshBound = false;
-  let visibleRefreshTimer = null, visibleMinuteRefreshTimer = null;
+  let visibleRefreshTimer = null, resourceDataRefreshHandlers = [];
   function visibleModal() { return g.document && g.document.getElementById('gsrsk-intelligence-modal'); }
   function ensureVisiblePanelMinuteRefresh() {
-    // Run the browser refresh loop only with a real document. Node test harnesses
-    // and server-side mocks should not keep their event loop alive with intervals.
-    if (visibleMinuteRefreshTimer !== null || typeof g.setInterval !== 'function' ||
-        !g.document || typeof g.document.addEventListener !== 'function' ||
-        typeof g.document.visibilityState !== 'string') return;
-    visibleMinuteRefreshTimer = g.setInterval(function () {
-      if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) {
-        if (visibleMinuteRefreshTimer !== null && typeof g.clearInterval === 'function') g.clearInterval(visibleMinuteRefreshTimer);
-        visibleMinuteRefreshTimer = null;
-        return;
-      }
-      const modal = visibleModal();
-      if (!modal || !modal.style || modal.style.display === 'none') {
-        if (visibleMinuteRefreshTimer !== null && typeof g.clearInterval === 'function') g.clearInterval(visibleMinuteRefreshTimer);
-        visibleMinuteRefreshTimer = null;
-        return;
-      }
-      const active = g.document && g.document.activeElement;
-      if (active && modal.contains && modal.contains(active) && /^(INPUT|SELECT|TEXTAREA)$/.test(String(active.tagName || '').toUpperCase())) return;
-      refreshVisiblePanel();
-    }, 60000);
+    // Kept as a compatibility hook for existing render callers. Event-driven
+    // refresh is the sole automatic path; never schedule a periodic full render.
+    return false;
   }
   function refreshVisiblePanel() {
     if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return;
@@ -2898,6 +2880,8 @@
   }
   function scheduleVisiblePanelRefresh() {
     if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return;
+    const currentModal = visibleModal();
+    if (!currentModal || !currentModal.style || currentModal.style.display === 'none') return;
     if (visibleRefreshTimer !== null) return;
     visibleRefreshTimer = g.setTimeout(function () {
       visibleRefreshTimer = null;
@@ -2932,12 +2916,24 @@
     [
       'RESOURCE_STATE_UPDATED','OMEGA_RESOURCE_SITE_BINDING_READY','OMEGA_RESOURCE_INDUSTRIAL_NETWORK_READY','OMEGA_READY','OMEGA_GAME_SESSION_STARTED',
       'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_BATCH_CREATED',
-      'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED',
+      'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_RESOURCE_ECONOMY_UPDATED',
+      'OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED',
       'OMEGA_RESOURCE_SUPPLY_ALERT_CREATED','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY',
       'OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED','OMEGA_COUNTRY_STARTING_FACTORY_ASSETS_REGISTERED'
     ].forEach(function (name) {
-      try { g.addEventListener(name, function () { resourceDataWarmupAttempted = false; scheduleVisiblePanelRefresh(); }); } catch (_) {}
+      const handler = function () { resourceDataWarmupAttempted = false; scheduleVisiblePanelRefresh(); };
+      try {
+        g.addEventListener(name, handler);
+        resourceDataRefreshHandlers.push({ name:name, handler:handler });
+      } catch (_) {}
     });
+  }
+  function unbindResourceDataRefreshEvents() {
+    resourceDataRefreshHandlers.forEach(function (row) {
+      try { if (g.removeEventListener) g.removeEventListener(row.name, row.handler); } catch (_) {}
+    });
+    resourceDataRefreshHandlers = [];
+    resourceDataRefreshBound = false;
   }
   function render(country, panel, modalOverride) {
     const modal = modalOverride || ensureModal();
@@ -2970,8 +2966,7 @@
   function close() {
     const modal = g.document && g.document.getElementById('gsrsk-intelligence-modal');
     if (modal) modal.style.display = 'none';
-    if (visibleMinuteRefreshTimer !== null && typeof g.clearInterval === 'function') g.clearInterval(visibleMinuteRefreshTimer);
-    visibleMinuteRefreshTimer = null;
+    unbindResourceDataRefreshEvents();
     if (visibleRefreshTimer !== null && typeof g.clearTimeout === 'function') g.clearTimeout(visibleRefreshTimer);
     visibleRefreshTimer = null;
   }
