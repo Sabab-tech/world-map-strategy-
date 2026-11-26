@@ -2326,7 +2326,7 @@ function batchFromExtraction(x,record){
       extracted.push({...record,producedBatch:batch});
 
     }
-    for(const row of Object.values(mineOutputs))if(n(row?.simulationTurn??row?.turn)===productionPeriodTurn)
+    for(const row of Object.values(mineOutputs))if(n(row?.simulationTurn??row?.turn)===productionPeriodTurn&&!row.productionPeriodId)
       row.productionPeriodId=productionPeriodId;
     for(const path of Object.values(minePaths))for(const stage of Array.isArray(path?.stages)?path.stages:[])
       if(n(stage?.turn)===productionPeriodTurn&&!stage.productionPeriodId)stage.productionPeriodId=productionPeriodId;
