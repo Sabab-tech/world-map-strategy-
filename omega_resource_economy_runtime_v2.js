@@ -396,19 +396,19 @@
 
   function reconcileHandler(cmd,ctx){
     var c=canonical(ctx.countryId),
-      invBefore=ctx.stateTransaction.get('resource.inventory')||{},inv=cloneInventoryQuantities(invBefore),
-      batchesBefore=ctx.stateTransaction.get('resource.batches'),bs=Array.isArray(batchesBefore)?clone(batchesBefore):[],
-      ledgerBefore=ctx.stateTransaction.get('resource.inventoryLedger'),ledger=Array.isArray(ledgerBefore)?clone(ledgerBefore):[],
+      invBefore=ctx.stateTransaction.peek('resource.inventory')||{},inv=cloneInventoryQuantities(invBefore),
+      batchesBefore=ctx.stateTransaction.peek('resource.batches'),bs=Array.isArray(batchesBefore)?batchesBefore.slice():[],
+      ledgerBefore=ctx.stateTransaction.peek('resource.inventoryLedger'),ledger=Array.isArray(ledgerBefore)?ledgerBefore.slice():[],
       warehouseDefault={warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]},
-      warehouseBefore=ctx.stateTransaction.get('resource.warehouse')||warehouseDefault,warehouse=clone(warehouseBefore),
+      warehouseBefore=ctx.stateTransaction.peek('resource.warehouse')||warehouseDefault,warehouse=cloneWarehouseForMutation(warehouseBefore),
       processedDefault={warehouseId:'WH-'+c+'-PROCESSED',countryId:c,type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+c+':PROCESSED',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]},
-      processedWarehouseBefore=ctx.stateTransaction.get('resource.processedWarehouse')||processedDefault,processedWarehouse=clone(processedWarehouseBefore),
-      inventoryLotsBefore=ctx.stateTransaction.get('resource.inventoryLots')||{},inventoryLots=clone(inventoryLotsBefore),
-      integrityBefore=ctx.stateTransaction.get('resource.inventoryIntegrity')||null;
+      processedWarehouseBefore=ctx.stateTransaction.peek('resource.processedWarehouse')||processedDefault,processedWarehouse=cloneWarehouseForMutation(processedWarehouseBefore),
+      inventoryLotsBefore=ctx.stateTransaction.peek('resource.inventoryLots')||{},inventoryLots=copyMapShallow(inventoryLotsBefore),
+      integrityBefore=ctx.stateTransaction.peek('resource.inventoryIntegrity')||null;
     var previousProcessedReceipts=new Map((Array.isArray(processedWarehouseBefore.receipts)?processedWarehouseBefore.receipts:[])
       .filter(function(row){return row&&row.batchId;})
       .map(function(row){return[String(row.batchId),row];}));
-    var network=clone(ctx.stateTransaction.get('resource.industrialNetwork')||{}),
+    var network=clone(ctx.stateTransaction.peek('resource.industrialNetwork')||{}),
       reconciliationMaps=consumptionLedgerMaps(network),flowByBatch=reconciliationMaps.flowByBatch,
       factoryInTransitByBatch=reconciliationMaps.factoryInTransitByBatch;
     var boundaryCheck=boundary()?.validateResourceCollection?.(bs,c);
