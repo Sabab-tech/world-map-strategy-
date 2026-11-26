@@ -3211,7 +3211,7 @@
         }
       }
       var endowment=g.OmegaResourceEndowmentRuntime||g.Omega&&g.Omega.ResourceEndowmentRuntime;
-      var extractionResult=await measure('resource-phase-checkpointed-extraction',function(){
+      var extractionResult=await measure('endowment-start-country-production-resource-phase-checkpointed',function(){
         return runCheckpointedResourceExtraction(cid,endowment);
       });
       if(extractionResult&&['FAILED','BLOCKED','WAITING_DEPENDENCIES'].includes(String(extractionResult.status||'').toUpperCase())){
