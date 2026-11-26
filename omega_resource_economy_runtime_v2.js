@@ -3011,6 +3011,19 @@
     }
     if(Math.abs(ledgerQuantity-receiptQuantity)>Math.max(1e-8,Math.abs(ledgerQuantity)*1e-9))
       return{ok:false,reason:'RESOURCE_PERIOD_LEDGER_RECEIPT_TOTAL_MISMATCH'};
+    var batches=Array.isArray(resource.batches)?resource.batches:[],lots=resource.inventoryLots||{};
+    var storedBatchIds=new Set(Array.isArray(warehouse.storedBatchIds)?warehouse.storedBatchIds.map(String):[]);
+    for(var [batchId,quantity] of ledgerByBatch){
+      var matchingBatches=batches.filter(row=>String(row?.batchId||'')===batchId);
+      var batch=matchingBatches[0],lot=lots[batchId]||null;
+      var batchQuantity=num(batch?.quantity??batch?.remainingQuantity);
+      var lotQuantity=num(lot?.quantity??lot?.remainingQuantity);
+      if(matchingBatches.length!==1||!lot||!storedBatchIds.has(batchId)||
+         batchQuantity===null||lotQuantity===null||
+         Math.abs(batchQuantity-quantity)>Math.max(1e-8,Math.abs(quantity)*1e-9)||
+         Math.abs(lotQuantity-quantity)>Math.max(1e-8,Math.abs(quantity)*1e-9))
+        return{ok:false,reason:'RESOURCE_PERIOD_BATCH_WAREHOUSE_STATE_MISMATCH',batchId};
+    }
     var outputs=resource.mineOutputs&&typeof resource.mineOutputs==='object'?Object.values(resource.mineOutputs):[];
     var periodOutputs=outputs.filter(samePeriod);
     var status=String(runResult?.status||'').toUpperCase();
