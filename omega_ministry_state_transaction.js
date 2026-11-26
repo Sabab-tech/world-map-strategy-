@@ -206,6 +206,24 @@
       return existing;
     }
 
+    // Read-only fast path for trusted internal consumers that immediately
+    // create their own copy or only inspect the value. Do not mutate the returned
+    // reference; use get() when a detached mutable value is required.
+    peek(path){
+      this._assertOpen();
+      const p=String(path||'');
+      const staged=[...this.operations].reverse().find(op=>op.path===p);
+      if(staged)return staged.after;
+      const ref=this._countryContainer(p,false);
+      if(!ref)return undefined;
+      let cur=ref.container;
+      for(const part of ref.parts){
+        if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
+        cur=cur[part];
+      }
+      return cur;
+    }
+
     get(path){
       this._assertOpen();
       const p=String(path||'');
