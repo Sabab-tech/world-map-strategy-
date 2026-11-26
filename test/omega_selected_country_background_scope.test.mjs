@@ -42,7 +42,15 @@ test('factory and resource-research background ticks are scoped to one player co
 test('resource economy and mine/action pipelines never call world-wide processing on the turn event', () => {
   const economy = read('omega_resource_economy_runtime_v2.js');
   const runTurnCore = between(economy, 'function runTurnCore(cid){', 'var resourceTurnPromises=');
-  assert.match(runTurnCore, /endowment\.startCountryProduction\(cid,null,\{skipHydrationIfReady:true\}\)/);
+  assert.match(runTurnCore, /runCheckpointedResourceExtraction\(cid,endowment\)/,
+    'the single-country turn path must run the checkpointed resource phase');
+  const resourcePhase = between(economy, 'async function runCheckpointedResourceExtraction(countryId,endowment){', 'function runTurnCore(cid){');
+  assert.match(resourcePhase, /endowment\.startCountryProduction\(cid,null,\{[\s\S]*?productionPeriodTurn:periodTurn,productionPeriodId:periodId/,
+    'resource catch-up must retain the canonical country extraction entry point and pass the daily period identity');
+  assert.match(resourcePhase, /canonical\(session\.playerCountryId\)===cid/,
+    'checkpoint scope must remain bound to the active player country');
+  assert.match(resourcePhase, /endowment\.startCountryProduction\(cid,null,\{skipHydrationIfReady:true\}\)/,
+    'legacy runtime fallback must remain available when checkpoint APIs are absent');
   assert.match(runTurnCore, /endowment\.extractCountry\(cid\)/, 'legacy endowment fallback remains available');
   assert.doesNotMatch(runTurnCore, /extractAll\(\)|countries\(\)\.forEach|GlobalTrade\.processAll/);
   const runTurn = between(economy, 'function runTurn(){', 'var resourceUiRefreshPending=false;');
