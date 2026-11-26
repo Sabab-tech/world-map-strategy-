@@ -343,7 +343,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(lifecycle, /function updateClockProgress\(\)/);
   assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
     'the compact two-button HUD must not repaint its hidden progress row on every paced clock frame');
-  assert.match(lifecycle, /function queueHudUpdate\\(\\)/,
+  assert.match(lifecycle, /function queueHudUpdate\(\)/,
     'bursty lifecycle events must share one animation-frame HUD refresh');
   assert.match(coordinator, /OMEGA_SIMULATION_CLOCK_TICK/);
   const topHeaderStart = index.indexOf('id="top-status-bar"');
