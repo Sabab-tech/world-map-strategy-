@@ -44,12 +44,12 @@
   function cloneInventoryQuantities(value){
     if(value===null||typeof value!=='object')return{};
     if(Array.isArray(value))return clone(value);
-    var out={};
+    var out={},seen=[[value,out]];
     Object.keys(value).forEach(function(key){
       if(key==='__proto__'||key==='constructor')return;
       var item=value[key];
       if(typeof item==='function'||item===undefined)return;
-      out[key]=item!==null&&typeof item==='object'?clone(item):item;
+      out[key]=item!==null&&typeof item==='object'?clone(item,seen):item;
     });
     return out;
   }
