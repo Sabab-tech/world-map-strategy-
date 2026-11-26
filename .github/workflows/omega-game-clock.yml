@@ -57,6 +57,8 @@ on:
       - 'test/omega_selected_country_background_scope.test.mjs'
       - 'index.html'
       - 'test/omega_simulation_daily_clock.test.mjs'
+      - 'docs/OMEGA_ECONOMY_PHASE_ARCHITECTURE_AUDIT_V1.md'
+      - 'test/omega_economy_phase_architecture_audit_v1.test.mjs'
       - '.github/workflows/omega-game-clock.yml'
 
 permissions:
@@ -103,5 +105,6 @@ jobs:
           node --check test/omega_country_general_data_runtime_v1.test.mjs
           node --check test/omega_resource_economy_runtime_v2.test.mjs
           node --check test/omega_selected_country_background_scope.test.mjs
+          node --check test/omega_economy_phase_architecture_audit_v1.test.mjs
       - name: Test shared daily clock, saves and lifecycle wiring
-        run: node --test test/omega_active_ministry_tick_gate.test.mjs test/omega_simulation_daily_clock.test.mjs test/omega_simulation_runtime.test.js test/omega_resource_industrial_network_v1.test.mjs test/omega_world_simulation_scheduler_v1.test.mjs test/opponent_country_rules_runtime.test.js test/omega_offline_data_cache.test.mjs test/omega_country_general_data_runtime_v1.test.mjs test/omega_resource_economy_runtime_v2.test.mjs test/omega_selected_country_background_scope.test.mjs
+        run: node --test test/omega_active_ministry_tick_gate.test.mjs test/omega_simulation_daily_clock.test.mjs test/omega_simulation_runtime.test.js test/omega_resource_industrial_network_v1.test.mjs test/omega_world_simulation_scheduler_v1.test.mjs test/opponent_country_rules_runtime.test.js test/omega_offline_data_cache.test.mjs test/omega_country_general_data_runtime_v1.test.mjs test/omega_resource_economy_runtime_v2.test.mjs test/omega_selected_country_background_scope.test.mjs test/omega_economy_phase_architecture_audit_v1.test.mjs
