@@ -341,7 +341,10 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(index, /id="omega-global-time-hud"/);
   assert.match(index, /data-omega-clock-progress/);
   assert.match(lifecycle, /function updateClockProgress\(\)/);
-  assert.match(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/);
+  assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
+    'the compact two-button HUD must not repaint its hidden progress row on every paced clock frame');
+  assert.match(lifecycle, /function queueHudUpdate\(\)/,
+    'bursty lifecycle events must share one animation-frame HUD refresh');
   assert.match(coordinator, /OMEGA_SIMULATION_CLOCK_TICK/);
   const topHeaderStart = index.indexOf('id="top-status-bar"');
   const unifiedHudStart = index.indexOf('id="omega-global-time-hud"');
@@ -862,15 +865,15 @@ test('manual time HUD buttons step days, run selected days, pause/resume and exp
   assert.equal(sim.clock.speed, 1, 'Play must always use the visible normal game speed');
   sim.clock.accumulatorMs = STEP_MS / 2;
   win.dispatchEvent(new win.CustomEvent('OMEGA_SIMULATION_CLOCK_TICK'));
-  assert.equal(progressFill.style.width, '50%', 'the HUD must show partial progress before a full day commits');
-  assert.equal(progressAttributes['aria-valuenow'], '50');
-  assert.equal(progressLabel.textContent, 'NEXT DAY · 50%',
-    'the HUD must make active time progression visible between calendar-day commits');
+  assert.equal(progressFill.style.width, undefined,
+    'the hidden clock-progress bar must not receive 2 Hz DOM writes after the compact dock ships');
+  assert.deepEqual(progressAttributes, {},
+    'hidden progress accessibility attributes must not be rewritten on every clock frame');
+  assert.equal(progressLabel.textContent, '',
+    'the hidden progress label must stay out of the compact gameplay HUD');
 
   dispatchAction('pause');
   assert.equal(sim.status, 'PAUSED', 'Pause must stop further automatic turns');
-  assert.equal(progressLabel.textContent, 'DAY PROGRESS · 50%',
-    'pausing must preserve and accurately display the partial day already elapsed');
 });
 
 test('backgrounding during a manual day batch cancels after the in-flight day and keeps time paused', async () => {
@@ -936,4 +939,53 @@ test('compact gameplay clock dock exposes only play and pause actions', () => {
   assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
   assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
   assert.match(serviceWorker, /omega-offline-atlas-shell-v149/);
+  assert.match(lifecycle, /function queueHudUpdate\(\)/);
+  assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
+  assert.doesNotMatch(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
+    'the hidden progress row must not trigger DOM writes twice per second');
+  const hudStart = lifecycle.indexOf('function updateHud()');
+  const hudEnd = lifecycle.indexOf('function queueHudUpdate()', hudStart);
+  assert.ok(hudStart >= 0 && hudEnd > hudStart);
+  assert.doesNotMatch(lifecycle.slice(hudStart, hudEnd), /updateClockProgress\(\)/,
+    'a committed-turn HUD update must not repaint a hidden clock-progress row');
+});
+
+
+test('bursty finance, resource and turn events coalesce to one HUD refresh per animation frame', async () => {
+  const { win, sim } = createRuntime();
+  const queuedFrames = [];
+  let resourceHudUpdates = 0;
+  win.requestAnimationFrame = callback => {
+    queuedFrames.push(callback);
+    return queuedFrames.length;
+  };
+  win.updateGlobalResourceHUD = country => {
+    assert.equal(country, 'BGD');
+    resourceHudUpdates += 1;
+  };
+  const { lifecycle } = attachLifecycle(win, sim);
+  await lifecycle.restore();
+  resourceHudUpdates = 0;
+
+  const event = type => win.dispatchEvent(new win.CustomEvent(type));
+  event('OMEGA_FINANCE_STATE_UPDATED');
+  event('OMEGA_FINANCE_STATE_UPDATED');
+  event('RESOURCE_STATE_UPDATED');
+  event('OMEGA_SIMULATION_STEP_COMPLETED');
+  event('OMEGA_SIMULATION_TURN_COMMITTED');
+  event('OMEGA_SIMULATION_BATCH_COMPLETED');
+
+  assert.equal(queuedFrames.length, 1,
+    'a burst of different state events must schedule only one DOM refresh');
+  assert.equal(resourceHudUpdates, 0,
+    'state events must not synchronously rerender the player resource HUD');
+  queuedFrames.shift()();
+  assert.equal(resourceHudUpdates, 1,
+    'the scheduled frame must refresh the player resource HUD once');
+
+  event('OMEGA_FINANCE_STATE_UPDATED');
+  assert.equal(queuedFrames.length, 1,
+    'a later event burst must schedule the next frame after the previous refresh completes');
+  queuedFrames.shift()();
+  assert.equal(resourceHudUpdates, 2);
 });

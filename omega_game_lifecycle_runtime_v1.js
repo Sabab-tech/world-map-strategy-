@@ -37,6 +37,8 @@
   var restoreFinished = false;
   var restoredFromSave = false;
   var manualCommandInFlight = false;
+  var hudUpdateFrame = null;
+  var hudUpdateTimer = null;
   var saveStatus = 'AUTOSAVE READY';
   // Gameplay automation is opt-in after every boot and remains paused in the background.
   var backgroundRunsEnabled = false;
@@ -273,7 +275,6 @@
     setText('[data-omega-game-day]', 'DAY ' + (turn + 1).toLocaleString('en-US') + ' · TURN ' + turn.toLocaleString('en-US'));
     setText('#status-clock', (date || 'DATE NOT RECORDED') + ' · DAY ' + (turn + 1).toLocaleString('en-US'));
     updateControls(sim);
-    updateClockProgress();
 
     var country = playerCountry(sim);
     if (country && typeof g.updateGlobalResourceHUD === 'function') {
@@ -321,6 +322,26 @@
       if (energy !== null) values.push('Energy ' + compact(energy) + (economyBucket.energyUnit || economyBucket.powerUnit ? ' ' + (economyBucket.energyUnit || economyBucket.powerUnit) : ''));
       assetNode.textContent = values.length ? values.slice(0, 5).join('  ·  ') : 'Assets/resources not recorded';
     }
+  }
+
+  // Finance, resource and turn events can arrive in bursts during one day.
+  // Coalesce their presentation work to one refresh per browser frame.
+  function queueHudUpdate() {
+    if (hudUpdateFrame !== null || hudUpdateTimer !== null) return;
+    var flush = function () {
+      hudUpdateFrame = null;
+      hudUpdateTimer = null;
+      updateHud();
+    };
+    if (typeof g.requestAnimationFrame === 'function') {
+      hudUpdateFrame = g.requestAnimationFrame(flush);
+      return;
+    }
+    if (typeof g.setTimeout === 'function') {
+      hudUpdateTimer = g.setTimeout(flush, 0);
+      return;
+    }
+    updateHud();
   }
 
   function openDb() {
@@ -747,7 +768,7 @@
   }
 
   function queueTurnSave() {
-    updateHud();
+    queueHudUpdate();
   }
 
   function armStateSaveTimer() {
@@ -1025,16 +1046,15 @@
     g.addEventListener && g.addEventListener('beforeunload', onPageExit);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', queueTurnSave);
     g.addEventListener && g.addEventListener('OMEGA_COUNTRY_CONTEXT_CHANGED', onCountryContextChanged);
-    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_STEP_COMPLETED', updateHud);
-    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress);
-    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_STARTED', updateHud);
+    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_STEP_COMPLETED', queueHudUpdate);
+    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_STARTED', queueHudUpdate);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_PROGRESS', function (event) {
       var detail = event && event.detail || {};
       setText('[data-omega-manual-progress]', 'RUNNING · ' + number(detail.completedTurns || 0) + '/' + number(detail.plannedTurns || 0) + ' DAYS');
-      updateHud();
+      queueHudUpdate();
     });
-    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_COMPLETED', updateHud);
-    g.addEventListener && g.addEventListener('OMEGA_FINANCE_STATE_UPDATED', updateHud);
+    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_COMPLETED', queueHudUpdate);
+    g.addEventListener && g.addEventListener('OMEGA_FINANCE_STATE_UPDATED', queueHudUpdate);
     [
       'MINISTRY_STATE_CHANGED', 'RESOURCE_STATE_UPDATED', 'OMEGA_FINANCE_STATE_UPDATED',
       'FINANCE_STATE_UPDATED', 'DECISION_ENACTED', 'POLICY_VOTE_CAST',
@@ -1045,9 +1065,9 @@
       g.addEventListener && g.addEventListener(type, scheduleStateSave);
     });
     ['COUNTRY_SELECTED', 'COUNTRY_CHANGED', 'OMEGA_COUNTRY_SELECTED', 'OMEGA_PLAYER_COUNTRY_CHANGED', 'MINISTRY_SELECTED'].forEach(function (type) {
-      g.addEventListener && g.addEventListener(type, function () { updateHud(); scheduleStateSave(); });
+      g.addEventListener && g.addEventListener(type, function () { queueHudUpdate(); scheduleStateSave(); });
     });
-    g.addEventListener && g.addEventListener('RESOURCE_STATE_UPDATED', updateHud);
+    g.addEventListener && g.addEventListener('RESOURCE_STATE_UPDATED', queueHudUpdate);
     g.addEventListener && g.addEventListener('OMEGA_READY', function () {
       restoreOnReady().catch(function () {
         restoreFailed = true;
