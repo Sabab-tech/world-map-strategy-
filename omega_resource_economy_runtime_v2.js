@@ -3055,7 +3055,9 @@
     var cid=canonical(countryId),targetTurn=Math.max(0,Math.floor(turn()));
     if(!endowment)return{status:'NOT_AVAILABLE',reason:'COUNTRY_SCOPED_EXTRACTION_UNAVAILABLE'};
     if(typeof endowment.initialize==='function'){
-      var initialized=await endowment.initialize();
+      var initialized;
+      try{initialized=await endowment.initialize();}
+      catch(error){return{status:'FAILED',reason:String(error&&error.message||error)};}
       if(initialized&&['FAILED','WAITING_DEPENDENCIES'].includes(String(initialized.status||'').toUpperCase()))
         return{status:'FAILED',reason:initialized.reason||'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized};
     }
