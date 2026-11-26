@@ -463,6 +463,8 @@
     }
   }
   function rebuild(){
+    // Keep the last atomically published books while the cooperative daily refresh owns the shared snapshot.
+    if(rebuildCountryInFlight)return g.__OmegaMarketBooks||{};
     const previousSnapshot=activeMarketSnapshot,previousProductIndex=activeProductIndex;
     activeMarketSnapshot=createMarketSnapshot();
     activeProductIndex=buildProductIndex();
