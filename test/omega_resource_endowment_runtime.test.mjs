@@ -1009,6 +1009,24 @@ assert.ok(Number(siteReferenceSourceIndexDiagnostics?.canonicalCatalogBuildCount
 assert.ok(Number(siteReferenceSourceIndexDiagnostics?.canonicalIndexedCountryCount)>0,
   'the canonical catalog country index must contain indexed country rows');
 assert.match(endowmentRuntimeSource,/const controllerKeyBySiteId=new Map/);
+const extractionHandlerStart=endowmentRuntimeSource.indexOf('function extractHandler(cmd,ctx){');
+const extractionHandlerEnd=endowmentRuntimeSource.indexOf('function publishCommittedExtractionEvents',extractionHandlerStart);
+assert.ok(extractionHandlerStart>=0&&extractionHandlerEnd>extractionHandlerStart,
+  'the authoritative extraction handler must remain available for copy-cost regression checks');
+const extractionHandlerSource=endowmentRuntimeSource.slice(extractionHandlerStart,extractionHandlerEnd);
+assert.doesNotMatch(extractionHandlerSource,/clone\\(ctx\\.stateTransaction\\.get\\(/,
+  'StateTransaction.get already returns detached mutable data; extraction must not deep-clone those snapshots a second time');
+assert.doesNotMatch(extractionHandlerSource,/Array\\.isArray\\(ctx\\.stateTransaction\\.get\\(/,
+  'large ledger arrays must be read once and reused rather than cloning the same history twice');
+assert.doesNotMatch(extractionHandlerSource,/const existingResourceState=/,
+  'extraction must not deep-copy the complete country resource bucket when that snapshot is unused');
+assert.match(extractionHandlerSource,/const persistedMineStates=ctx\\.stateTransaction\\.peek\\('resource\\.mineStates'\\)/,
+  'read-only mine-state inspection must use the transaction peek path');
+assert.match(extractionHandlerSource,/const consumption=ctx\\.stateTransaction\\.peek\\('resource\\.consumption'\\)/,
+  'read-only domestic demand must not allocate another detached copy');
+assert.match(extractionHandlerSource,/const exportDemand=ctx\\.stateTransaction\\.peek\\('resource\\.exportDemand'\\)\\|\\|ctx\\.stateTransaction\\.peek\\('trade\\.exportDemand'\\)/,
+  'read-only export demand must use zero-copy transaction peeks');
+
 assert.match(endowmentRuntimeSource,/PLAYER_COUNTRY_SCOPE_VIOLATION/);
 assert.match(endowmentRuntimeSource,/const requestedPeriodTurn=n\(cmd\?\.payload\?\.productionPeriodTurn\)/,
   'resource extraction commands must carry an explicit historical production period without changing the world clock');
