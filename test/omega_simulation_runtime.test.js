@@ -855,3 +855,36 @@ test('simulation diagnostics measure each participant with bounded rolling sampl
   assert.equal(state.simulation.participantTimings,undefined,
     'process-local timing samples must not create another durable save-state authority');
 });
+
+
+test('large participant results stay in diagnostics and are compacted before step publication',async()=>{
+  const {sandbox,state}=makeSandbox();
+  let now=100;
+  sandbox.performance={now(){now+=2;return now;}};
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const sim=sandbox.Omega.Simulation;
+  sim.createSession({playerCountryId:'BANGLADESH'});
+  const largeRows=Array.from({length:4096},(_,index)=>({id:'MINE-BATCH-'+index,quantity:index+1,trace:'batch-origin'}));
+  sim.registerTurnParticipant('test.large-resource-result',async()=>{
+    return{status:'COMPLETED',countryId:'BANGLADESH',processedCount:largeRows.length,rows:largeRows};
+  });
+  const advanced=await sim.advance(1);
+  assert.equal(advanced.steps,1);
+  const detailed=sim.diagnostics().lastTurnParticipantResults.find(row=>row.id==='test.large-resource-result');
+  assert.equal(detailed.status,'COMPLETED');
+  assert.equal(detailed.result.rows.length,4096,
+    'the read-only diagnostic trace retains the full participant result');
+  const published=advanced.last.phases.PUBLISH.participants.find(row=>row.id==='test.large-resource-result');
+  assert.equal(published.status,'COMPLETED');
+  assert.ok(published.durationMs>0,'compact published diagnostics retain participant timing');
+  assert.equal(published.result.status,'COMPLETED');
+  assert.equal(published.result.countryId,'BANGLADESH');
+  assert.equal(published.result.processedCount,4096);
+  assert.equal(Object.prototype.hasOwnProperty.call(published.result,'rows'),false,
+    'large mine/factory detail must not be cloned into the committed step summary');
+  const persisted=state.simulation.lastTurnParticipantResults.find(row=>row.id==='test.large-resource-result');
+  assert.equal(Object.prototype.hasOwnProperty.call(persisted,'durationMs'),false,
+    'participant timing remains process-local and is not added to the durable ledger');
+  assert.equal(Object.prototype.hasOwnProperty.call(persisted.result,'rows'),false,
+    'the durable participant trace remains compact');
+});
