@@ -837,12 +837,20 @@ test('simulation diagnostics measure each participant with bounded rolling sampl
   });
   const sim=sandbox.Omega.Simulation;
   sim.createSession({playerCountryId:'BANGLADESH'});
+  let largePayloadReads=0;
   sim.registerTurnParticipant('test.timed-participant',async()=>{
     now+=12.5;
-    return{result:'measured'};
+    const result={status:'COMPLETED',countryId:'BANGLADESH'};
+    Object.defineProperty(result,'largePayload',{
+      enumerable:true,
+      get(){largePayloadReads+=1;return Array.from({length:2048},(_,index)=>({index}));}
+    });
+    return result;
   });
   const result=await sim.advance(1);
   assert.equal(result.steps,1);
+  assert.equal(largePayloadReads,0,
+    'participant diagnostics must not traverse/copy large result payloads already owned by authoritative ledgers');
   const diagnostics=sim.diagnostics();
   const timing=diagnostics.turnParticipants.find(row=>row.id==='test.timed-participant');
   assert.equal(timing.sampleCount,1);
@@ -851,7 +859,11 @@ test('simulation diagnostics measure each participant with bounded rolling sampl
   assert.equal(timing.averageDurationMs,12.5);
   assert.equal(timing.maxDurationMs,12.5);
   assert.equal(timing.p95DurationMs,12.5);
-  assert.equal(diagnostics.lastTurnParticipantResults.find(row=>row.id==='test.timed-participant').durationMs,12.5);
+  const participantResult=diagnostics.lastTurnParticipantResults.find(row=>row.id==='test.timed-participant');
+  assert.equal(participantResult.durationMs,12.5);
+  assert.deepEqual(JSON.parse(JSON.stringify(participantResult.result)),{
+    status:'COMPLETED',countryId:'BANGLADESH'
+  },'participant diagnostics should retain the stable scalar summary while omitting heavyweight payloads');
   assert.equal(state.simulation.participantTimings,undefined,
     'process-local timing samples must not create another durable save-state authority');
 });
