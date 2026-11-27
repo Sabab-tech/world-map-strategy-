@@ -362,6 +362,12 @@ assert.equal(countryRefresh.turn,refreshTurn);
 assert.ok(countryRefresh.refresh?.countryCount>=2,JSON.stringify(countryRefresh.refresh));
 assert.ok(countryRefresh.refresh?.resourceCount>0,JSON.stringify(countryRefresh.refresh));
 assert.ok(countryRefresh.refresh?.yieldCount>0,JSON.stringify(countryRefresh.refresh));
+assert.ok(countryRefresh.refresh?.snapshotYieldCount>0,
+  'canonical country/domain snapshot preparation must yield before order-book collection');
+assert.ok(countryRefresh.refresh?.resourceDiscoveryYieldCount>0,
+  'resource-ID discovery across the canonical country roster must yield before order-book collection');
+assert.ok(countryRefresh.refresh?.snapshotDurationMs>=0,JSON.stringify(countryRefresh.refresh));
+assert.ok(countryRefresh.refresh?.resourceDiscoveryDurationMs>=0,JSON.stringify(countryRefresh.refresh));
 assert.ok(marketRefreshYieldCount>0,'the market refresh must yield control to the browser between workload slices');
 assert.equal(market.diagnostics().lastCountryRefresh?.scheduler,'COOPERATIVE_MAIN_THREAD_SLICES');
 const committedBooks=globalThis.__OmegaMarketBooks;
