@@ -150,6 +150,32 @@ await import('../omega_resource_quantity_normalization_v1.js');
 await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
+
+{
+const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowment_runtime.js',import.meta.url),'utf8');
+const extractionHandlerStart=endowmentRuntimeSource.indexOf('function extractHandler(cmd,ctx){');
+const extractionHandlerEnd=endowmentRuntimeSource.indexOf('function publishCommittedExtractionEvents',extractionHandlerStart);
+assert.ok(extractionHandlerStart>=0&&extractionHandlerEnd>extractionHandlerStart,
+  'the authoritative extraction handler must remain discoverable for regression checks');
+const extractionHandlerSource=endowmentRuntimeSource.slice(extractionHandlerStart,extractionHandlerEnd);
+assert.match(extractionHandlerSource,/const existingBatchById=new Map\(\)/,
+  'each extraction transaction must build one existing-batch identity index');
+assert.match(extractionHandlerSource,/existingBatchById\.get\(batchIdentity\)/,
+  'each produced batch must use the prebuilt identity index rather than rescanning history');
+assert.match(extractionHandlerSource,/existingBatches\.push\(batch\);\s*existingBatchById\.set\(batchIdentity,batch\)/,
+  'newly created batches must enter the same index so same-transaction collisions remain detectable');
+assert.doesNotMatch(extractionHandlerSource,/existingBatches\.find\(/,
+  'the extraction loop must not rescan the historical batch array for every occurrence');
+
+
+const day2OfflineShellSource=fs.readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),'utf8');
+assert.match(day2OfflineShellSource,/const CACHE_NAME = "omega-offline-atlas-shell-v160"/,
+  'the updated core extraction runtime must be fetched by a new offline shell cache');
+assert.match(day2OfflineShellSource,/const DATA_CACHE_NAME = "omega-country-data-v1"/,
+  'updating the app shell must preserve the separate downloaded country-data cache');
+
+}
+
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
 assert.equal(globalThis.OmegaResourceSiteQuantityCompletionData?.recordCount,305,'all additive missing-site gameplay quantities must load');
