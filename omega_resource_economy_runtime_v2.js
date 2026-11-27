@@ -437,6 +437,7 @@
     var c=canonical(ctx.countryId),
       invBefore=ctx.stateTransaction.peek('resource.inventory')||{},inv=cloneInventoryQuantities(invBefore),
       batchesBefore=ctx.stateTransaction.peek('resource.batches'),bs=Array.isArray(batchesBefore)?batchesBefore.slice():[],
+      batchIds=new Set(bs.map(function(row){return String(row&&row.batchId||'');})),
       ledgerBefore=ctx.stateTransaction.peek('resource.inventoryLedger'),ledger=Array.isArray(ledgerBefore)?ledgerBefore.slice():[],
       warehouseDefault={warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]},
       warehouseBefore=ctx.stateTransaction.peek('resource.warehouse')||warehouseDefault,warehouse=cloneWarehouseForMutation(warehouseBefore),
@@ -447,7 +448,9 @@
     var previousProcessedReceipts=new Map((Array.isArray(processedWarehouseBefore.receipts)?processedWarehouseBefore.receipts:[])
       .filter(function(row){return row&&row.batchId;})
       .map(function(row){return[String(row.batchId),row];}));
-    var network=clone(ctx.stateTransaction.peek('resource.industrialNetwork')||{}),
+    // This network snapshot is read-only here. peek() returns the effective
+    // state without allocating a deep copy unless this transaction staged child writes.
+    var network=ctx.stateTransaction.peek('resource.industrialNetwork')||{},
       reconciliationMaps=consumptionLedgerMaps(network),flowByBatch=reconciliationMaps.flowByBatch,
       factoryInTransitByBatch=reconciliationMaps.factoryInTransitByBatch;
     var boundaryCheck=boundary()?.validateResourceCollection?.(bs,c);
@@ -524,12 +527,12 @@
         // A legacy opening batch can remain in the ledger after its stock has been
         // consumed. Never treat that historical ID as proof that a new unallocated
         // balance is already represented: append a distinct top-up lot instead.
-        if(bs.some(function(x){return String(x&&x.batchId)===legacyBatchBase;})){
+        if(batchIds.has(legacyBatchBase)){
           var topUpSequence=1,topUpCandidate='';
           do{
             topUpCandidate=legacyBatchBase+'_TOPUP_T'+turn()+'_'+topUpSequence;
             topUpSequence+=1;
-          }while(bs.some(function(x){return String(x&&x.batchId)===topUpCandidate;}));
+          }while(batchIds.has(topUpCandidate));
           legacyBatchId=topUpCandidate;
         }
         var legacyBatch={batchId:legacyBatchId,resourceId:rid,materialIdentity:rid,
@@ -541,7 +544,7 @@
           createdTurn:turn(),lastMovementTurn:turn(),
           provenance:{source:'PRE_EXISTING_RESOURCE_INVENTORY',status:'UNALLOCATED_LEGACY_BALANCE',
             simulationTurn:turn(),authority:'RESOURCE_INVENTORY_AUTHORITY'}};
-        bs.push(legacyBatch);
+        bs.push(legacyBatch);batchIds.add(legacyBatchId);
         inventoryLots[legacyBatchId]=Object.assign({},legacyBatch,{status:'AVAILABLE'});
         warehouse.availableByResource[rid]=(num(warehouse.availableByResource[rid])||0)+diff;
         if(!Array.isArray(warehouse.storedBatchIds))warehouse.storedBatchIds=[];
