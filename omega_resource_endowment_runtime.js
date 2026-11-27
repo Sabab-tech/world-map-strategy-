@@ -2504,7 +2504,7 @@ function batchFromExtraction(x,record){
     }
     const nav=g.navigator||{},ua=String(nav.userAgent||'');
     const constrained=/Android|Mobile|iPhone|iPad/i.test(ua)||Number(nav.deviceMemory||8)<=4||Number(nav.hardwareConcurrency||8)<=4;
-    const sliceSize=constrained?3:8,sliceResults=[];
+    const sliceSize=constrained?2:8,sliceResults=[];
     for(let offset=0;offset<candidates.length;offset+=sliceSize){
       const slice=candidates.slice(offset,offset+sliceSize);
       const result=await extractCountry(c,slice,{productionPeriodTurn:t,productionPeriodId});
