@@ -160,8 +160,16 @@ const extractionHandlerEnd=endowmentRuntimeSource.indexOf('function publishCommi
 assert.ok(extractionHandlerStart>=0&&extractionHandlerEnd>extractionHandlerStart,
   'the authoritative extraction handler must remain discoverable for regression checks');
 const extractionHandlerSource=endowmentRuntimeSource.slice(extractionHandlerStart,extractionHandlerEnd);
-assert.match(extractionHandlerSource,/const existingBatchById=new Map\(\)/,
-  'each extraction transaction must build one existing-batch identity index');
+assert.match(extractionHandlerSource,/existingBatchById=extractionHistoryIndex\?new Map\(extractionHistoryIndex\.existingBatchById\):null/,
+  'each sliced extraction must take an isolated mutable copy of the prepared batch index');
+assert.match(extractionHandlerSource,/existingBatchById=new Map\(\)/,
+  'standalone extraction must retain its one-pass existing-batch identity index');
+assert.match(extractionHandlerSource,/const mineProductionLedgerSnapshot=extractionHistoryIndex\?extractionHistoryIndex\.mineProductionLedger\.slice\(\):ctx\.stateTransaction\.get\('resource\.mineProductionLedger'\)/,
+  'sliced extraction must avoid asking StateTransaction to deep-copy the growing mine history again');
+assert.match(extractionHandlerSource,/const extractionLedgerSnapshot=extractionHistoryIndex\?extractionHistoryIndex\.extractionLedger\.slice\(\):ctx\.stateTransaction\.get\('resource\.extractionLedger'\)/,
+  'sliced extraction must reuse the prepared extraction ledger snapshot');
+assert.match(extractionHandlerSource,/const existingBatchesSnapshot=extractionHistoryIndex\?extractionHistoryIndex\.batches\.slice\(\):ctx\.stateTransaction\.get\('resource\.batches'\)/,
+  'sliced extraction must reuse the prepared batch snapshot');
 assert.match(extractionHandlerSource,/existingBatchById\.get\(batchIdentity\)/,
   'each produced batch must use the prebuilt identity index rather than rescanning history');
 assert.match(extractionHandlerSource,/existingBatches\.push\(batch\);\s*existingBatchById\.set\(batchIdentity,batch\)/,
