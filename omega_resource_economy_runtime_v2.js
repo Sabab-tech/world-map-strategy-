@@ -3217,12 +3217,22 @@
       return{ok:false,reason:'RESOURCE_PERIOD_LEDGER_RECEIPT_TOTAL_MISMATCH'};
     var batches=Array.isArray(resource.batches)?resource.batches:[],lots=resource.inventoryLots||{};
     var storedBatchIds=new Set(Array.isArray(warehouse.storedBatchIds)?warehouse.storedBatchIds.map(String):[]);
+    // Index only this period's expected batches in one pass. The former filter()
+    // inside the ledger loop rescanned the complete historical batch list per row.
+    var batchesById=new Map();
+    for(var batchIndex=0;batchIndex<batches.length;batchIndex++){
+      var batchRow=batches[batchIndex],indexedBatchId=String(batchRow?.batchId||'').trim();
+      if(!ledgerByBatch.has(indexedBatchId))continue;
+      var indexedBatch=batchesById.get(indexedBatchId);
+      if(indexedBatch)indexedBatch.count++;
+      else batchesById.set(indexedBatchId,{row:batchRow,count:1});
+    }
     for(var [batchId,quantity] of ledgerByBatch){
-      var matchingBatches=batches.filter(row=>String(row?.batchId||'')===batchId);
-      var batch=matchingBatches[0],lot=lots[batchId]||null;
+      var indexedBatch=batchesById.get(batchId);
+      var batch=indexedBatch?.row||null,lot=lots[batchId]||null;
       var batchQuantity=num(batch?.quantity??batch?.remainingQuantity);
       var lotQuantity=num(lot?.quantity??lot?.remainingQuantity);
-      if(matchingBatches.length!==1||!lot||!storedBatchIds.has(batchId)||
+      if(!indexedBatch||indexedBatch.count!==1||!lot||!storedBatchIds.has(batchId)||
          String(batch?.productionPeriodId||'')!==periodId||String(lot?.productionPeriodId||'')!==periodId||
          batchQuantity===null||lotQuantity===null||
          Math.abs(batchQuantity-quantity)>Math.max(1e-8,Math.abs(quantity)*1e-9)||
