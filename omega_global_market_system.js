@@ -40,13 +40,22 @@
     let next=iterator.next();
     while(!next.done){
       const now=marketNow(),sliceMs=Math.max(0,now-pacing.sliceStartedAt);
+      pacing.maxSliceMs=Math.max(pacing.maxSliceMs,sliceMs);
       if(sliceMs>=MARKET_REFRESH_SLICE_MS){
-        pacing.maxSliceMs=Math.max(pacing.maxSliceMs,sliceMs);
         await yieldMarketRefresh();
         pacing.yieldCount+=1;
         pacing.sliceStartedAt=marketNow();
       }
       next=iterator.next();
+    }
+    // Include the generator's final tail in the budget and let the browser paint
+    // before publishing even when the last chunk reaches the time-slice limit.
+    const finalSliceMs=Math.max(0,marketNow()-pacing.sliceStartedAt);
+    pacing.maxSliceMs=Math.max(pacing.maxSliceMs,finalSliceMs);
+    if(finalSliceMs>=MARKET_REFRESH_SLICE_MS){
+      await yieldMarketRefresh();
+      pacing.yieldCount+=1;
+      pacing.sliceStartedAt=marketNow();
     }
     return next.value;
   }
@@ -66,8 +75,9 @@
   let activeProductIndex=null;
   let rebuildCountryInFlight=null;
   const MARKET_REFRESH_SLICE_MS=6;
-  function createMarketSnapshot(){
+  function* createMarketSnapshotWork(){
     const root=state()||{},countryIds=new Set();
+    let scanned=0;
     const resolveRow=row=>{
       const raw=row&&typeof row==='object'
         ?(row.iso3||row.iso3Code||row.countryCode||row.country_id||row.countryId||row.canonicalId||row.id||row.code)
@@ -77,27 +87,45 @@
     };
     try{
       const rows=registry()?.list?.('COUNTRY')||registry()?.list?.()||[];
-      if(Array.isArray(rows))rows.forEach(resolveRow);
+      if(Array.isArray(rows)){
+        for(const row of rows){
+          resolveRow(row);
+          if(++scanned%8===0)yield null;
+        }
+      }
     }catch(_){}
     const domains=['trade','resource','finance','foreign','economy'];
     for(const domain of domains){
       const source=root[domain];
-      if(source&&typeof source==='object')Object.keys(source).forEach(resolveRow);
+      if(!source||typeof source!=='object')continue;
+      const keys=Object.keys(source);
+      for(const key of keys){
+        resolveRow(key);
+        if(++scanned%8===0)yield null;
+      }
     }
     const buckets=Object.create(null);
     for(const domain of domains){
       const source=root[domain];
       if(!source||typeof source!=='object')continue;
       const index=Object.create(null);
-      for(const key of Object.keys(source)){
+      const keys=Object.keys(source);
+      for(const key of keys){
         const cid=canonical(key);
         if(cid&&!Object.prototype.hasOwnProperty.call(index,cid))index[cid]=source[key];
+        if(++scanned%8===0)yield null;
       }
       // Preserve the old direct-key preference when canonical and alias keys coexist.
-      for(const cid of countryIds)if(Object.prototype.hasOwnProperty.call(source,cid))index[cid]=source[cid];
+      for(const cid of countryIds){
+        if(Object.prototype.hasOwnProperty.call(source,cid))index[cid]=source[cid];
+        if(++scanned%8===0)yield null;
+      }
       buckets[domain]=index;
     }
     return{countryIds:[...countryIds].filter(Boolean).sort(),buckets,currencyByCountry:new Map(),usdRateByCountry:new Map()};
+  }
+  function createMarketSnapshot(){
+    return drainMarketWorkSync(createMarketSnapshotWork());
   }
   const countries=()=>activeMarketSnapshot?activeMarketSnapshot.countryIds:(()=>{
     const out=new Set();
@@ -188,21 +216,47 @@
     const p=n(price),r=usdRate(c);if(p===null||r===null)return null;
     return currency(c)==='USD'?p:p/r;
   }
-  function resourceIds(){
+  function* resourceIdsWork(countryRows){
     const ids=new Set;
+    let scanned=0;
     const rt=g.ResourceMinistryEngine?.resourceTypes;
     if(Array.isArray(rt))for(const x of rt)if(x?.id)ids.add(String(x.id));
-    for(const c of countries()){
+    const rows=Array.isArray(countryRows)?countryRows:countries();
+    for(let countryIndex=0;countryIndex<rows.length;countryIndex++){
+      const c=rows[countryIndex];
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),cons=countryValue(c,'resource.consumption');
-      for(const source of [inv,prod,cons])if(source&&typeof source==='object')for(const k of Object.keys(source))ids.add(k);
-      const req=countryValue(c,'trade.importRequests');if(Array.isArray(req))for(const x of req)if(x?.resourceId)ids.add(x.resourceId);
+      for(const source of [inv,prod,cons]){
+        if(!source||typeof source!=='object')continue;
+        for(const key of Object.keys(source)){
+          ids.add(key);
+          if(++scanned%64===0)yield null;
+        }
+      }
+      const req=countryValue(c,'trade.importRequests');
+      if(Array.isArray(req))for(const row of req){
+        if(row?.resourceId)ids.add(row.resourceId);
+        if(++scanned%64===0)yield null;
+      }
       const offers=countryValue(c,'trade.offerBook');
       if(offers&&typeof offers==='object'){
-        if(Array.isArray(offers))for(const x of offers)if(x?.resourceId)ids.add(x.resourceId);
-        else for(const [k,v] of Object.entries(offers))if(v&&typeof v==='object')ids.add(v.resourceId||k);
+        if(Array.isArray(offers)){
+          for(const row of offers){
+            if(row?.resourceId)ids.add(row.resourceId);
+            if(++scanned%64===0)yield null;
+          }
+        }else{
+          for(const [key,value] of Object.entries(offers)){
+            if(value&&typeof value==='object')ids.add(value.resourceId||key);
+            if(++scanned%64===0)yield null;
+          }
+        }
       }
+      if((countryIndex+1)%8===0)yield null;
     }
     return [...ids].map(String).filter(Boolean).sort((a,b)=>token(a).localeCompare(token(b)));
+  }
+  function resourceIds(){
+    return drainMarketWorkSync(resourceIdsWork());
   }
   function referencePrice(rid){
     const rt=g.ResourceMinistryEngine?.resourceTypes||[];
@@ -435,12 +489,22 @@
   async function rebuildCooperatively(){
     const previousSnapshot=activeMarketSnapshot,previousProductIndex=activeProductIndex;
     const startedAt=marketNow(),pacing={sliceStartedAt:startedAt,yieldCount:0,maxSliceMs:0};
-    activeMarketSnapshot=createMarketSnapshot();
+    const snapshotYieldStart=pacing.yieldCount,snapshotStartedAt=marketNow();
+    activeMarketSnapshot=await drainMarketWorkCooperatively(createMarketSnapshotWork(),pacing);
+    const snapshotDurationMs=Number(Math.max(0,marketNow()-snapshotStartedAt).toFixed(2));
+    const snapshotYieldCount=pacing.yieldCount-snapshotYieldStart;
+    const productIndexStartedAt=marketNow();
     activeProductIndex=buildProductIndex();
+    const productIndexDurationMs=Number(Math.max(0,marketNow()-productIndexStartedAt).toFixed(2));
     try{
-      const markets={},countryRows=activeMarketSnapshot.countryIds.slice(),resourceRows=resourceIds();
+      const markets={},countryRows=activeMarketSnapshot.countryIds.slice();
+      const discoveryYieldStart=pacing.yieldCount,discoveryStartedAt=marketNow();
+      const resourceRows=await drainMarketWorkCooperatively(resourceIdsWork(countryRows),pacing);
+      const resourceDiscoveryDurationMs=Number(Math.max(0,marketNow()-discoveryStartedAt).toFixed(2));
+      const resourceDiscoveryYieldCount=pacing.yieldCount-discoveryYieldStart;
       const seedCountry=countryRows[0];
       const persisted=seedCountry?countryValue(seedCountry,'trade.marketHistory'):{};
+      const orderBookStartedAt=marketNow();
       for(let index=0;index<resourceRows.length;index++){
         const rid=resourceRows[index];
         const orders=await drainMarketWorkCooperatively(collectOrdersWork(rid,countryRows),pacing);
@@ -449,11 +513,14 @@
         markets[rid]={orders,clearing,history:h.concat([{turn:turn(),...clearing}]).slice(-MAX_MARKET_HISTORY)};
         await yieldIfMarketSliceExpired(pacing);
       }
+      const orderBookDurationMs=Number(Math.max(0,marketNow()-orderBookStartedAt).toFixed(2));
       g.__OmegaMarketBooks=markets;
       const completedAt=marketNow();
       g.__omegaGlobalMarketRefreshDiagnostics={
         status:'COMPLETED',turn:turn(),countryCount:countryRows.length,resourceCount:resourceRows.length,
-        yieldCount:pacing.yieldCount,durationMs:Number(Math.max(0,completedAt-startedAt).toFixed(2)),
+        yieldCount:pacing.yieldCount,snapshotYieldCount,resourceDiscoveryYieldCount,
+        snapshotDurationMs,productIndexDurationMs,resourceDiscoveryDurationMs,orderBookDurationMs,
+        durationMs:Number(Math.max(0,completedAt-startedAt).toFixed(2)),
         maxSliceMs:Number(pacing.maxSliceMs.toFixed(2)),scheduler:'COOPERATIVE_MAIN_THREAD_SLICES'
       };
       return markets;
