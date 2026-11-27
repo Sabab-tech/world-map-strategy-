@@ -1837,10 +1837,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     const tracked=(rows,key)=>new Proxy(rows,{
       get(target,property,receiver){
         if(property===Symbol.iterator)return function*(){
-          for(let index=0;index<target.length;index++){
-            reads[key]++;
-            yield receiver[index];
-          }
+          for(let index=0;index<target.length;index++)yield receiver[index];
         };
         if(typeof property==='string'&&/^\d+$/.test(property))reads[key]++;
         return Reflect.get(target,property,receiver);
