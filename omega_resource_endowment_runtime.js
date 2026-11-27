@@ -1966,12 +1966,12 @@ function batchFromExtraction(x,record){
     }
     const inventory=ctx.stateTransaction.get('resource.inventory')||{};
     const reserves=ctx.stateTransaction.get('resource.reserves')||{};
-    const extractionLedgerSnapshot=extractionHistoryIndex?extractionHistoryIndex.extractionLedger:ctx.stateTransaction.get('resource.extractionLedger');
+    const extractionLedgerSnapshot=extractionHistoryIndex?extractionHistoryIndex.extractionLedger.slice():ctx.stateTransaction.get('resource.extractionLedger');
     const ledger=Array.isArray(extractionLedgerSnapshot)?extractionLedgerSnapshot:[];
-    const mineProductionLedgerSnapshot=extractionHistoryIndex?extractionHistoryIndex.mineProductionLedger:ctx.stateTransaction.get('resource.mineProductionLedger');
+    const mineProductionLedgerSnapshot=extractionHistoryIndex?extractionHistoryIndex.mineProductionLedger.slice():ctx.stateTransaction.get('resource.mineProductionLedger');
     const mineProductionLedger=Array.isArray(mineProductionLedgerSnapshot)?mineProductionLedgerSnapshot:[];
     const mineOutputTotals=ctx.stateTransaction.get('resource.mineOutputTotals')||{};
-    const existingBatchesSnapshot=extractionHistoryIndex?extractionHistoryIndex.batches:ctx.stateTransaction.get('resource.batches');
+    const existingBatchesSnapshot=extractionHistoryIndex?extractionHistoryIndex.batches.slice():ctx.stateTransaction.get('resource.batches');
     const existingBatches=Array.isArray(existingBatchesSnapshot)?existingBatchesSnapshot:[];
     const inventoryLots=ctx.stateTransaction.get('resource.inventoryLots')||{};
     const minePaths=ctx.stateTransaction.get('resource.minePaths')||{};
@@ -2035,7 +2035,7 @@ function batchFromExtraction(x,record){
     // Standalone/manual extraction retains the authoritative one-pass fallback.
     let firstPositiveProductionByOccurrence=extractionHistoryIndex?.firstPositiveProductionByOccurrence;
     let committedProductionByOccurrence=extractionHistoryIndex?.committedProductionByOccurrence;
-    let existingBatchById=extractionHistoryIndex?.existingBatchById;
+    let existingBatchById=extractionHistoryIndex?new Map(extractionHistoryIndex.existingBatchById):null;
     let extractionRecordByIdAndOccurrence=extractionHistoryIndex?.extractionRecordByIdAndOccurrence;
     const extractionTurn=productionPeriodTurn;
     if(!extractionHistoryIndex){
