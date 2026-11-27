@@ -368,8 +368,9 @@ const committedBooks=globalThis.__OmegaMarketBooks;
 // Add multiple commodity offer rows to different countries. The refreshed
 // orderbook must visit each source offer once for the entire global product set.
 const syntheticProductIds=Array.from({length:12},(_,index)=>'TURN_LOAD_TEST_'+String(index).padStart(2,'0'));
+globalThis.Game.state.trade=globalThis.Game.state.trade||{};
 for(const countryId of ['BDG','SAU']){
-  const tradeCountry=globalThis.Game.state.trade[countryId];
+  const tradeCountry=globalThis.Game.state.trade[countryId]||(globalThis.Game.state.trade[countryId]={});
   const existing=tradeCountry.offerBook||{};
   const priorRows=Array.isArray(existing)?existing.slice():Object.entries(existing).flatMap(([key,value])=>{
     if(Array.isArray(value))return value.map(row=>({...row,resourceId:row?.resourceId||key}));
