@@ -153,6 +153,8 @@ const runtime=globalThis.OmegaResourceEndowmentRuntime;
 
 {
 const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowment_runtime.js',import.meta.url),'utf8');
+assert.match(endowmentRuntimeSource,/const sliceSize=constrained\?2:8/,
+  'constrained mobile extraction must process smaller slices and yield to the UI more frequently');
 const extractionHandlerStart=endowmentRuntimeSource.indexOf('function extractHandler(cmd,ctx){');
 const extractionHandlerEnd=endowmentRuntimeSource.indexOf('function publishCommittedExtractionEvents',extractionHandlerStart);
 assert.ok(extractionHandlerStart>=0&&extractionHandlerEnd>extractionHandlerStart,
@@ -524,8 +526,6 @@ const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
 assert.equal(preGlobal.mineSiteReferenceCount,561,'58 additional unique mineplay sites must hydrate into the authoritative endowment runtime');
 assert.equal(preGlobal.mineSiteControllerCount,561,'each hydrated mineplay site must receive an executable site controller');
-assert.match(endowmentRuntimeSource,/const sliceSize=constrained\?2:8/,
-  'constrained mobile extraction must process smaller slices and yield to the UI more frequently');
 const extractionPromiseA=runtime.extractAll();
 const extractionPromiseB=runtime.extractAll();
 assert.equal(extractionPromiseA,extractionPromiseB,'concurrent turn listeners must share one in-flight world extraction');
