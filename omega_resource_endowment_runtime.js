@@ -1861,26 +1861,29 @@ function batchFromExtraction(x,record){
     if(strategicPolicy&&strategicPolicy.diagnostics?.().rulesLoaded!==true)return{accepted:false,reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY'};
     if(!r||!p5?.ExtractionRequest||!p5?.executeExtraction)return{accepted:false,reason:'PART05_RESOURCE_EXTRACTION_UNAVAILABLE'};
     const current=ctx.stateTransaction.get('resource.mineStates')||{};
-    const production=clone(ctx.stateTransaction.get('resource.production')||{});
+    const production=ctx.stateTransaction.get('resource.production')||{};
     const previousExtractionTurn=n(ctx.stateTransaction.get('resource.lastExtractionTurn'));
     if(previousExtractionTurn!==productionPeriodTurn){
       for(const key of Object.keys(production))production[key]=0;
       ctx.stateTransaction.set('resource.lastExtractionTurn',productionPeriodTurn);
     }
-    const inventory=clone(ctx.stateTransaction.get('resource.inventory')||{});
-    const reserves=clone(ctx.stateTransaction.get('resource.reserves')||{});
-    const ledger=Array.isArray(ctx.stateTransaction.get('resource.extractionLedger'))?clone(ctx.stateTransaction.get('resource.extractionLedger')):[];
-    const mineProductionLedger=Array.isArray(ctx.stateTransaction.get('resource.mineProductionLedger'))?clone(ctx.stateTransaction.get('resource.mineProductionLedger')):[];
-    const mineOutputTotals=clone(ctx.stateTransaction.get('resource.mineOutputTotals')||{});
-    const existingBatches=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[];
-    const inventoryLots=clone(ctx.stateTransaction.get('resource.inventoryLots')||{});
-    const minePaths=clone(ctx.stateTransaction.get('resource.minePaths')||{});
-    const warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||{
+    const inventory=ctx.stateTransaction.get('resource.inventory')||{};
+    const reserves=ctx.stateTransaction.get('resource.reserves')||{};
+    const extractionLedgerSnapshot=ctx.stateTransaction.get('resource.extractionLedger');
+    const ledger=Array.isArray(extractionLedgerSnapshot)?extractionLedgerSnapshot:[];
+    const mineProductionLedgerSnapshot=ctx.stateTransaction.get('resource.mineProductionLedger');
+    const mineProductionLedger=Array.isArray(mineProductionLedgerSnapshot)?mineProductionLedgerSnapshot:[];
+    const mineOutputTotals=ctx.stateTransaction.get('resource.mineOutputTotals')||{};
+    const existingBatchesSnapshot=ctx.stateTransaction.get('resource.batches');
+    const existingBatches=Array.isArray(existingBatchesSnapshot)?existingBatchesSnapshot:[];
+    const inventoryLots=ctx.stateTransaction.get('resource.inventoryLots')||{};
+    const minePaths=ctx.stateTransaction.get('resource.minePaths')||{};
+    const warehouse=ctx.stateTransaction.get('resource.warehouse')||{
       warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
       locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],lastReceiptTurn:null
-    });
-    const existingResourceState=ctx.stateTransaction.get('resource')||{};
-    const persistedMineStates=ctx.stateTransaction.get('resource.mineStates')||{};
+    };
+    
+    const persistedMineStates=ctx.stateTransaction.peek('resource.mineStates')||{};
     const canonicalRows=occurrenceRows(c);
     const siteRows=siteExecutionRows(c,{mineStates:persistedMineStates,requestedOccurrenceKeys:Array.isArray(cmd?.payload?.occurrenceKeys)?cmd.payload.occurrenceKeys.map(String):[]});
     // Canonical site metadata is shared reference data; avoid scanning every
@@ -1956,15 +1959,15 @@ function batchFromExtraction(x,record){
     const extracted=[];
     const replayedRecords=[];
     const blocked=[];
-    const mineOutputs=clone(ctx.stateTransaction.get('resource.mineOutputs')||{});
-    const mineSiteControllers=clone(ctx.stateTransaction.get('resource.mineSiteControllers')||{});
-    const mines=clone(ctx.stateTransaction.get('resource.mines')||[]);
+    const mineOutputs=ctx.stateTransaction.get('resource.mineOutputs')||{};
+    const mineSiteControllers=ctx.stateTransaction.get('resource.mineSiteControllers')||{};
+    const mines=ctx.stateTransaction.get('resource.mines')||[];
     // Capacity and demand are both expressed as rates per day, while extraction
     // commits one simulation-step quantity. Keep production and consumption on
     // the same time window; legacy harnesses without a clock retain a daily tick.
     const windowHours=simulationWindowHours(),turnDays=windowHours/DAY_HOURS;
-    const consumption=ctx.stateTransaction.get('resource.consumption')||{};
-    const exportDemand=ctx.stateTransaction.get('resource.exportDemand')||ctx.stateTransaction.get('trade.exportDemand')||{};
+    const consumption=ctx.stateTransaction.peek('resource.consumption')||{};
+    const exportDemand=ctx.stateTransaction.peek('resource.exportDemand')||ctx.stateTransaction.peek('trade.exportDemand')||{};
     const valueForResource=(obj,resourceId)=>{if(!obj||typeof obj!=='object')return null;if(Object.prototype.hasOwnProperty.call(obj,resourceId))return n(obj[resourceId]);const wanted=tok(resourceId);for(const k of Object.keys(obj))if(tok(k)===wanted)return n(obj[k]);return null;};
     const demandTargetByResource={},windowCapacityByOccurrence={},totalWindowByResource={};
     // Demand shares use the country's full occurrence set even when a UI action
@@ -2347,9 +2350,9 @@ function batchFromExtraction(x,record){
     ctx.stateTransaction.set('resource.production',production);
     ctx.stateTransaction.set('resource.inventory',inventory);
     ctx.stateTransaction.set('resource.reserves',reserves);
-    const strategicReserve=clone(ctx.stateTransaction.get('resource.strategicReserve')||{
+    const strategicReserve=ctx.stateTransaction.get('resource.strategicReserve')||{
       warehouseId:'WH-'+c+'-SPR',countryId:c,type:'STRATEGIC_RESERVE_STOCKPILE',locationNodeKey:'WAREHOUSE:'+c+':SPR',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],transfers:[],lastTransferTurn:null
-    });
+    };
     ctx.stateTransaction.set('resource.strategicReserve',strategicReserve);
     const tradeAvailability=computeTradeAvailability(inventory,strategicReserve.availableByResource);
     ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
