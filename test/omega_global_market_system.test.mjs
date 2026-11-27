@@ -329,6 +329,12 @@ assert.equal(market.getCompanyResearchRequests('BGD','AURORA_INDUSTRIAL_GROUP').
 assert.equal(globalThis.Game.state.trade.BGD.importRequests.length,requestsBefore);
 
 
+// Exercise bounded preparation with a small real-country roster beyond the two
+// transaction examples above; these rows carry no orders or stock and cannot affect clearing.
+for(const countryId of ['USA','CHN','IND','JPN','GBR','DEU','FRA','BRA']){
+  globalThis.Game.state.resource[countryId] ||= {};
+  globalThis.Game.state.trade[countryId] ||= {};
+}
 const refreshTurn=Number(globalThis.Game.state.simulation.turn||0)+1;
 globalThis.Game.state.simulation.turn=refreshTurn;
 const refreshPlayerCountryId=identity.resolveCountry('BGD')?.id||'BGD';
@@ -362,6 +368,12 @@ assert.equal(countryRefresh.turn,refreshTurn);
 assert.ok(countryRefresh.refresh?.countryCount>=2,JSON.stringify(countryRefresh.refresh));
 assert.ok(countryRefresh.refresh?.resourceCount>0,JSON.stringify(countryRefresh.refresh));
 assert.ok(countryRefresh.refresh?.yieldCount>0,JSON.stringify(countryRefresh.refresh));
+assert.ok(countryRefresh.refresh?.snapshotYieldCount>0,
+  'canonical country/domain snapshot preparation must yield before order-book collection');
+assert.ok(countryRefresh.refresh?.resourceDiscoveryYieldCount>0,
+  'resource-ID discovery across the canonical country roster must yield before order-book collection');
+assert.ok(countryRefresh.refresh?.snapshotDurationMs>=0,JSON.stringify(countryRefresh.refresh));
+assert.ok(countryRefresh.refresh?.resourceDiscoveryDurationMs>=0,JSON.stringify(countryRefresh.refresh));
 assert.ok(marketRefreshYieldCount>0,'the market refresh must yield control to the browser between workload slices');
 assert.equal(market.diagnostics().lastCountryRefresh?.scheduler,'COOPERATIVE_MAIN_THREAD_SLICES');
 const committedBooks=globalThis.__OmegaMarketBooks;
