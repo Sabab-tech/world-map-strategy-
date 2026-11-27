@@ -230,6 +230,13 @@ test('resource extraction phase catches up one stable game-day at a time and rec
     'batch and inventory lot period IDs must agree before the checkpoint is committed');
   assert.match(economySource,/RESOURCE_PERIOD_BATCH_WAREHOUSE_STATE_MISMATCH/,
     'a period must verify its batch, inventory lot and warehouse stored-batch identity');
+  const resourceReconciliation=economySource.slice(
+    economySource.indexOf('function reconcileResourceProductionPeriod'),
+    economySource.indexOf('async function runCheckpointedResourceExtraction'));
+  assert.doesNotMatch(resourceReconciliation,/batches\.filter\(/,
+    'resource checkpoint reconciliation must not rescan all historical batches for each period batch');
+  assert.match(resourceReconciliation,/batchesById\.get\(batchId\)/,
+    'resource batch identity checks must use the one-pass period batch index');
   assert.match(economySource,/if\(!reconciliation\.ok\)\{\s*api\.fail\(/,
     'failed ledger reconciliation must leave the resource checkpoint pending');
   assert.match(economySource,/phase:'RESOURCE_EXTRACTION',\s*lastProcessedEventId:periodId,\s*reconciliation:\{status:'RECONCILED'/,
@@ -1480,4 +1487,12 @@ test('industrial journal completion follows reconciliation; failed reconciliatio
     'recovery and already-completed periods must be eligible for reconciliation');
   assert.ok(reconcile.includes("status:'COMPLETED',completedAt"),
     'only a successful reconciliation promotes the journal to COMPLETED');
+  assert.doesNotMatch(reconcile,/inventoryLedger\.some\(/,
+    'finished-goods reconciliation must not rescan the full inventory ledger per transaction');
+  assert.doesNotMatch(reconcile,/batches\.filter\(/,
+    'finished-goods reconciliation must not rescan all historical batches per output batch');
+  assert.match(reconcile,/postedTransactions=new Set\(\)/,
+    'period-matched inventory postings must be indexed once before transaction checks');
+  assert.match(reconcile,/batchesById=new Map\(\)/,
+    'period batch identities must be indexed once while preserving duplicate detection');
 });

@@ -7071,6 +7071,16 @@ function reconcileProductionPeriod(countryId,periodTurn,periodId,runResult){
   const batches=Array.isArray(resource.batches)?resource.batches:[];
   const lots=resource.inventoryLots&&typeof resource.inventoryLots==='object'?resource.inventoryLots:{};
   const stored=new Set(Array.isArray(warehouse.storedBatchIds)?warehouse.storedBatchIds.map(String):[]);
+  // Build a period-scoped transaction index once instead of rescanning the full
+  // historical inventory ledger for every finished-goods transaction.
+  const postedTransactions=new Set();
+  for(const entry of inventoryLedger){
+    const entryType=String(entry?.type||'');
+    if(String(entry?.productionPeriodId||'')!==key||num(entry?.turn)!==targetTurn||
+       (entryType!=='FACTORY_PROCESSING_COMMITTED'&&entryType!=='FACTORY_MULTI_INPUT_PROCESSING_COMMITTED'))continue;
+    const transactionId=String(entry?.transactionId||'').trim();
+    if(transactionId)postedTransactions.add(transactionId);
+  }
   const ledgerTransactions=new Set();
   const expectedBatchIds=new Set();
   let totalQuantity=0;
@@ -7093,10 +7103,8 @@ function reconcileProductionPeriod(countryId,periodTurn,periodId,runResult){
         return{ok:false,reason:'INDUSTRIAL_PERIOD_LEDGER_BATCH_INVALID',batchId};
       expectedBatchIds.add(batchId);
     }
-    const posted=inventoryLedger.some(entry=>String(entry?.transactionId||'')===transactionId&&
-      String(entry?.productionPeriodId||'')===key&&num(entry?.turn)===targetTurn&&
-      ['FACTORY_PROCESSING_COMMITTED','FACTORY_MULTI_INPUT_PROCESSING_COMMITTED'].includes(String(entry?.type||'')));
-    if(!posted)return{ok:false,reason:'INDUSTRIAL_PERIOD_INVENTORY_LEDGER_MISMATCH',transactionId};
+    if(!postedTransactions.has(transactionId))
+      return{ok:false,reason:'INDUSTRIAL_PERIOD_INVENTORY_LEDGER_MISMATCH',transactionId};
   }
   const receiptByBatch=new Map();
   for(const receipt of receipts){
@@ -7110,11 +7118,21 @@ function reconcileProductionPeriod(countryId,periodTurn,periodId,runResult){
   if(receiptByBatch.size!==expectedBatchIds.size)
     return{ok:false,reason:'INDUSTRIAL_PERIOD_LEDGER_RECEIPT_COUNT_MISMATCH',
       ledgerBatches:expectedBatchIds.size,warehouseReceipts:receiptByBatch.size};
+  // Resolve expected batches from one country batch scan and retain duplicate
+  // counts so identity ambiguity remains a hard reconciliation failure.
+  const batchesById=new Map();
+  for(const batchRow of batches){
+    const batchId=String(batchRow?.batchId||'');
+    if(!expectedBatchIds.has(batchId))continue;
+    const indexed=batchesById.get(batchId);
+    if(indexed)indexed.count++;
+    else batchesById.set(batchId,{row:batchRow,count:1});
+  }
   for(const batchId of expectedBatchIds){
     const receipt=receiptByBatch.get(batchId);
-    const matching=batches.filter(row=>String(row?.batchId||'')===batchId);
-    const batch=matching[0]||null,lot=lots[batchId]||null;
-    if(!receipt||matching.length!==1||!batch||!lot||!stored.has(batchId)||
+    const indexed=batchesById.get(batchId);
+    const batch=indexed?.row||null,lot=lots[batchId]||null;
+    if(!receipt||!indexed||indexed.count!==1||!batch||!lot||!stored.has(batchId)||
        String(batch.productionPeriodId||'')!==key||String(lot.productionPeriodId||'')!==key||
        tok(batch.resourceId||batch.materialIdentity)!==tok(receipt.resourceId)||
        tok(lot.resourceId||lot.materialIdentity)!==tok(receipt.resourceId)||
@@ -7122,9 +7140,8 @@ function reconcileProductionPeriod(countryId,periodTurn,periodId,runResult){
        Math.abs((num(lot.quantity)||0)-(num(receipt.quantity)||0))>Math.max(1e-8,Math.abs(num(receipt.quantity)||0)*1e-9))
       return{ok:false,reason:'INDUSTRIAL_PERIOD_BATCH_WAREHOUSE_STATE_MISMATCH',batchId};
   }
-  for(const [resourceId,expected] of Object.entries(Object.fromEntries(
-    Object.entries(outputByResource).filter(([key])=>!key.startsWith('__RECEIPT__'))
-  ))){
+  for(const [resourceId,expected] of Object.entries(outputByResource)){
+    if(resourceId.startsWith('__RECEIPT__'))continue;
     const received=outputByResource['__RECEIPT__'+resourceId]||0;
     if(Math.abs(expected-received)>Math.max(1e-8,Math.abs(expected)*1e-9))
       return{ok:false,reason:'INDUSTRIAL_PERIOD_LEDGER_RECEIPT_QUANTITY_MISMATCH',resourceId,expected,received};
