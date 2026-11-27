@@ -371,14 +371,19 @@ globalThis.Game.state.trade=globalThis.Game.state.trade||{};
 globalThis.Game.state.finance=globalThis.Game.state.finance||{};
 globalThis.Game.state.economy=globalThis.Game.state.economy||{};
 const loadTestCountryId=refreshPlayerCountryId;
-const tradeCountry=globalThis.Game.state.trade[loadTestCountryId]||
-  globalThis.Game.state.trade.BDG||(globalThis.Game.state.trade[loadTestCountryId]={});
-globalThis.Game.state.trade[loadTestCountryId]=tradeCountry;
-globalThis.Game.state.finance[loadTestCountryId]={
-  ...(globalThis.Game.state.finance[loadTestCountryId]||{}),currencyCode:'USD'
+const tradeCountryKey=Object.keys(globalThis.Game.state.trade).find(key=>
+  Array.isArray(globalThis.Game.state.trade[key]?.companyMarketResearchRequests)&&
+  globalThis.Game.state.trade[key].companyMarketResearchRequests.some(row=>id(row?.companyId)==='AURORA_INDUSTRIAL_GROUP'))||
+  Object.keys(globalThis.Game.state.trade).find(key=>identity.resolveCountry(key)?.id===refreshPlayerCountryId)||'BGD';
+const tradeCountry=globalThis.Game.state.trade[tradeCountryKey]||
+  (globalThis.Game.state.trade[tradeCountryKey]={});
+const matchingFinanceKey=Object.keys(globalThis.Game.state.finance).find(key=>identity.resolveCountry(key)?.id===refreshPlayerCountryId)||tradeCountryKey;
+const matchingEconomyKey=Object.keys(globalThis.Game.state.economy).find(key=>identity.resolveCountry(key)?.id===refreshPlayerCountryId)||tradeCountryKey;
+globalThis.Game.state.finance[matchingFinanceKey]={
+  ...(globalThis.Game.state.finance[matchingFinanceKey]||{}),currencyCode:'USD'
 };
-globalThis.Game.state.economy[loadTestCountryId]={
-  ...(globalThis.Game.state.economy[loadTestCountryId]||{}),currency_code:'USD',exchange_rate_usd:1
+globalThis.Game.state.economy[matchingEconomyKey]={
+  ...(globalThis.Game.state.economy[matchingEconomyKey]||{}),currency_code:'USD',exchange_rate_usd:1
 };
 const existing=tradeCountry.offerBook||{};
 const priorRows=Array.isArray(existing)?existing.slice():Object.entries(existing).flatMap(([key,value])=>{
