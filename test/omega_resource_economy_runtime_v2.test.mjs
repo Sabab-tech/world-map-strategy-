@@ -247,6 +247,105 @@ test('resource extraction phase catches up one stable game-day at a time and rec
     'the existing industrial phase must remain after the resource extraction phase');
 });
 
+test('extraction fiscal batch handlers read and write the growing ledger once per day',()=>{
+  const {context,worldState,handlers}=createContext();
+  vm.runInNewContext(readFileSync('omega_resource_economy_runtime_v2.js','utf8'),context,
+    {filename:'omega_resource_economy_runtime_v2.js'});
+  worldState.finance.BGD.resourceExtractionFiscalLedger=Array.from({length:1800},(_,index)=>({
+    batchId:'OLD-FISCAL-'+index,resourceId:'iron_ore',quantity:1,status:'VALUED_AND_POSTED',
+    valuationComplete:true,cashPosted:true
+  }));
+  let getCalls=0,setCalls=0;
+  const tx={
+    get(path){
+      assert.equal(path,'finance.resourceExtractionFiscalLedger');
+      getCalls++;
+      return worldState.finance.BGD.resourceExtractionFiscalLedger.map(row=>({...row}));
+    },
+    set(path,value){
+      assert.equal(path,'finance.resourceExtractionFiscalLedger');
+      setCalls++;
+      worldState.finance.BGD.resourceExtractionFiscalLedger=value;
+    }
+  };
+  const pending=handlers.get('OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING_BATCH')?.handler;
+  const valued=handlers.get('OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_VALUED_BATCH')?.handler;
+  assert.equal(typeof pending,'function','the batch pending command must be registered');
+  assert.equal(typeof valued,'function','the batch valued command must be registered');
+  const records=[
+    {batchId:'DAY-81-MINE-A',mineId:'MINE_A',resourceId:'iron_ore',quantity:12,sourceAuthority:'OBSERVED'},
+    {batchId:'DAY-81-MINE-B',mineId:'MINE_B',resourceId:'coal',quantity:8,sourceAuthority:'OBSERVED'}
+  ];
+  const pendingResult=pending({payload:{records}},{countryId:'BGD',stateTransaction:tx});
+  assert.equal(pendingResult.accepted,true);
+  assert.equal(pendingResult.added,2);
+  assert.equal(getCalls,1,'a country-day batch must read the pending ledger only once');
+  assert.equal(setCalls,1,'a country-day batch must commit the pending ledger only once');
+  assert.equal(worldState.finance.BGD.resourceExtractionFiscalLedger.length,1802);
+  assert.deepEqual(
+    worldState.finance.BGD.resourceExtractionFiscalLedger.slice(-2).map(row=>row.batchId),
+    records.map(row=>row.batchId)
+  );
+
+  getCalls=0;setCalls=0;
+  const pendingReplay=pending({payload:{records}},{countryId:'BGD',stateTransaction:tx});
+  assert.equal(pendingReplay.accepted,true);
+  assert.equal(pendingReplay.added,0);
+  assert.equal(pendingReplay.duplicates,2);
+  assert.equal(getCalls,1);
+  assert.equal(setCalls,0,'replaying the same batch must not write an unchanged ledger');
+
+  const valuations=records.map((row,index)=>({
+    ...row,status:'VALUED_AND_POSTED',valuationComplete:true,cashPosted:true,
+    unitPrice:10+index,marketValue:row.quantity*(10+index),receiptId:'EXTRACTION-FISCAL:BGD:'+row.batchId
+  }));
+  getCalls=0;setCalls=0;
+  const valuedResult=valued({payload:{records:valuations}},{countryId:'BGD',stateTransaction:tx});
+  assert.equal(valuedResult.accepted,true);
+  assert.equal(valuedResult.updated,2);
+  assert.equal(getCalls,1,'a country-day valuation batch must index the pending ledger once');
+  assert.equal(setCalls,1,'a country-day valuation batch must commit once');
+  for(const record of valuations){
+    const row=worldState.finance.BGD.resourceExtractionFiscalLedger.find(item=>item.batchId===record.batchId);
+    assert.equal(row.valuationComplete,true);
+    assert.equal(row.receiptId,record.receiptId);
+    assert.equal(row.marketValue,record.marketValue);
+  }
+
+  getCalls=0;setCalls=0;
+  const valuedReplay=valued({payload:{records:valuations}},{countryId:'BGD',stateTransaction:tx});
+  assert.equal(valuedReplay.accepted,true);
+  assert.equal(valuedReplay.updated,0);
+  assert.equal(valuedReplay.duplicates,2);
+  assert.equal(getCalls,1);
+  assert.equal(setCalls,0,'replayed valuation batches must not rewrite already-valued rows');
+});
+
+test('single-record extraction fiscal compatibility handlers avoid redundant detached copies',()=>{
+  const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  const pendingStart=source.indexOf('function extractionFiscalPendingHandler');
+  const pendingEnd=source.indexOf('\n  function extractionFiscalValuedHandler',pendingStart);
+  const valuedStart=source.indexOf('function extractionFiscalValuedHandler');
+  const valuedEnd=source.indexOf('\n  function extractionFiscalPendingBatchHandler',valuedStart);
+  assert.ok(pendingStart>=0&&pendingEnd>pendingStart);
+  assert.ok(valuedStart>=0&&valuedEnd>valuedStart);
+  for(const handler of [source.slice(pendingStart,pendingEnd),source.slice(valuedStart,valuedEnd)]){
+    assert.match(handler,/var ledgerSnapshot=ctx\.stateTransaction\.get\('finance\.resourceExtractionFiscalLedger'\)/,
+      'each compatibility handler must take one detached transaction snapshot');
+    assert.doesNotMatch(handler,/clone\(ctx\.stateTransaction\.get\('finance\.resourceExtractionFiscalLedger'\)\)/,
+      'a detached transaction snapshot must not be deep-cloned a second time');
+  }
+  const fiscalStart=source.indexOf('function valueExtractionFiscalPending(c)');
+  const fiscalEnd=source.indexOf('function productionSummaryFromIndustrialResult',fiscalStart);
+  const fiscal=source.slice(fiscalStart,fiscalEnd);
+  assert.match(fiscal,/existingReceiptIds=new Set\(\)/,
+    'fiscal receipt identity must be indexed once per country-day valuation');
+  assert.doesNotMatch(fiscal,/fiscalLedger\.find\(/,
+    'the historical fiscal receipt ledger must not be rescanned for every pending mine batch');
+  assert.match(fiscal,/OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_VALUED_BATCH/,
+    'pending valuation status must be committed as a single country-day batch');
+});
+
 test('export settlement replay is idempotent across company flows, Treasury clearing and fiscal receipts',async()=>{
   const {context,worldState,commands,commandCollisions}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
