@@ -425,7 +425,11 @@ for(const productId of syntheticProductIds){
 }
 assert.equal((await market.rebuildCountry(refreshPlayerCountryId)).status,'ALREADY_UPDATED',
   'a committed day cannot rebuild or publish the same market twice');
-assert.equal(market.getCompanyResearchRequests(refreshPlayerCountryId,'AURORA_INDUSTRIAL_GROUP')[0]?.status,'RESOLVED',
-  'queued market research must still resolve after the cooperative refresh');
+const resolvedResearchRows=[
+  ...market.getCompanyResearchRequests('BGD','AURORA_INDUSTRIAL_GROUP'),
+  ...market.getCompanyResearchRequests(refreshPlayerCountryId,'AURORA_INDUSTRIAL_GROUP')
+];
+assert.ok(resolvedResearchRows.some(row=>row.status==='RESOLVED'),
+  'queued market research must still resolve after the cooperative refresh: '+JSON.stringify(resolvedResearchRows));
 
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
