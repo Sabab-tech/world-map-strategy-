@@ -329,6 +329,12 @@ assert.equal(market.getCompanyResearchRequests('BGD','AURORA_INDUSTRIAL_GROUP').
 assert.equal(globalThis.Game.state.trade.BGD.importRequests.length,requestsBefore);
 
 
+// Exercise bounded preparation with a small real-country roster beyond the two
+// transaction examples above; these rows carry no orders or stock and cannot affect clearing.
+for(const countryId of ['USA','CHN','IND','JPN','GBR','DEU','FRA','BRA']){
+  globalThis.Game.state.resource[countryId] ||= {};
+  globalThis.Game.state.trade[countryId] ||= {};
+}
 const refreshTurn=Number(globalThis.Game.state.simulation.turn||0)+1;
 globalThis.Game.state.simulation.turn=refreshTurn;
 const refreshPlayerCountryId=identity.resolveCountry('BGD')?.id||'BGD';
