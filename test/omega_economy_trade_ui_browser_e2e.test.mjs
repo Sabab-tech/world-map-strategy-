@@ -109,16 +109,15 @@ test('real Chromium keeps the five premium Trade & Commerce destinations availab
     });
 
     await page.goto(server.origin + '/', { waitUntil:'domcontentloaded', timeout:60000 });
+    // Only the app shell and route integration are eager. Presentation modules
+    // are intentionally loaded on demand by omega_ui_v2/module-loader.js.
     await page.waitForFunction(() =>
       !!window.OmegaUIV2App &&
       !!window.OmegaUIV2Integration &&
       typeof window.OmegaUIV2Integration.openRoute === 'function' &&
-      !!window.OmegaUIV2Economy &&
-      !!window.OmegaUIV2MinistryDetail &&
-      !!window.OmegaUIV2Government &&
-      !!window.OmegaCabinetUI &&
-      !!window.OmegaCabinetUI.ministriesDatabase?.trade
-    , null, { timeout:120000 });
+      !!window.OmegaUIV2ModuleLoader &&
+      typeof window.OmegaUIV2ModuleLoader.loadForContext === 'function'
+    , null, { timeout:30000 });
 
     const openedEconomy = await page.evaluate(() => {
       const country = 'BGD';
@@ -132,6 +131,10 @@ test('real Chromium keeps the five premium Trade & Commerce destinations availab
       return window.OmegaUIV2Integration.openRoute('economy');
     });
     check('production integration opens Economy', openedEconomy === true);
+    await page.waitForFunction(() =>
+      !!window.OmegaUIV2Economy &&
+      typeof window.OmegaUIV2Economy.render === 'function',
+    null, { timeout:30000 });
     const cabinet = page.locator('#cabinet-full-window');
     await cabinet.locator('[data-omega-v2-open-economic-ministry="trade"]').waitFor({ state:'visible', timeout:30000 });
     check('Economy renders the Trade & Commerce ministry gateway', await cabinet.locator('[data-omega-v2-open-economic-ministry="trade"]').count() === 1);
@@ -162,6 +165,12 @@ test('real Chromium keeps the five premium Trade & Commerce destinations availab
     await page.setViewportSize({ width:1280, height:850 });
 
     await cabinet.locator('[data-omega-v2-open-economic-ministry="trade"]').click();
+    await page.waitForFunction(() =>
+      !!window.OmegaUIV2Government &&
+      typeof window.OmegaUIV2Government.render === 'function' &&
+      !!window.OmegaUIV2MinistryDetail &&
+      typeof window.OmegaUIV2MinistryDetail.render === 'function',
+    null, { timeout:30000 });
     await page.waitForFunction(() => {
       const root = document.getElementById('cabinet-full-window');
       const main = root?.querySelector('[data-omega-v2-main]');
