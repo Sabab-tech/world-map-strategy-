@@ -373,7 +373,7 @@ globalThis.Game.state.economy=globalThis.Game.state.economy||{};
 const loadTestCountryId=refreshPlayerCountryId;
 const tradeCountryKey=Object.keys(globalThis.Game.state.trade).find(key=>
   Array.isArray(globalThis.Game.state.trade[key]?.companyMarketResearchRequests)&&
-  globalThis.Game.state.trade[key].companyMarketResearchRequests.some(row=>id(row?.companyId)==='AURORA_INDUSTRIAL_GROUP'))||
+  globalThis.Game.state.trade[key].companyMarketResearchRequests.some(row=>String(row?.companyId||'').toUpperCase()==='AURORA_INDUSTRIAL_GROUP'))||
   Object.keys(globalThis.Game.state.trade).find(key=>identity.resolveCountry(key)?.id===refreshPlayerCountryId)||'BGD';
 const tradeCountry=globalThis.Game.state.trade[tradeCountryKey]||
   (globalThis.Game.state.trade[tradeCountryKey]={});
