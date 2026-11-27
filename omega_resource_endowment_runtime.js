@@ -1883,7 +1883,7 @@ function batchFromExtraction(x,record){
       locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],lastReceiptTurn:null
     };
     
-    const persistedMineStates=ctx.stateTransaction.peek('resource.mineStates')||{};
+    const persistedMineStates=current;
     const canonicalRows=occurrenceRows(c);
     const siteRows=siteExecutionRows(c,{mineStates:persistedMineStates,requestedOccurrenceKeys:Array.isArray(cmd?.payload?.occurrenceKeys)?cmd.payload.occurrenceKeys.map(String):[]});
     // Canonical site metadata is shared reference data; avoid scanning every
@@ -1966,8 +1966,8 @@ function batchFromExtraction(x,record){
     // commits one simulation-step quantity. Keep production and consumption on
     // the same time window; legacy harnesses without a clock retain a daily tick.
     const windowHours=simulationWindowHours(),turnDays=windowHours/DAY_HOURS;
-    const consumption=ctx.stateTransaction.peek('resource.consumption')||{};
-    const exportDemand=ctx.stateTransaction.peek('resource.exportDemand')||ctx.stateTransaction.peek('trade.exportDemand')||{};
+    const consumption=ctx.stateTransaction.get('resource.consumption')||{};
+    const exportDemand=ctx.stateTransaction.get('resource.exportDemand')||ctx.stateTransaction.get('trade.exportDemand')||{};
     const valueForResource=(obj,resourceId)=>{if(!obj||typeof obj!=='object')return null;if(Object.prototype.hasOwnProperty.call(obj,resourceId))return n(obj[resourceId]);const wanted=tok(resourceId);for(const k of Object.keys(obj))if(tok(k)===wanted)return n(obj[k]);return null;};
     const demandTargetByResource={},windowCapacityByOccurrence={},totalWindowByResource={};
     // Demand shares use the country's full occurrence set even when a UI action
