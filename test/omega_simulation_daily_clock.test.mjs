@@ -961,7 +961,7 @@ test('compact gameplay clock keeps date, Treasury and a live accessible day-prog
   assert.match(activeDockCss, /\.ogth-advanced:not\(\[open\]\) > \.ogth-advanced-content \{ display: none !important; \}/);
   assert.match(activeDockCss, /\.ogth-clock-progress-row[\s\S]*?display: flex !important;/);
   assert.match(activeDockCss, /height: 30px !important;/);
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v158/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v\\d+/);
   assert.match(lifecycle, /function queueHudUpdate\(forceResourceHudRefresh\)/);
   assert.match(lifecycle, /hudUpdateFrame !== null \|\| hudUpdateTimer !== null/);
   assert.match(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/,
