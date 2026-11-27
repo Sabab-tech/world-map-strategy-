@@ -1881,7 +1881,10 @@ function batchFromExtraction(x,record){
       const key=String(row?.extractionId||'')+'\\u0000'+String(row?.occurrenceKey||'');
       if(!extractionRecordByIdAndOccurrence.has(key))extractionRecordByIdAndOccurrence.set(key,row);
     }
+    // Shallow array snapshots are safe: the handler only appends new immutable
+    // ledger/batch rows and commits fresh capped arrays through StateTransaction.
     extractionHistoryIndexCaches.set(cacheId,{countryId:c,productionPeriodId:periodId,productionPeriodTurn:periodTurn,
+      mineProductionLedger:mineProductionLedger.slice(),batches:batches.slice(),extractionLedger:extractionLedger.slice(),
       firstPositiveProductionByOccurrence,committedProductionByOccurrence,existingBatchById,extractionRecordByIdAndOccurrence});
     extractionHistoryIndexCacheBuildCount++;
     extractionHistoryIndexRowsIndexed+=mineProductionLedger.length+batches.length+extractionLedger.length;
@@ -1908,24 +1911,35 @@ function batchFromExtraction(x,record){
       const batch=record?.producedBatch||record?.batch||null;
       const batchId=String(batch?.batchId||record?.batchId||'').trim();
       const extractionId=String(record?.extractionId||record?.productionId||'').trim();
-      if(quantity>0){
-        const ledgerRow={productionId:extractionId,mineId:occurrenceKey,occurrenceKey,batchId,
-          quantity,turn:n(record?.simulationTurn)??productionPeriodTurn,
-          simulationTurn:n(record?.simulationTurn)??productionPeriodTurn,
+      const extractionRecordKey=extractionId+'\\u0000'+occurrenceKey;
+      if(quantity>0&&!cache.committedProductionByOccurrence.has(occurrenceKey)){
+        const ledgerRow={productionId:extractionId,mineId:occurrenceKey,occurrenceKey,
+          siteReferenceKey:record?.siteReferenceKey||null,mineName:record?.siteName||null,
+          depositKey:record?.depositKey||null,resourceId:record?.resourceId||batch?.resourceId||null,
+          quantity,unit:batch?.unit||null,purity:batch?.purity??null,gradePercent:batch?.grade??null,
+          batchId,warehouseId:batch?.warehouseId||null,
+          turn:n(record?.simulationTurn)??productionPeriodTurn,
           productionPeriodId:String(record?.productionPeriodId||productionPeriodId),
-          status:record?.status||'COMMITTED',simulationGenerated:!!record?.simulationGenerated,
-          sourceAuthority:record?.provenance?.sourceAuthority||'UNOBSERVED'};
+          reserveBefore:n(record?.reserveBefore?.residualQuantity),reserveAfter:n(record?.reserveAfter?.residualQuantity),
+          status:record?.status||'COMMITTED',sourceDatasetId:record?.provenance?.sourceDatasetId||null,
+          sourceAuthority:record?.provenance?.sourceAuthority||'UNOBSERVED',
+          simulationGenerated:!!record?.simulationGenerated};
         if(!cache.firstPositiveProductionByOccurrence.has(occurrenceKey))
           cache.firstPositiveProductionByOccurrence.set(occurrenceKey,ledgerRow);
-        if(batchId&&!cache.committedProductionByOccurrence.has(occurrenceKey))
-          cache.committedProductionByOccurrence.set(occurrenceKey,ledgerRow);
+        if(batchId)cache.committedProductionByOccurrence.set(occurrenceKey,ledgerRow);
+        cache.mineProductionLedger.push(ledgerRow);
+        while(cache.mineProductionLedger.length>MAX_MINE_HISTORY)cache.mineProductionLedger.shift();
       }
-      if(batchId&&batch&&!cache.existingBatchById.has(batchId))
+      if(batchId&&batch&&!cache.existingBatchById.has(batchId)){
         cache.existingBatchById.set(batchId,batch);
-      if(extractionId){
-        const key=extractionId+'\\u0000'+occurrenceKey;
-        if(!cache.extractionRecordByIdAndOccurrence.has(key))
-          cache.extractionRecordByIdAndOccurrence.set(key,record);
+        cache.batches.push(batch);
+        while(cache.batches.length>MAX_LEDGER)cache.batches.shift();
+      }
+      if(extractionId&&!cache.extractionRecordByIdAndOccurrence.has(extractionRecordKey)){
+        const extractionRecord={...record,producedBatch:batch};
+        cache.extractionRecordByIdAndOccurrence.set(extractionRecordKey,extractionRecord);
+        cache.extractionLedger.push(extractionRecord);
+        while(cache.extractionLedger.length>MAX_LEDGER)cache.extractionLedger.shift();
       }
       extractionHistoryIndexRowsReused++;
     }
@@ -1941,6 +1955,8 @@ function batchFromExtraction(x,record){
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     if(strategicPolicy&&strategicPolicy.diagnostics?.().rulesLoaded!==true)return{accepted:false,reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY'};
     if(!r||!p5?.ExtractionRequest||!p5?.executeExtraction)return{accepted:false,reason:'PART05_RESOURCE_EXTRACTION_UNAVAILABLE'};
+    const extractionHistoryIndex=getExtractionHistoryIndexCache(
+      cmd?.payload?.extractionIndexCacheId,c,productionPeriodId);
     const current=ctx.stateTransaction.get('resource.mineStates')||{};
     const production=ctx.stateTransaction.get('resource.production')||{};
     const previousExtractionTurn=n(ctx.stateTransaction.get('resource.lastExtractionTurn'));
@@ -1950,12 +1966,12 @@ function batchFromExtraction(x,record){
     }
     const inventory=ctx.stateTransaction.get('resource.inventory')||{};
     const reserves=ctx.stateTransaction.get('resource.reserves')||{};
-    const extractionLedgerSnapshot=ctx.stateTransaction.get('resource.extractionLedger');
+    const extractionLedgerSnapshot=extractionHistoryIndex?extractionHistoryIndex.extractionLedger:ctx.stateTransaction.get('resource.extractionLedger');
     const ledger=Array.isArray(extractionLedgerSnapshot)?extractionLedgerSnapshot:[];
-    const mineProductionLedgerSnapshot=ctx.stateTransaction.get('resource.mineProductionLedger');
+    const mineProductionLedgerSnapshot=extractionHistoryIndex?extractionHistoryIndex.mineProductionLedger:ctx.stateTransaction.get('resource.mineProductionLedger');
     const mineProductionLedger=Array.isArray(mineProductionLedgerSnapshot)?mineProductionLedgerSnapshot:[];
     const mineOutputTotals=ctx.stateTransaction.get('resource.mineOutputTotals')||{};
-    const existingBatchesSnapshot=ctx.stateTransaction.get('resource.batches');
+    const existingBatchesSnapshot=extractionHistoryIndex?extractionHistoryIndex.batches:ctx.stateTransaction.get('resource.batches');
     const existingBatches=Array.isArray(existingBatchesSnapshot)?existingBatchesSnapshot:[];
     const inventoryLots=ctx.stateTransaction.get('resource.inventoryLots')||{};
     const minePaths=ctx.stateTransaction.get('resource.minePaths')||{};
@@ -2017,8 +2033,6 @@ function batchFromExtraction(x,record){
       ?rows.filter(x=>cmd.payload.occurrenceKeys.includes(x.occurrenceKey)):rows;
     // A multi-slice country-day extraction reuses its opening history indexes.
     // Standalone/manual extraction retains the authoritative one-pass fallback.
-    const extractionHistoryIndex=getExtractionHistoryIndexCache(
-      cmd?.payload?.extractionIndexCacheId,c,productionPeriodId);
     let firstPositiveProductionByOccurrence=extractionHistoryIndex?.firstPositiveProductionByOccurrence;
     let committedProductionByOccurrence=extractionHistoryIndex?.committedProductionByOccurrence;
     let existingBatchById=extractionHistoryIndex?.existingBatchById;
