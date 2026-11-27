@@ -151,6 +151,7 @@ await import('../omega_resource_realism_runtime_v1.js');
 await import('../omega_resource_endowment_runtime.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 
+{
 const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowment_runtime.js',import.meta.url),'utf8');
 const extractionHandlerStart=endowmentRuntimeSource.indexOf('function extractHandler(cmd,ctx){');
 const extractionHandlerEnd=endowmentRuntimeSource.indexOf('function publishCommittedExtractionEvents',extractionHandlerStart);
@@ -165,6 +166,8 @@ assert.match(extractionHandlerSource,/existingBatches\.push\(batch\);\s*existing
   'newly created batches must enter the same index so same-transaction collisions remain detectable');
 assert.doesNotMatch(extractionHandlerSource,/existingBatches\.find\(/,
   'the extraction loop must not rescan the historical batch array for every occurrence');
+
+}
 
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
