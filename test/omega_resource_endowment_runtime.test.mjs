@@ -153,6 +153,8 @@ const runtime=globalThis.OmegaResourceEndowmentRuntime;
 
 {
 const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowment_runtime.js',import.meta.url),'utf8');
+assert.match(endowmentRuntimeSource,/const sliceSize=constrained\?2:8/,
+  'constrained mobile extraction must process smaller slices and yield to the UI more frequently');
 const extractionHandlerStart=endowmentRuntimeSource.indexOf('function extractHandler(cmd,ctx){');
 const extractionHandlerEnd=endowmentRuntimeSource.indexOf('function publishCommittedExtractionEvents',extractionHandlerStart);
 assert.ok(extractionHandlerStart>=0&&extractionHandlerEnd>extractionHandlerStart,
