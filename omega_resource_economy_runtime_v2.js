@@ -3221,7 +3221,7 @@
     // inside the ledger loop rescanned the complete historical batch list per row.
     var batchesById=new Map();
     for(var batchIndex=0;batchIndex<batches.length;batchIndex++){
-      var batchRow=batches[batchIndex],indexedBatchId=String(batchRow?.batchId||'').trim();
+      var batchRow=batches[batchIndex],indexedBatchId=String(batchRow?.batchId||'');
       if(!ledgerByBatch.has(indexedBatchId))continue;
       var indexedBatch=batchesById.get(indexedBatchId);
       if(indexedBatch)indexedBatch.count++;
