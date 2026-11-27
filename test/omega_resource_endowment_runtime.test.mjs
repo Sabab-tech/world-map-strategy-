@@ -167,6 +167,13 @@ assert.match(extractionHandlerSource,/existingBatches\.push\(batch\);\s*existing
 assert.doesNotMatch(extractionHandlerSource,/existingBatches\.find\(/,
   'the extraction loop must not rescan the historical batch array for every occurrence');
 
+
+const day2OfflineShellSource=fs.readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),'utf8');
+assert.match(day2OfflineShellSource,/const CACHE_NAME = "omega-offline-atlas-shell-v160"/,
+  'the updated core extraction runtime must be fetched by a new offline shell cache');
+assert.match(day2OfflineShellSource,/const DATA_CACHE_NAME = "omega-country-data-v1"/,
+  'updating the app shell must preserve the separate downloaded country-data cache');
+
 }
 
 const initialized=await runtime.initialize();
