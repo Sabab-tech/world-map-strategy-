@@ -7122,7 +7122,7 @@ function reconcileProductionPeriod(countryId,periodTurn,periodId,runResult){
   // counts so identity ambiguity remains a hard reconciliation failure.
   const batchesById=new Map();
   for(const batchRow of batches){
-    const batchId=String(batchRow?.batchId||'').trim();
+    const batchId=String(batchRow?.batchId||'');
     if(!expectedBatchIds.has(batchId))continue;
     const indexed=batchesById.get(batchId);
     if(indexed)indexed.count++;
