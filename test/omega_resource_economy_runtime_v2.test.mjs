@@ -321,6 +321,82 @@ test('extraction fiscal batch handlers read and write the growing ledger once pe
   assert.equal(setCalls,0,'replayed valuation batches must not rewrite already-valued rows');
 });
 
+test('extraction fiscal receipts post as one indexed Treasury ledger transaction',()=>{
+  const {context,worldState,handlers}=createContext();
+  vm.runInNewContext(readFileSync('omega_resource_economy_runtime_v2.js','utf8'),context,
+    {filename:'omega_resource_economy_runtime_v2.js'});
+  const existing=Array.from({length:1800},(_,index)=>({
+    receiptId:'OLD-RECEIPT-'+index,batchId:'OLD-BATCH-'+index,
+    direction:'EXTRACTION',total:0.1,royalty:0.07,resourceTax:0.03
+  }));
+  worldState.finance.BGD.resourceFiscalLedger=existing;
+  const reads=new Map(),writes=new Map();
+  const getPath=(path)=>{
+    const [domain,...parts]=path.split('.');
+    return parts.reduce((value,key)=>value==null?undefined:value[key],worldState[domain]?.BGD);
+  };
+  const setPath=(path,value)=>{
+    const [domain,...parts]=path.split('.');
+    let root=worldState[domain]||(worldState[domain]={});
+    root.BGD=root.BGD||{};
+    let target=root.BGD;
+    for(const key of parts.slice(0,-1))target=target[key]||(target[key]={});
+    target[parts.at(-1)]=value;
+  };
+  const tx={
+    get(path){
+      reads.set(path,(reads.get(path)||0)+1);
+      const value=getPath(path);
+      return value&&typeof value==='object'?structuredClone(value):value;
+    },
+    set(path,value){
+      writes.set(path,(writes.get(path)||0)+1);
+      setPath(path,value);
+    }
+  };
+  const handler=handlers.get('OMEGA_RESOURCE_ECON_FISCAL_RECEIPT_BATCH')?.handler;
+  assert.equal(typeof handler,'function','batch extraction fiscal receipt handler must be registered');
+  const receipts=[
+    {receiptId:'EXTRACTION-FISCAL:BGD:DAY-81-A',batchId:'DAY-81-A',countryId:'BGD',
+      resourceId:'iron_ore',direction:'EXTRACTION',total:12,royalty:8,resourceTax:4,
+      corporateTax:0,exportDuty:0,other:0},
+    {receiptId:'EXTRACTION-FISCAL:BGD:DAY-81-B',batchId:'DAY-81-B',countryId:'BGD',
+      resourceId:'coal',direction:'EXTRACTION',total:20,royalty:14,resourceTax:6,
+      corporateTax:0,exportDuty:0,other:0}
+  ];
+  const result=handler({payload:{receipts}},{countryId:'BGD',stateTransaction:tx});
+  assert.equal(result.accepted,true);
+  assert.equal(result.added,2);
+  assert.equal(result.duplicates,0);
+  assert.equal(result.total,32);
+  assert.equal(reads.get('finance.resourceFiscalLedger'),1,
+    'the historical Treasury receipt ledger must be read once for the entire country-day batch');
+  assert.equal(writes.get('finance.resourceFiscalLedger'),1,
+    'the Treasury receipt ledger must be committed once for the entire country-day batch');
+  assert.equal(worldState.finance.BGD.resourceFiscalLedger.length,1802);
+  assert.equal(worldState.finance.BGD.available,1032);
+  assert.equal(worldState.finance.BGD.revenue,32);
+  assert.equal(worldState.finance.BGD.taxRevenue,32);
+  assert.equal(worldState.finance.BGD.resourceFiscal.cumulative.total,32);
+
+  const before=JSON.stringify({
+    ledger:worldState.finance.BGD.resourceFiscalLedger,
+    finance:worldState.finance.BGD
+  });
+  reads.clear();writes.clear();
+  const replay=handler({payload:{receipts}},{countryId:'BGD',stateTransaction:tx});
+  assert.equal(replay.accepted,true);
+  assert.equal(replay.added,0);
+  assert.equal(replay.duplicates,2);
+  assert.equal(replay.total,0);
+  assert.equal(reads.get('finance.resourceFiscalLedger'),1);
+  assert.equal(writes.size,0,'replaying posted receipt IDs must not write Treasury state');
+  assert.equal(JSON.stringify({
+    ledger:worldState.finance.BGD.resourceFiscalLedger,
+    finance:worldState.finance.BGD
+  }),before,'replaying the exact receipt IDs must not change Treasury totals or ledgers');
+});
+
 test('single-record extraction fiscal compatibility handlers avoid redundant detached copies',()=>{
   const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   const pendingStart=source.indexOf('function extractionFiscalPendingHandler');
