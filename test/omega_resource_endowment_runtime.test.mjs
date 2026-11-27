@@ -1023,12 +1023,14 @@ assert.equal(extractionHandlerSource.includes('Array.isArray(ctx.stateTransactio
   'large ledger arrays must be read once and reused rather than cloning the same history twice');
 assert.equal(extractionHandlerSource.includes('const existingResourceState='),false,
   'extraction must not deep-copy the complete country resource bucket when that snapshot is unused');
-assert.ok(extractionHandlerSource.includes("const persistedMineStates=ctx.stateTransaction.peek('resource.mineStates')"),
-  'read-only mine-state inspection must use the transaction peek path');
-assert.ok(extractionHandlerSource.includes("const consumption=ctx.stateTransaction.peek('resource.consumption')"),
-  'read-only domestic demand must not allocate another detached copy');
-assert.ok(extractionHandlerSource.includes("const exportDemand=ctx.stateTransaction.peek('resource.exportDemand')||ctx.stateTransaction.peek('trade.exportDemand')"),
-  'read-only export demand must use zero-copy transaction peeks');
+assert.ok(extractionHandlerSource.includes('const persistedMineStates=current;'),
+  'site inspection must reuse the already-detached mine-state snapshot instead of reading the full mine state twice');
+assert.ok(extractionHandlerSource.includes("const consumption=ctx.stateTransaction.get('resource.consumption')"),
+  'read-only domestic demand must keep compatibility with transaction adapters exposing get/set');
+assert.ok(extractionHandlerSource.includes("const exportDemand=ctx.stateTransaction.get('resource.exportDemand')||ctx.stateTransaction.get('trade.exportDemand')"),
+  'read-only export demand must keep compatibility with transaction adapters exposing get/set');
+assert.equal(extractionHandlerSource.includes('ctx.stateTransaction.peek('),false,
+  'the extraction handler must not require optional peek support from existing transaction adapters');
 
 assert.match(endowmentRuntimeSource,/PLAYER_COUNTRY_SCOPE_VIOLATION/);
 assert.match(endowmentRuntimeSource,/const requestedPeriodTurn=n\(cmd\?\.payload\?\.productionPeriodTurn\)/,
