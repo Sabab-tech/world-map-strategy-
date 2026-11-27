@@ -160,8 +160,16 @@ const extractionHandlerEnd=endowmentRuntimeSource.indexOf('function publishCommi
 assert.ok(extractionHandlerStart>=0&&extractionHandlerEnd>extractionHandlerStart,
   'the authoritative extraction handler must remain discoverable for regression checks');
 const extractionHandlerSource=endowmentRuntimeSource.slice(extractionHandlerStart,extractionHandlerEnd);
-assert.match(extractionHandlerSource,/const existingBatchById=new Map\(\)/,
-  'each extraction transaction must build one existing-batch identity index');
+assert.match(extractionHandlerSource,/existingBatchById=extractionHistoryIndex\?new Map\(extractionHistoryIndex\.existingBatchById\):null/,
+  'each sliced extraction must take an isolated mutable copy of the prepared batch index');
+assert.match(extractionHandlerSource,/existingBatchById=new Map\(\)/,
+  'standalone extraction must retain its one-pass existing-batch identity index');
+assert.match(extractionHandlerSource,/const mineProductionLedgerSnapshot=extractionHistoryIndex\?extractionHistoryIndex\.mineProductionLedger\.slice\(\):ctx\.stateTransaction\.get\('resource\.mineProductionLedger'\)/,
+  'sliced extraction must avoid asking StateTransaction to deep-copy the growing mine history again');
+assert.match(extractionHandlerSource,/const extractionLedgerSnapshot=extractionHistoryIndex\?extractionHistoryIndex\.extractionLedger\.slice\(\):ctx\.stateTransaction\.get\('resource\.extractionLedger'\)/,
+  'sliced extraction must reuse the prepared extraction ledger snapshot');
+assert.match(extractionHandlerSource,/const existingBatchesSnapshot=extractionHistoryIndex\?extractionHistoryIndex\.batches\.slice\(\):ctx\.stateTransaction\.get\('resource\.batches'\)/,
+  'sliced extraction must reuse the prepared batch snapshot');
 assert.match(extractionHandlerSource,/existingBatchById\.get\(batchIdentity\)/,
   'each produced batch must use the prebuilt identity index rather than rescanning history');
 assert.match(extractionHandlerSource,/existingBatches\.push\(batch\);\s*existingBatchById\.set\(batchIdentity,batch\)/,
@@ -1045,8 +1053,15 @@ assert.match(endowmentRuntimeSource,/warehouseId:batch\.warehouseId,turn:product
   'mine production ledger rows must preserve legacy turn fields and add period identity');
 assert.match(endowmentRuntimeSource,/const samePeriod=row=>row\?\.productionPeriodId/,
   'duplicate suppression must use period identity instead of treating every elapsed day as one current turn');
-assert.match(endowmentRuntimeSource,/extractCountry\(c,slice,\{productionPeriodTurn:t,productionPeriodId\}\)/,
-  'sliced extraction must preserve the same period identity across every occurrence batch');
+assert.match(endowmentRuntimeSource,/extractCountry\(c,slice,\{productionPeriodTurn:t,productionPeriodId,extractionIndexCacheId\}\)/,
+  'all slices in a country-day extraction must share one stable historical-index context');
+assert.match(endowmentRuntimeSource,/function createExtractionHistoryIndexCache/);
+assert.match(endowmentRuntimeSource,/function getExtractionHistoryIndexCache/);
+assert.match(endowmentRuntimeSource,/rememberCommittedExtractionHistory\(payload\.extractionIndexCacheId/);
+assert.match(endowmentRuntimeSource,/if\(!extractionHistoryIndex\)\{/,
+  'standalone extraction must retain its one-pass authoritative history-index fallback');
+assert.match(endowmentRuntimeSource,/extractionHistoryIndexCaches\.delete\(extractionIndexCacheId\)/,
+  'country-day extraction must release its transient history index after completion or failure');
 
 globalThis.Game.state.simulation.playerCountryId='BGD';
 globalThis.Game.state.simulation.session=globalThis.Game.state.simulation.session||{};
@@ -1054,7 +1069,15 @@ globalThis.Game.state.simulation.session.playerCountryId='BGD';
 const foreignCountryStart=await runtime.startCountryProduction('AUS');
 assert.equal(foreignCountryStart.status,'BLOCKED',JSON.stringify(foreignCountryStart));
 assert.equal(foreignCountryStart.reason,'PLAYER_COUNTRY_SCOPE_VIOLATION',JSON.stringify(foreignCountryStart));
+const extractionIndexCacheBefore=runtime.diagnostics().extractionHistoryIndexCache;
 const oneTapStart=await runtime.startCountryProduction('BGD',[oneTapSite.siteId]);
+const extractionIndexCacheAfter=runtime.diagnostics().extractionHistoryIndexCache;
+assert.equal(extractionIndexCacheAfter.buildCount,extractionIndexCacheBefore.buildCount+1,
+  'a country-day extraction must build its large history indexes only once');
+assert.ok(extractionIndexCacheAfter.hitCount>extractionIndexCacheBefore.hitCount,
+  'the extraction command must consume its prepared country-day history indexes');
+assert.equal(extractionIndexCacheAfter.activeContexts,0,
+  'completed extraction must release its transient history index context');
 assert.ok(['STARTED','PARTIALLY_STARTED'].includes(oneTapStart.status),
   'one tap must start simulated extraction on an unattempted commercial site: '+JSON.stringify(oneTapStart));
 assert.ok(oneTapStart.startedSiteCount>0,JSON.stringify(oneTapStart));
