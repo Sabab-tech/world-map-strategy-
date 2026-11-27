@@ -476,6 +476,23 @@
     return target;
   }
 
+  // Turn participant returns are diagnostic summaries, not authoritative state.
+  // Do not deep-clone arbitrary result graphs: resource/factory handlers may return
+  // large row collections that are already committed in their owning ledgers.
+  function compactTurnParticipantResult(result) {
+    if (result === null || typeof result !== 'object') return result === undefined ? null : result;
+    var summary = {};
+    ['status', 'reason', 'countryId', 'factoryId', 'cycleId', 'turn',
+      'startedCount', 'completedCount', 'processedCount', 'blockedCount',
+      'awaitingCount', 'warehouseTransferCount'].forEach(function (key) {
+      var value = result[key];
+      if (value === null || ['string', 'number', 'boolean'].indexOf(typeof value) >= 0) {
+        if (value !== undefined) summary[key] = typeof value === 'string' ? value.slice(0, 160) : value;
+      }
+    });
+    return Object.keys(summary).length ? summary : null;
+  }
+
   function persistedTurnParticipantResults(rows) {
     return (Array.isArray(rows) ? rows : []).slice(-256).map(function (row) {
       var compact = {
@@ -484,19 +501,8 @@
         status: String(row && row.status || 'UNKNOWN')
       };
       if (row && row.error) compact.error = String(row.error).slice(0, 500);
-      var result = row && row.result;
-      if (result && typeof result === 'object') {
-        var summary = {};
-        ['status', 'reason', 'countryId', 'factoryId', 'cycleId', 'turn',
-          'startedCount', 'completedCount', 'processedCount', 'blockedCount',
-          'awaitingCount', 'warehouseTransferCount'].forEach(function (key) {
-          var value = result[key];
-          if (value === null || ['string', 'number', 'boolean'].indexOf(typeof value) >= 0) {
-            if (value !== undefined) summary[key] = typeof value === 'string' ? value.slice(0, 160) : value;
-          }
-        });
-        if (Object.keys(summary).length) compact.result = summary;
-      }
+      var summary = compactTurnParticipantResult(row && row.result);
+      if (summary !== null) compact.result = summary;
       return compact;
     });
   }
@@ -881,7 +887,7 @@
           const durationMs=this.recordParticipantDuration(entry.id,monotonicNow()-participantStartedAt);
           this.world.state.simulation.subsystemTurns=this.world.state.simulation.subsystemTurns||{};
           this.world.state.simulation.subsystemTurns[entry.id]=turn;
-          results.push({id:entry.id,turn,status:'COMPLETED',durationMs,result:value===undefined?null:clone(value)});
+          results.push({id:entry.id,turn,status:'COMPLETED',durationMs,result:compactTurnParticipantResult(value)});
         }catch(error){
           const durationMs=this.recordParticipantDuration(entry.id,monotonicNow()-participantStartedAt);
           const failure={id:entry.id,turn,status:'FAILED',durationMs,error:String(error?.message||error)};
