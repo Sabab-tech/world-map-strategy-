@@ -414,12 +414,16 @@ test('single-record extraction fiscal compatibility handlers avoid redundant det
   const fiscalStart=source.indexOf('function valueExtractionFiscalPending(c)');
   const fiscalEnd=source.indexOf('function productionSummaryFromIndustrialResult',fiscalStart);
   const fiscal=source.slice(fiscalStart,fiscalEnd);
-  assert.match(fiscal,/existingReceiptIds=new Set\(\)/,
-    'fiscal receipt identity must be indexed once per country-day valuation');
-  assert.doesNotMatch(fiscal,/fiscalLedger\.find\(/,
-    'the historical fiscal receipt ledger must not be rescanned for every pending mine batch');
+  assert.match(fiscal,/fiscalReceipts=\\[\\]/,
+    'extraction fiscal receipts must be accumulated before Treasury posting');
+  assert.doesNotMatch(fiscal,/existingReceiptIds|fiscalLedger\\.find\\(/,
+    'the valuation loop must not rescan the historical Treasury receipt ledger');
+  assert.match(fiscal,/OMEGA_RESOURCE_ECON_FISCAL_RECEIPT_BATCH/,
+    'all extraction Treasury receipts must post through one country-day transaction');
   assert.match(fiscal,/OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_VALUED_BATCH/,
     'pending valuation status must be committed as a single country-day batch');
+  assert.match(source,/function fiscalBatchHandler\\(cmd,ctx\\)/,
+    'the authoritative fiscal receipt batch handler must own duplicate-key indexing');
 });
 
 test('export settlement replay is idempotent across company flows, Treasury clearing and fiscal receipts',async()=>{
