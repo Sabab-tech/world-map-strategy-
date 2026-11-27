@@ -1149,6 +1149,62 @@
     if(av!==null)ctx.stateTransaction.set('finance.available',av+total);else if(res!==null)ctx.stateTransaction.set('finance.reserves',res+total);
     return{accepted:true,total:total};
   }
+  function fiscalBatchHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},records=Array.isArray(p.receipts)?p.receipts:[],
+      ledgerSnapshot=ctx.stateTransaction.get('finance.resourceFiscalLedger'),
+      ledger=Array.isArray(ledgerSnapshot)?ledgerSnapshot:[],receiptKeys=new Set();
+    ledger.forEach(function(row){var key=fiscalReceiptKey(row);if(key)receiptKeys.add(key);});
+    if(!records.length)return{accepted:true,added:0,duplicates:0,total:0};
+    var prepared=[],invalid=[],duplicates=0,amounts={royalty:0,resourceTax:0,corporateTax:0,exportDuty:0,other:0,total:0};
+    records.forEach(function(raw,index){
+      var receipt=clone(raw||{}),total=num(receipt.total);
+      if(total===null||total<0){
+        invalid.push({index:index,receiptId:receipt.receiptId||null,reason:'FISCAL_RECEIPT_INVALID'});
+        return;
+      }
+      var key=fiscalReceiptKey(receipt);
+      if(key&&receiptKeys.has(key)){duplicates++;return;}
+      if(key)receiptKeys.add(key);
+      ['royalty','resourceTax','corporateTax','exportDuty','other'].forEach(function(name){
+        amounts[name]+=num(receipt[name])||0;
+      });
+      amounts.total+=total;
+      receipt.turn=turn();
+      prepared.push(receipt);
+    });
+    if(invalid.length)return{accepted:false,reason:'FISCAL_RECEIPT_BATCH_INVALID',invalid};
+    if(!prepared.length)return{accepted:true,added:0,duplicates:duplicates,total:0};
+    var fiscalSnapshot=ctx.stateTransaction.get('finance.resourceFiscal');
+    var fiscal=fiscalSnapshot&&typeof fiscalSnapshot==='object'?fiscalSnapshot:{
+      cumulative:{royalty:0,resourceTax:0,corporateTax:0,exportDuty:0,other:0,total:0},
+      thisTurn:{royalty:0,resourceTax:0,corporateTax:0,exportDuty:0,other:0,total:0},lastTurn:null
+    };
+    var sameTurn=fiscal.lastTurn===turn();
+    if(!sameTurn)fiscal.thisTurn={royalty:0,resourceTax:0,corporateTax:0,exportDuty:0,other:0,total:0};
+    ['royalty','resourceTax','corporateTax','exportDuty','other'].forEach(function(name){
+      fiscal.cumulative[name]=(num(fiscal.cumulative&&fiscal.cumulative[name])||0)+amounts[name];
+      fiscal.thisTurn[name]=(num(fiscal.thisTurn&&fiscal.thisTurn[name])||0)+amounts[name];
+    });
+    fiscal.cumulative.total=(num(fiscal.cumulative.total)||0)+amounts.total;
+    fiscal.thisTurn.total=(num(fiscal.thisTurn.total)||0)+amounts.total;
+    fiscal.lastTurn=turn();fiscal.policySource='resource_economy_rules.json';
+    prepared.forEach(function(receipt){ledger.push(receipt);});
+    while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
+    ctx.stateTransaction.set('finance.resourceFiscal',fiscal);
+    ctx.stateTransaction.set('finance.resourceFiscalLedger',ledger);
+    var budgetContribution=num(ctx.stateTransaction.get('finance.resourceBudgetContribution'))||0,
+      budgetThisTurn=sameTurn?(num(ctx.stateTransaction.get('finance.resourceBudgetContributionThisTurn'))||0):0;
+    ctx.stateTransaction.set('finance.resourceBudgetContribution',budgetContribution+amounts.total);
+    ctx.stateTransaction.set('finance.resourceBudgetContributionThisTurn',budgetThisTurn+amounts.total);
+    var revenue=num(ctx.stateTransaction.get('finance.revenue')),taxRevenue=num(ctx.stateTransaction.get('finance.taxRevenue')),
+      available=num(ctx.stateTransaction.get('finance.available')),reserves=num(ctx.stateTransaction.get('finance.reserves'));
+    ctx.stateTransaction.set('finance.revenue',(revenue===null?0:revenue)+amounts.total);
+    ctx.stateTransaction.set('finance.taxRevenue',(taxRevenue===null?0:taxRevenue)+amounts.total);
+    if(available!==null)ctx.stateTransaction.set('finance.available',available+amounts.total);
+    else if(reserves!==null)ctx.stateTransaction.set('finance.reserves',reserves+amounts.total);
+    return{accepted:true,added:prepared.length,duplicates:duplicates,total:amounts.total};
+  }
+
   function extractionFiscalPendingHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},r=clone(p.record||p),c=canonical(ctx.countryId);
     if(!r.batchId||!r.resourceId||num(r.quantity)===null||num(r.quantity)<=0)return{accepted:false,reason:'EXTRACTION_FISCAL_RECORD_INVALID'};
@@ -2825,6 +2881,7 @@
       ['OMEGA_RESOURCE_ECON_SUPPLIER_FLOW','economy',flowHandler('economy.supplierRevenue','SUPPLIER')],
       ['OMEGA_RESOURCE_ECON_TRANSPORT_REVENUE','transport',flowHandler('transport.resourceRevenue','TRANSPORT')],
       ['OMEGA_RESOURCE_ECON_FISCAL_RECEIPT','finance',fiscalHandler],
+      ['OMEGA_RESOURCE_ECON_FISCAL_RECEIPT_BATCH','finance',fiscalBatchHandler],
       ['OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING','finance',extractionFiscalPendingHandler],
       ['OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING_BATCH','finance',extractionFiscalPendingBatchHandler],
       ['OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_VALUED','finance',extractionFiscalValuedHandler],
@@ -2943,14 +3000,8 @@
   function valueExtractionFiscalPending(c){
     var cid=canonical(c),pending=read(cid,'finance.resourceExtractionFiscalLedger');
     pending=Array.isArray(pending)?pending:[];
-    var prices=read(cid,'trade.marketPrice')||{},fiscalLedger=read(cid,'finance.resourceFiscalLedger');
-    fiscalLedger=Array.isArray(fiscalLedger)?fiscalLedger:[];
-    var existingReceiptIds=new Set();
-    fiscalLedger.forEach(function(row){
-      var receiptId=String(row&&row.receiptId||'').trim();
-      if(receiptId)existingReceiptIds.add(receiptId);
-    });
-    var visited=0,posted=0,skipped=0,failed=[],valuationRecords=[],valuationEvents=[],currentTurn=turn();
+    var prices=read(cid,'trade.marketPrice')||{},visited=0,posted=0,skipped=0,failed=[],
+      valuationRecords=[],valuationEvents=[],fiscalReceipts=[],currentTurn=turn();
     var fiscalRules=rules().fiscal||{};
     for(var i=0;i<pending.length;i++){
       var row=pending[i]||{},batchId=String(row.batchId||'').trim(),rid=String(row.resourceId||'').trim(),quantity=num(row.quantity);
@@ -2963,18 +3014,13 @@
       var marketValue=quantity*price,royalty=marketValue*(num(fiscalRules.royaltyRate)||0),
         resourceTax=marketValue*(num(fiscalRules.resourceTaxRate)||0),total=royalty+resourceTax;
       var fiscal={royalty:royalty,resourceTax:resourceTax,corporateTax:0,exportDuty:0,other:0,total:total,policySource:'resource_economy_rules.json'};
-      if(!existingReceiptIds.has(receiptId)){
-        var result=dispatch('finance','OMEGA_RESOURCE_ECON_FISCAL_RECEIPT',cid,{receipt:Object.assign({},fiscal,{
-          receiptId:receiptId,batchId:batchId,countryId:cid,resourceId:rid,quantity:quantity,unit:row.unit||null,direction:'EXTRACTION',
-          marketValue:marketValue,unitPrice:price,priceAuthority:pricing.authority||'SIMULATED_FALLBACK',
-          priceBasisResourceId:pricing.basisResourceId||null,sourceAuthority:row.sourceAuthority||row.quantityAuthority||'UNOBSERVED',
-          quantityAuthority:row.quantityAuthority||row.sourceAuthority||'UNOBSERVED',occurrenceKey:row.occurrenceKey||null,
-          siteReferenceKey:row.siteReferenceKey||null,siteName:row.siteName||null,simulationTurn:currentTurn}),correlationId:receiptId});
-        if(result?.status!=='APPLIED'||result?.result?.accepted===false){
-          failed.push({batchId:batchId,reason:result?.result?.reason||result?.reason||'FISCAL_RECEIPT_POST_FAILED'});continue;
-        }
-        existingReceiptIds.add(receiptId);
-      }
+      fiscalReceipts.push(Object.assign({},fiscal,{
+        receiptId:receiptId,batchId:batchId,countryId:cid,resourceId:rid,quantity:quantity,unit:row.unit||null,direction:'EXTRACTION',
+        marketValue:marketValue,unitPrice:price,priceAuthority:pricing.authority||'SIMULATED_FALLBACK',
+        priceBasisResourceId:pricing.basisResourceId||null,sourceAuthority:row.sourceAuthority||row.quantityAuthority||'UNOBSERVED',
+        quantityAuthority:row.quantityAuthority||row.sourceAuthority||'UNOBSERVED',occurrenceKey:row.occurrenceKey||null,
+        siteReferenceKey:row.siteReferenceKey||null,siteName:row.siteName||null,simulationTurn:currentTurn
+      }));
       var valuationRecord=Object.assign({},row,{status:total>0?'VALUED_AND_POSTED':'VALUED_NO_FISCAL_RECEIPT',
         valuationStatus:pricing.authority||'SIMULATED_FALLBACK',valuationAuthority:pricing.authority||'SIMULATED_FALLBACK',
         priceAuthority:pricing.authority||'SIMULATED_FALLBACK',priceBasisResourceId:pricing.basisResourceId||null,
@@ -2987,20 +3033,28 @@
         fiscal:fiscal});
     }
     if(valuationRecords.length){
-      var marked=dispatch('finance','OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_VALUED_BATCH',cid,{
-        records:valuationRecords,correlationId:'EXTRACTION-FISCAL-VALUED:'+cid+':'+currentTurn
+      var fiscalPosted=dispatch('finance','OMEGA_RESOURCE_ECON_FISCAL_RECEIPT_BATCH',cid,{
+        receipts:fiscalReceipts,correlationId:'EXTRACTION-FISCAL-RECEIPTS:'+cid+':'+currentTurn
       });
-      if(marked?.status!=='APPLIED'||marked?.result?.accepted===false){
-        var reason=marked?.result?.reason||marked?.reason||'EXTRACTION_FISCAL_BATCH_STATUS_UPDATE_FAILED';
-        valuationRecords.forEach(function(record){failed.push({batchId:record.batchId,reason:reason});});
+      if(fiscalPosted?.status!=='APPLIED'||fiscalPosted?.result?.accepted===false){
+        var fiscalReason=fiscalPosted?.result?.reason||fiscalPosted?.reason||'FISCAL_RECEIPT_BATCH_POST_FAILED';
+        valuationRecords.forEach(function(record){failed.push({batchId:record.batchId,reason:fiscalReason});});
       }else{
-        posted+=valuationRecords.length;
-        valuationEvents.forEach(function(event){
-          emit('OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED',cid,{receiptId:event.receiptId,batchId:event.batchId,
-            resourceId:event.resourceId,quantity:event.quantity,unit:event.unit,marketValue:event.marketValue,
-            unitPrice:event.unitPrice,priceAuthority:event.priceAuthority,priceBasisResourceId:event.priceBasisResourceId,
-            sourceAuthority:event.sourceAuthority,fiscal:event.fiscal,turn:currentTurn,status:'RECEIPT_POSTED'},'finance');
+        var marked=dispatch('finance','OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_VALUED_BATCH',cid,{
+          records:valuationRecords,correlationId:'EXTRACTION-FISCAL-VALUED:'+cid+':'+currentTurn
         });
+        if(marked?.status!=='APPLIED'||marked?.result?.accepted===false){
+          var reason=marked?.result?.reason||marked?.reason||'EXTRACTION_FISCAL_BATCH_STATUS_UPDATE_FAILED';
+          valuationRecords.forEach(function(record){failed.push({batchId:record.batchId,reason:reason});});
+        }else{
+          posted+=valuationRecords.length;
+          valuationEvents.forEach(function(event){
+            emit('OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED',cid,{receiptId:event.receiptId,batchId:event.batchId,
+              resourceId:event.resourceId,quantity:event.quantity,unit:event.unit,marketValue:event.marketValue,
+              unitPrice:event.unitPrice,priceAuthority:event.priceAuthority,priceBasisResourceId:event.priceBasisResourceId,
+              sourceAuthority:event.sourceAuthority,fiscal:event.fiscal,turn:currentTurn,status:'RECEIPT_POSTED'},'finance');
+          });
+        }
       }
     }
     return{countryId:cid,turn:currentTurn,visited:visited,posted:posted,skipped:skipped,failed:failed};
