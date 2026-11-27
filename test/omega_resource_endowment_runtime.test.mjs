@@ -1009,6 +1009,29 @@ assert.ok(Number(siteReferenceSourceIndexDiagnostics?.canonicalCatalogBuildCount
 assert.ok(Number(siteReferenceSourceIndexDiagnostics?.canonicalIndexedCountryCount)>0,
   'the canonical catalog country index must contain indexed country rows');
 assert.match(endowmentRuntimeSource,/const controllerKeyBySiteId=new Map/);
+const extractionHandlerStart=endowmentRuntimeSource.indexOf('function extractHandler(cmd,ctx){');
+const extractionHandlerEnd=endowmentRuntimeSource.indexOf('function publishCommittedExtractionEvents',extractionHandlerStart);
+assert.ok(extractionHandlerStart>=0&&extractionHandlerEnd>extractionHandlerStart,
+  'the authoritative extraction handler must remain available for copy-cost regression checks');
+const extractionHandlerSource=endowmentRuntimeSource.slice(extractionHandlerStart,extractionHandlerEnd);
+const stateTransactionSource=fs.readFileSync(new URL('../omega_ministry_state_transaction.js',import.meta.url),'utf8');
+assert.ok(stateTransactionSource.includes('return clone(this._readEffectivePath(path));'),
+  'StateTransaction.get must keep its detached-copy contract');
+assert.equal(extractionHandlerSource.includes('clone(ctx.stateTransaction.get('),false,
+  'extraction must not deep-clone snapshots a second time after StateTransaction.get');
+assert.equal(extractionHandlerSource.includes('Array.isArray(ctx.stateTransaction.get('),false,
+  'large ledger arrays must be read once and reused rather than cloning the same history twice');
+assert.equal(extractionHandlerSource.includes('const existingResourceState='),false,
+  'extraction must not deep-copy the complete country resource bucket when that snapshot is unused');
+assert.ok(extractionHandlerSource.includes('const persistedMineStates=current;'),
+  'site inspection must reuse the already-detached mine-state snapshot instead of reading the full mine state twice');
+assert.ok(extractionHandlerSource.includes("const consumption=ctx.stateTransaction.get('resource.consumption')"),
+  'read-only domestic demand must keep compatibility with transaction adapters exposing get/set');
+assert.ok(extractionHandlerSource.includes("const exportDemand=ctx.stateTransaction.get('resource.exportDemand')||ctx.stateTransaction.get('trade.exportDemand')"),
+  'read-only export demand must keep compatibility with transaction adapters exposing get/set');
+assert.equal(extractionHandlerSource.includes('ctx.stateTransaction.peek('),false,
+  'the extraction handler must not require optional peek support from existing transaction adapters');
+
 assert.match(endowmentRuntimeSource,/PLAYER_COUNTRY_SCOPE_VIOLATION/);
 assert.match(endowmentRuntimeSource,/const requestedPeriodTurn=n\(cmd\?\.payload\?\.productionPeriodTurn\)/,
   'resource extraction commands must carry an explicit historical production period without changing the world clock');
