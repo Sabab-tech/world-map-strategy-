@@ -624,6 +624,24 @@ test('factory input availability event is persisted as an economy runtime event 
   assert.ok(events.listeners.has('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE'));
 });
 
+test('daily inventory reconciliation keeps read-only industrial state zero-copy and indexes legacy batch IDs once',()=>{
+  const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  const start=source.indexOf('function reconcileHandler(cmd,ctx){');
+  const end=source.indexOf('\\n  function ',start+40);
+  assert.ok(start>=0&&end>start,'the authoritative inventory reconciliation handler must exist');
+  const handler=source.slice(start,end);
+  assert.match(handler,/network=ctx\\.stateTransaction\\.peek\\('resource\\.industrialNetwork'\\)\\|\\|\\{\\}/,
+    'the industrial network is read-only in this handler and must use the zero-copy peek path');
+  assert.doesNotMatch(handler,/clone\\(ctx\\.stateTransaction\\.peek\\('resource\\.industrialNetwork'\\)/,
+    'daily reconciliation must not deep-clone shipment, route and production history it only reads');
+  assert.match(handler,/batchIds=new Set\\(bs\\.map\\(/,
+    'existing batch identities must be indexed once before legacy inventory reconciliation');
+  assert.doesNotMatch(handler,/bs\\.some\\(/,
+    'legacy opening batch identity checks must not rescan the entire batch ledger per resource');
+  assert.match(handler,/bs\\.push\\(legacyBatch\\);batchIds\\.add\\(legacyBatchId\\)/,
+    'new legacy batches must enter the identity index immediately to preserve collision checks');
+});
+
 test('legacy opening inventory reconciliation creates a warehouse-backed unobserved batch', async()=>{
   const {context,worldState}=createContext();
   worldState.resource.BGD.inventory.copper=25;
