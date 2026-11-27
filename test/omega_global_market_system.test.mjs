@@ -365,6 +365,31 @@ assert.ok(countryRefresh.refresh?.yieldCount>0,JSON.stringify(countryRefresh.ref
 assert.ok(marketRefreshYieldCount>0,'the market refresh must yield control to the browser between workload slices');
 assert.equal(market.diagnostics().lastCountryRefresh?.scheduler,'COOPERATIVE_MAIN_THREAD_SLICES');
 const committedBooks=globalThis.__OmegaMarketBooks;
+// Add multiple commodity offer rows to different countries. The refreshed
+// orderbook must visit each source offer once for the entire global product set.
+const syntheticProductIds=Array.from({length:12},(_,index)=>'TURN_LOAD_TEST_'+String(index).padStart(2,'0'));
+for(const countryId of ['BDG','SAU']){
+  const tradeCountry=globalThis.Game.state.trade[countryId];
+  const existing=tradeCountry.offerBook||{};
+  const priorRows=Array.isArray(existing)?existing.slice():Object.entries(existing).flatMap(([key,value])=>{
+    if(Array.isArray(value))return value.map(row=>({...row,resourceId:row?.resourceId||key}));
+    return value&&typeof value==='object'?[{...value,resourceId:value.resourceId||key}]:[];
+  });
+  const sourceRows=syntheticProductIds.map((resourceId,index)=>({
+    offerId:'INDEX-ONCE-'+countryId+'-'+index,resourceId,quantity:100+index,
+    unitPrice:10+index,priceAuthority:'PLAYER_AUTHORIZED_SELLER_ASK',
+    priceProvenance:'PLAYER_AUTHORIZED',source:'TURN_INDEX_REGRESSION'
+  }));
+  tradeCountry.offerBook=priorRows.concat(sourceRows);
+}
+const expectedMarketOfferRows=Object.values(globalThis.Game.state.trade).reduce((total,country)=>{
+  const offers=country?.offerBook;
+  if(Array.isArray(offers))return total+offers.length;
+  if(!offers||typeof offers!=='object')return total;
+  return total+Object.values(offers).reduce((count,value)=>
+    count+(Array.isArray(value)?value.length:(value&&typeof value==='object'?1:0)),0);
+},0);
+const expectedSyntheticOffers=syntheticProductIds.length*2;
 const secondRefreshTurn=refreshTurn+1;
 globalThis.Game.state.simulation.turn=secondRefreshTurn;
 const secondDayTask=market.rebuildCountry(refreshPlayerCountryId);
@@ -379,6 +404,15 @@ assert.equal(secondDayRefresh.turn,secondRefreshTurn);
 assert.deepEqual(concurrentSecondDayRefresh,secondDayRefresh,
   'concurrent day refresh requests must share one committed market build');
 assert.ok(secondDayRefresh.refresh?.yieldCount>0,JSON.stringify(secondDayRefresh.refresh));
+assert.equal(secondDayRefresh.refresh?.countriesScanned,secondDayRefresh.refresh?.countryCount,
+  'the cooperative index scans each country once for the whole global market');
+assert.equal(secondDayRefresh.refresh?.offerRowsScanned,expectedMarketOfferRows,
+  'every stored seller offer is indexed once, not once for every resource product');
+assert.ok(secondDayRefresh.refresh?.indexedOrders>=expectedSyntheticOffers,
+  'offers for every discovered resource are retained in the one-pass index');
+for(const productId of syntheticProductIds){
+  assert.ok(market.quote(productId).bestAskUsd>0,'the index must preserve each distinct product ask: '+productId);
+}
 assert.equal((await market.rebuildCountry(refreshPlayerCountryId)).status,'ALREADY_UPDATED',
   'a committed day cannot rebuild or publish the same market twice');
 assert.equal(market.getCompanyResearchRequests(refreshPlayerCountryId,'AURORA_INDUSTRIAL_GROUP')[0]?.status,'RESOLVED',
