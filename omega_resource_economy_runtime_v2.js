@@ -2968,7 +2968,7 @@
           receiptId:receiptId,batchId:batchId,countryId:cid,resourceId:rid,quantity:quantity,unit:row.unit||null,direction:'EXTRACTION',
           marketValue:marketValue,unitPrice:price,priceAuthority:pricing.authority||'SIMULATED_FALLBACK',
           priceBasisResourceId:pricing.basisResourceId||null,sourceAuthority:row.sourceAuthority||row.quantityAuthority||'UNOBSERVED',
-          quantityAuthority:row.quantityAuthority||row.sourceAuthority||'UNOBSERVED',occurrenceKey:row.occurrenceKey||row.mineId||null,
+          quantityAuthority:row.quantityAuthority||row.sourceAuthority||'UNOBSERVED',occurrenceKey:row.occurrenceKey||null,
           siteReferenceKey:row.siteReferenceKey||null,siteName:row.siteName||null,simulationTurn:currentTurn}),correlationId:receiptId});
         if(result?.status!=='APPLIED'||result?.result?.accepted===false){
           failed.push({batchId:batchId,reason:result?.result?.reason||result?.reason||'FISCAL_RECEIPT_POST_FAILED'});continue;
