@@ -524,6 +524,8 @@ const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
 assert.equal(preGlobal.mineSiteReferenceCount,561,'58 additional unique mineplay sites must hydrate into the authoritative endowment runtime');
 assert.equal(preGlobal.mineSiteControllerCount,561,'each hydrated mineplay site must receive an executable site controller');
+assert.match(endowmentRuntimeSource,/const sliceSize=constrained\?2:8/,
+  'constrained mobile extraction must process smaller slices and yield to the UI more frequently');
 const extractionPromiseA=runtime.extractAll();
 const extractionPromiseB=runtime.extractAll();
 assert.equal(extractionPromiseA,extractionPromiseB,'concurrent turn listeners must share one in-flight world extraction');
