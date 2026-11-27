@@ -2209,7 +2209,8 @@ function batchFromExtraction(x,record){
       const batchCheck=boundary()?.validateLocalBatch?.(batch,c);
       if(batchCheck&&!batchCheck.ok)throw new Error(batchCheck.reason||'RESOURCE_COUNTRY_BOUNDARY_VIOLATION');
       if(!batch.batchId||batch.quantity<=0)throw new Error('EXTRACTION_BATCH_CREATION_FAILED');
-      const conflictingBatch=existingBatches.find(row=>String(row?.batchId||'')===batch.batchId);
+      const batchIdentity=String(batch.batchId);
+      const conflictingBatch=existingBatchById.get(batchIdentity);
       if(conflictingBatch||Object.prototype.hasOwnProperty.call(inventoryLots,batch.batchId)){
         const reason='EXTRACTION_BATCH_ID_COLLISION';
         blocked.push({occurrenceKey:x.occurrenceKey,resourceId:resource,reason,batchId:batch.batchId});
@@ -2222,6 +2223,7 @@ function batchFromExtraction(x,record){
       reserves[resource]=n(result.reserveAfter.residualQuantity)||0;
       current[x.occurrenceKey]=clone(result.reserveAfter.toJSON?.()||result.reserveAfter);
       existingBatches.push(batch);
+      existingBatchById.set(batchIdentity,batch);
       if(typeof strategicPolicy?.recordExtractionImpactTx==='function'){
         const environmentalResult=strategicPolicy.recordExtractionImpactTx(ctx,{transactionId:batch.batchId,siteId:policySiteId||x.occurrenceKey,resourceId:resource,quantity:q,unit:batch.unit,batchId:batch.batchId,extractionId:record.extractionId});
         if(environmentalResult?.accepted===false&&environmentalResult.reason!=='ENVIRONMENTAL_RULES_UNAVAILABLE'){
