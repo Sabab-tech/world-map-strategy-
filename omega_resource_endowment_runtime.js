@@ -1959,6 +1959,7 @@ function batchFromExtraction(x,record){
     const extracted=[];
     const replayedRecords=[];
     const blocked=[];
+    const pendingFiscalRecords=[];
     const mineOutputs=ctx.stateTransaction.get('resource.mineOutputs')||{};
     const mineSiteControllers=ctx.stateTransaction.get('resource.mineSiteControllers')||{};
     const mines=ctx.stateTransaction.get('resource.mines')||[];
@@ -2259,22 +2260,13 @@ function batchFromExtraction(x,record){
         sitePath.stages.push({stage:'BATCH_CREATED',turn:productionPeriodTurn,batchId:batch.batchId,quantity:q,occurrenceKey:x.occurrenceKey});
         minePaths[sitePathKey]=sitePath;
       }
-      const fiscalPending=dispatch('OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING',c,{
-        record:{
-          countryId:c,mineId:x.occurrenceKey,depositKey:x.depositKey,batchId:batch.batchId,resourceId:resource,
-          quantity:q,unit:batch.unit,purity:batch.purity,gradePercent:batch.grade,
-          occurrencePathId:pathId,warehouseId:batch.warehouseId,extractionId:record.extractionId,
-          valuationStatus:'UNOBSERVED_MARKET_VALUE',cashPosted:false,simulationGenerated:!!x.isSimulationGenerated,sourceAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED'
-        },
-        correlationId:record.extractionId
+      pendingFiscalRecords.push({
+        countryId:c,mineId:x.occurrenceKey,depositKey:x.depositKey,batchId:batch.batchId,resourceId:resource,
+        quantity:q,unit:batch.unit,purity:batch.purity,gradePercent:batch.grade,
+        occurrencePathId:pathId,warehouseId:batch.warehouseId,extractionId:record.extractionId,
+        valuationStatus:'UNOBSERVED_MARKET_VALUE',cashPosted:false,simulationGenerated:!!x.isSimulationGenerated,
+        sourceAuthority:x.isSimulationGenerated?'SIMULATED':'OBSERVED'
       });
-      if(fiscalPending?.status!=='APPLIED'){
-        existingPath.stages.push({stage:'TREASURY_FISCAL_LEDGER_PENDING',turn:productionPeriodTurn,status:'DEGRADED',reason:fiscalPending?.reason||'FISCAL_LEDGER_HANDLER_UNAVAILABLE'});
-        minePaths[x.occurrenceKey]=existingPath;
-      } else {
-        existingPath.stages.push({stage:'TREASURY_FISCAL_LEDGER_PENDING',turn:productionPeriodTurn,status:'RECORDED',cashPosted:false});
-        minePaths[x.occurrenceKey]=existingPath;
-      }
       if(!mineOutputTotals[x.occurrenceKey])mineOutputTotals[x.occurrenceKey]={cumulativeQuantity:0,turnCount:0,lastTurn:null};
       mineOutputTotals[x.occurrenceKey].cumulativeQuantity=(n(mineOutputTotals[x.occurrenceKey].cumulativeQuantity)||0)+q;
       mineOutputTotals[x.occurrenceKey].turnCount=(n(mineOutputTotals[x.occurrenceKey].turnCount)||0)+1;
@@ -2330,6 +2322,25 @@ function batchFromExtraction(x,record){
       ledger.push({...record,producedBatch:batch});
       extracted.push({...record,producedBatch:batch});
 
+    }
+    if(pendingFiscalRecords.length){
+      const fiscalPendingBatch=dispatch('OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING_BATCH',c,{
+        records:pendingFiscalRecords,
+        correlationId:'EXTRACTION-FISCAL-PENDING:'+c+':'+productionPeriodId
+      });
+      const fiscalPendingAccepted=fiscalPendingBatch?.status==='APPLIED'&&fiscalPendingBatch?.result?.accepted!==false;
+      for(const fiscalRecord of pendingFiscalRecords){
+        const fiscalPath=minePaths[fiscalRecord.mineId];
+        if(!fiscalPath)continue;
+        fiscalPath.stages=Array.isArray(fiscalPath.stages)?fiscalPath.stages:[];
+        if(!fiscalPendingAccepted){
+          fiscalPath.stages.push({stage:'TREASURY_FISCAL_LEDGER_PENDING',turn:productionPeriodTurn,status:'DEGRADED',
+            reason:fiscalPendingBatch?.result?.reason||fiscalPendingBatch?.reason||'FISCAL_LEDGER_HANDLER_UNAVAILABLE'});
+        }else{
+          fiscalPath.stages.push({stage:'TREASURY_FISCAL_LEDGER_PENDING',turn:productionPeriodTurn,status:'RECORDED',cashPosted:false});
+        }
+        minePaths[fiscalRecord.mineId]=fiscalPath;
+      }
     }
     for(const row of Object.values(mineOutputs))if(n(row?.simulationTurn??row?.turn)===productionPeriodTurn&&!row.productionPeriodId)
       row.productionPeriodId=productionPeriodId;
