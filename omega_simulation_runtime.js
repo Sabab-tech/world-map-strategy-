@@ -501,6 +501,19 @@
     });
   }
 
+  // The diagnostic API keeps the full participant result. The step/publish
+  // pipeline only needs the same bounded summary used by durable save traces.
+  // This prevents a large mine/factory ledger result from being cloned through
+  // PUBLISH, lastStepSummary and the returned step object on every game day.
+  function compactTurnParticipantResults(rows){
+    const recent=Array.isArray(rows)?rows.slice(-256):[];
+    return persistedTurnParticipantResults(recent).map(function(summary,index){
+      const duration=finite(recent[index]&&recent[index].durationMs,null);
+      if(duration!==null)summary.durationMs=duration;
+      return summary;
+    });
+  }
+
   function finite(value,fallback){
     const n=Number(value);
     return Number.isFinite(n)?n:fallback;
@@ -910,7 +923,7 @@
       // The previous per-handler rewrite repeatedly cloned the growing result list.
       this.lastTurnParticipantResults=results.slice(-256);
       this.world.state.simulation.lastTurnParticipantResults=persistedTurnParticipantResults(this.lastTurnParticipantResults);
-      return results;
+      return compactTurnParticipantResults(results);
     }
 
     registerTurnFinalizer(id,handler,options={}){
@@ -1126,7 +1139,7 @@
             event:clone(event)
           });
         }
-        return {event,participants:clone(participantResults)};
+        return {event,participants:participantResults};
       });
 
       this.phaseHandlers.set('CHECKPOINT',async({turn})=>{
