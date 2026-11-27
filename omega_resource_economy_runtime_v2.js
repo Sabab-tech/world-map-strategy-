@@ -1152,7 +1152,8 @@
   function extractionFiscalPendingHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},r=clone(p.record||p),c=canonical(ctx.countryId);
     if(!r.batchId||!r.resourceId||num(r.quantity)===null||num(r.quantity)<=0)return{accepted:false,reason:'EXTRACTION_FISCAL_RECORD_INVALID'};
-    var ledger=Array.isArray(ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger'))?clone(ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger')):[];
+    var ledgerSnapshot=ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger');
+    var ledger=Array.isArray(ledgerSnapshot)?ledgerSnapshot:[];
     var prior=ledger.find(function(x){return String(x.batchId||'')===String(r.batchId||'');});
     if(prior)return{accepted:true,duplicate:true,countryId:c,batchId:r.batchId,status:prior.status};
     r.countryId=c;r.turn=turn();r.status='PENDING_MARKET_VALUATION';r.cashPosted=false;r.valuationComplete=false;
@@ -1165,13 +1166,71 @@
   function extractionFiscalValuedHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},r=clone(p.record||p),batchId=String(r.batchId||'').trim(),c=canonical(ctx.countryId);
     if(!batchId)return{accepted:false,reason:'EXTRACTION_FISCAL_BATCH_ID_REQUIRED'};
-    var ledger=Array.isArray(ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger'))?clone(ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger')):[];
+    var ledgerSnapshot=ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger');
+    var ledger=Array.isArray(ledgerSnapshot)?ledgerSnapshot:[];
     var index=ledger.findIndex(function(x){return String(x.batchId||'')===batchId;});
     if(index<0)return{accepted:false,reason:'EXTRACTION_FISCAL_PENDING_RECORD_NOT_FOUND',batchId};
     if(ledger[index].valuationComplete)return{accepted:true,duplicate:true,batchId,status:ledger[index].status};
     ledger[index]=Object.assign({},ledger[index],r,{countryId:c,batchId,valuationComplete:true,valuationTurn:turn()});
     ctx.stateTransaction.set('finance.resourceExtractionFiscalLedger',ledger);
     return{accepted:true,batchId,status:ledger[index].status,cashPosted:!!ledger[index].cashPosted};
+  }
+
+  function extractionFiscalPendingBatchHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},records=Array.isArray(p.records)?p.records:[],c=canonical(ctx.countryId);
+    if(!records.length)return{accepted:true,countryId:c,added:0,duplicates:0};
+    var ledgerSnapshot=ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger');
+    var ledger=Array.isArray(ledgerSnapshot)?ledgerSnapshot:[],batchIds=new Set();
+    ledger.forEach(function(row){var id=String(row&&row.batchId||'');if(id)batchIds.add(id);});
+    var prepared=[],invalid=[];
+    records.forEach(function(source,index){
+      var r=clone(source||{}),batchId=String(r.batchId||'');
+      if(!batchId.trim()||!r.resourceId||num(r.quantity)===null||num(r.quantity)<=0){
+        invalid.push({index:index,batchId:batchId,reason:'EXTRACTION_FISCAL_RECORD_INVALID'});
+        return;
+      }
+      if(batchIds.has(batchId))return;
+      batchIds.add(batchId);
+      r.countryId=c;r.turn=turn();r.status='PENDING_MARKET_VALUATION';
+      r.cashPosted=false;r.valuationComplete=false;
+      r.sourceAuthority=r.sourceAuthority||r.quantityAuthority||'UNOBSERVED';
+      prepared.push(r);
+    });
+    if(invalid.length)return{accepted:false,reason:'EXTRACTION_FISCAL_BATCH_RECORD_INVALID',invalid};
+    prepared.forEach(function(row){ledger.push(row);});
+    while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
+    if(prepared.length)ctx.stateTransaction.set('finance.resourceExtractionFiscalLedger',ledger);
+    return{accepted:true,countryId:c,added:prepared.length,duplicates:records.length-prepared.length};
+  }
+  function extractionFiscalValuedBatchHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},records=Array.isArray(p.records)?p.records:[],c=canonical(ctx.countryId);
+    if(!records.length)return{accepted:true,countryId:c,updated:0,duplicates:0};
+    var ledgerSnapshot=ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger');
+    var ledger=Array.isArray(ledgerSnapshot)?ledgerSnapshot:[],indexByBatchId=new Map();
+    for(var i=0;i<ledger.length;i++){
+      var existingId=String(ledger[i]&&ledger[i].batchId||'');
+      if(existingId&&!indexByBatchId.has(existingId))indexByBatchId.set(existingId,i);
+    }
+    var plans=[],seen=new Set(),duplicates=0,missing=[];
+    records.forEach(function(source,index){
+      var record=clone(source||{}),batchId=String(record.batchId||'').trim();
+      if(!batchId){missing.push({index:index,reason:'EXTRACTION_FISCAL_BATCH_ID_REQUIRED'});return;}
+      if(seen.has(batchId)){duplicates++;return;}
+      seen.add(batchId);
+      var ledgerIndex=indexByBatchId.get(batchId);
+      if(ledgerIndex===undefined){missing.push({index:index,batchId:batchId,reason:'EXTRACTION_FISCAL_PENDING_RECORD_NOT_FOUND'});return;}
+      if(ledger[ledgerIndex].valuationComplete){duplicates++;return;}
+      plans.push({index:ledgerIndex,batchId:batchId,record:record});
+    });
+    if(missing.length)return{accepted:false,reason:'EXTRACTION_FISCAL_BATCH_UPDATE_NOT_APPLIED',missing};
+    var currentTurn=turn();
+    plans.forEach(function(plan){
+      ledger[plan.index]=Object.assign({},ledger[plan.index],plan.record,{
+        countryId:c,batchId:plan.batchId,valuationComplete:true,valuationTurn:currentTurn
+      });
+    });
+    if(plans.length)ctx.stateTransaction.set('finance.resourceExtractionFiscalLedger',ledger);
+    return{accepted:true,countryId:c,updated:plans.length,duplicates:duplicates};
   }
 
   function recordDomesticSaleHandler(cmd,ctx){
@@ -2767,7 +2826,9 @@
       ['OMEGA_RESOURCE_ECON_TRANSPORT_REVENUE','transport',flowHandler('transport.resourceRevenue','TRANSPORT')],
       ['OMEGA_RESOURCE_ECON_FISCAL_RECEIPT','finance',fiscalHandler],
       ['OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING','finance',extractionFiscalPendingHandler],
+      ['OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING_BATCH','finance',extractionFiscalPendingBatchHandler],
       ['OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_VALUED','finance',extractionFiscalValuedHandler],
+      ['OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_VALUED_BATCH','finance',extractionFiscalValuedBatchHandler],
       ['OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY','finance',financeClearHandler],
       ['OMEGA_RESOURCE_ECON_BUYER_TREASURY_DEBIT','finance',debitTreasuryBuyerHandler],
       ['OMEGA_RESOURCE_ECON_RECORD_DOMESTIC_SALE','trade',recordDomesticSaleHandler],
@@ -2882,47 +2943,67 @@
   function valueExtractionFiscalPending(c){
     var cid=canonical(c),pending=read(cid,'finance.resourceExtractionFiscalLedger');
     pending=Array.isArray(pending)?pending:[];
-    var prices=read(cid,'trade.marketPrice')||{},visited=0,posted=0,skipped=0,failed=[];
+    var prices=read(cid,'trade.marketPrice')||{},fiscalLedger=read(cid,'finance.resourceFiscalLedger');
+    fiscalLedger=Array.isArray(fiscalLedger)?fiscalLedger:[];
+    var existingReceiptIds=new Set();
+    fiscalLedger.forEach(function(row){
+      var receiptId=String(row&&row.receiptId||'').trim();
+      if(receiptId)existingReceiptIds.add(receiptId);
+    });
+    var visited=0,posted=0,skipped=0,failed=[],valuationRecords=[],valuationEvents=[],currentTurn=turn();
+    var fiscalRules=rules().fiscal||{};
     for(var i=0;i<pending.length;i++){
       var row=pending[i]||{},batchId=String(row.batchId||'').trim(),rid=String(row.resourceId||'').trim(),quantity=num(row.quantity);
       if(!batchId||!rid||quantity===null||quantity<=0){skipped++;continue;}
       if(row.valuationComplete||row.cashPosted||['VALUED_AND_POSTED','VALUED_NO_FISCAL_RECEIPT'].includes(String(row.status||'')))continue;
       visited++;
       var receiptId='EXTRACTION-FISCAL:'+cid+':'+batchId;
-      var fiscalLedger=read(cid,'finance.resourceFiscalLedger');
-      fiscalLedger=Array.isArray(fiscalLedger)?fiscalLedger:[];
       var pricing=simulatedOfferPrice(cid,rid,prices),price=num(pricing&&pricing.price);
-      if(price===null||price<=0){failed.push({batchId,reason:'POSITIVE_PRICE_UNAVAILABLE'});continue;}
-      var marketValue=quantity*price,fr=rules().fiscal||{},royalty=marketValue*(num(fr.royaltyRate)||0),resourceTax=marketValue*(num(fr.resourceTaxRate)||0);
-      var total=royalty+resourceTax;
+      if(price===null||price<=0){failed.push({batchId:batchId,reason:'POSITIVE_PRICE_UNAVAILABLE'});continue;}
+      var marketValue=quantity*price,royalty=marketValue*(num(fiscalRules.royaltyRate)||0),
+        resourceTax=marketValue*(num(fiscalRules.resourceTaxRate)||0),total=royalty+resourceTax;
       var fiscal={royalty:royalty,resourceTax:resourceTax,corporateTax:0,exportDuty:0,other:0,total:total,policySource:'resource_economy_rules.json'};
-      var existingReceipt=fiscalLedger.find(function(x){return String(x.receiptId||'')===receiptId;});
-      if(!existingReceipt){
+      if(!existingReceiptIds.has(receiptId)){
         var result=dispatch('finance','OMEGA_RESOURCE_ECON_FISCAL_RECEIPT',cid,{receipt:Object.assign({},fiscal,{
           receiptId:receiptId,batchId:batchId,countryId:cid,resourceId:rid,quantity:quantity,unit:row.unit||null,direction:'EXTRACTION',
           marketValue:marketValue,unitPrice:price,priceAuthority:pricing.authority||'SIMULATED_FALLBACK',
           priceBasisResourceId:pricing.basisResourceId||null,sourceAuthority:row.sourceAuthority||row.quantityAuthority||'UNOBSERVED',
-          quantityAuthority:row.quantityAuthority||row.sourceAuthority||'UNOBSERVED',occurrenceKey:row.occurrenceKey||null,
-          siteReferenceKey:row.siteReferenceKey||null,siteName:row.siteName||null,simulationTurn:turn()}),correlationId:receiptId});
+          quantityAuthority:row.quantityAuthority||row.sourceAuthority||'UNOBSERVED',occurrenceKey:row.occurrenceKey||row.mineId||null,
+          siteReferenceKey:row.siteReferenceKey||null,siteName:row.siteName||null,simulationTurn:currentTurn}),correlationId:receiptId});
         if(result?.status!=='APPLIED'||result?.result?.accepted===false){
           failed.push({batchId:batchId,reason:result?.result?.reason||result?.reason||'FISCAL_RECEIPT_POST_FAILED'});continue;
         }
+        existingReceiptIds.add(receiptId);
       }
       var valuationRecord=Object.assign({},row,{status:total>0?'VALUED_AND_POSTED':'VALUED_NO_FISCAL_RECEIPT',
         valuationStatus:pricing.authority||'SIMULATED_FALLBACK',valuationAuthority:pricing.authority||'SIMULATED_FALLBACK',
         priceAuthority:pricing.authority||'SIMULATED_FALLBACK',priceBasisResourceId:pricing.basisResourceId||null,
         unitPrice:price,marketValue:marketValue,royalty:royalty,resourceTax:resourceTax,corporateTax:0,exportDuty:0,other:0,fiscalTotal:total,
-        receiptId:receiptId,cashPosted:total>0,valuationComplete:true,valuationTurn:turn()});
-      var marked=dispatch('finance','OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_VALUED',cid,{record:valuationRecord,correlationId:receiptId});
-      if(marked?.status!=='APPLIED'||marked?.result?.accepted===false){
-        failed.push({batchId:batchId,reason:marked?.result?.reason||marked?.reason||'EXTRACTION_FISCAL_STATUS_UPDATE_FAILED'});continue;
-      }
-      posted++;
-      emit('OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED',cid,{receiptId:receiptId,batchId:batchId,resourceId:rid,quantity:quantity,unit:row.unit||null,
-        marketValue:marketValue,unitPrice:price,priceAuthority:pricing.authority||'SIMULATED_FALLBACK',priceBasisResourceId:pricing.basisResourceId||null,
-        sourceAuthority:row.sourceAuthority||row.quantityAuthority||'UNOBSERVED',fiscal:fiscal,turn:turn(),status:'RECEIPT_POSTED'},'finance');
+        receiptId:receiptId,cashPosted:total>0,valuationComplete:true,valuationTurn:currentTurn});
+      valuationRecords.push(valuationRecord);
+      valuationEvents.push({receiptId:receiptId,batchId:batchId,resourceId:rid,quantity:quantity,unit:row.unit||null,
+        marketValue:marketValue,unitPrice:price,priceAuthority:pricing.authority||'SIMULATED_FALLBACK',
+        priceBasisResourceId:pricing.basisResourceId||null,sourceAuthority:row.sourceAuthority||row.quantityAuthority||'UNOBSERVED',
+        fiscal:fiscal});
     }
-    return{countryId:cid,turn:turn(),visited:visited,posted:posted,skipped:skipped,failed:failed};
+    if(valuationRecords.length){
+      var marked=dispatch('finance','OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_VALUED_BATCH',cid,{
+        records:valuationRecords,correlationId:'EXTRACTION-FISCAL-VALUED:'+cid+':'+currentTurn
+      });
+      if(marked?.status!=='APPLIED'||marked?.result?.accepted===false){
+        var reason=marked?.result?.reason||marked?.reason||'EXTRACTION_FISCAL_BATCH_STATUS_UPDATE_FAILED';
+        valuationRecords.forEach(function(record){failed.push({batchId:record.batchId,reason:reason});});
+      }else{
+        posted+=valuationRecords.length;
+        valuationEvents.forEach(function(event){
+          emit('OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED',cid,{receiptId:event.receiptId,batchId:event.batchId,
+            resourceId:event.resourceId,quantity:event.quantity,unit:event.unit,marketValue:event.marketValue,
+            unitPrice:event.unitPrice,priceAuthority:event.priceAuthority,priceBasisResourceId:event.priceBasisResourceId,
+            sourceAuthority:event.sourceAuthority,fiscal:event.fiscal,turn:currentTurn,status:'RECEIPT_POSTED'},'finance');
+        });
+      }
+    }
+    return{countryId:cid,turn:currentTurn,visited:visited,posted:posted,skipped:skipped,failed:failed};
   }
 
   function productionSummaryFromIndustrialResult(cid,result){
