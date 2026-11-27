@@ -1787,3 +1787,80 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   assert.equal(retried.status, 'READY', 'a timed-out catalog promise must not block later retries');
   assert.equal(retried.count, Object.keys(catalog.resourceRules || {}).length);
 }
+
+
+// Consecutive-day reconciliation must scale linearly with existing ledger size.
+// Instrument array reads so the regression is deterministic and does not rely on
+// wall-clock timing or modify any game-owned data format.
+{
+  const priorState=context.Game.state;
+  try{
+    const turn=80,periodId='PERF_RECONCILIATION_DAY_80',rowCount=24,historyCount=800;
+    const resource={
+      finishedGoodsLedger:[],inventoryLedger:[],batches:[],inventoryLots:{},
+      processedWarehouse:{receipts:[],storedBatchIds:[]},
+      industrialNetwork:{industrialProductionPeriods:{
+        [periodId]:{countryId:'BGD',turn,status:'EXECUTED',productionPeriodId:periodId}
+      }}
+    };
+    for(let index=0;index<historyCount;index++){
+      resource.inventoryLedger.push({
+        transactionId:'OLD-TX-'+index,turn:turn-1,productionPeriodId:'OLD_PERIOD',
+        type:'FACTORY_PROCESSING_COMMITTED'
+      });
+      resource.batches.push({
+        batchId:'OLD-BATCH-'+index,resourceId:'OLD_MATERIAL',quantity:1,productionPeriodId:'OLD_PERIOD'
+      });
+    }
+    for(let index=0;index<rowCount;index++){
+      const transactionId='CURRENT-TX-'+index,batchId='CURRENT-BATCH-'+index;
+      resource.finishedGoodsLedger.push({
+        transactionId,turn,productionPeriodId:periodId,
+        outputQuantities:{IRON_INTERMEDIATE:1},createdBatchIds:[batchId]
+      });
+      resource.inventoryLedger.push({
+        transactionId,turn,productionPeriodId:periodId,type:'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED'
+      });
+      resource.processedWarehouse.receipts.push({
+        receiptId:'RECEIPT-'+index,batchId,resourceId:'IRON_INTERMEDIATE',
+        quantity:1,simulationTurn:turn,productionPeriodId:periodId
+      });
+      resource.processedWarehouse.storedBatchIds.push(batchId);
+      resource.batches.push({
+        batchId,resourceId:'IRON_INTERMEDIATE',quantity:1,productionPeriodId:periodId
+      });
+      resource.inventoryLots[batchId]={
+        batchId,resourceId:'IRON_INTERMEDIATE',quantity:1,productionPeriodId:periodId
+      };
+    }
+    const reads={inventory:0,batches:0};
+    const tracked=(rows,key)=>new Proxy(rows,{
+      get(target,property,receiver){
+        if(property===Symbol.iterator)return function*(){
+          for(let index=0;index<target.length;index++){
+            reads[key]++;
+            yield receiver[index];
+          }
+        };
+        if(typeof property==='string'&&/^\d+$/.test(property))reads[key]++;
+        return Reflect.get(target,property,receiver);
+      }
+    });
+    resource.inventoryLedger=tracked(resource.inventoryLedger,'inventory');
+    resource.batches=tracked(resource.batches,'batches');
+    context.Game.state={
+      simulation:{turn,playerCountryId:'BGD'},
+      resource:{BGD:resource}
+    };
+    const result=N.reconcileProductionPeriod('BGD',turn,periodId,{status:'COMPLETED'});
+    assert.equal(result.ok,true,JSON.stringify(result));
+    assert.equal(result.ledgerRows,rowCount);
+    assert.equal(result.batchCount,rowCount);
+    assert.ok(reads.inventory<=resource.inventoryLedger.length+4,
+      'inventory postings should be read once, not once for every factory transaction: '+JSON.stringify(reads));
+    assert.ok(reads.batches<=resource.batches.length+4,
+      'batch rows should be read once, not once for every finished-goods batch: '+JSON.stringify(reads));
+  }finally{
+    context.Game.state=priorState;
+  }
+}
