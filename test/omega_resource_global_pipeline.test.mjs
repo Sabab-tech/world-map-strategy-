@@ -188,13 +188,27 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
   assert.ok(Object.keys(byCountry).length>=2);
 
   let fiscalPendingCount=0;
-  interop.registerCommandHandler('OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING','finance',(cmd,ctx)=>{
-    fiscalPendingCount++;
-    const arr=Array.isArray(ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger'))?ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger').slice():[];
-    arr.push({...cmd.payload.record,status:'PENDING_MARKET_VALUATION',turn:state.simulation.turn});
-    ctx.stateTransaction.set('finance.resourceExtractionFiscalLedger',arr);
-    return{accepted:true};
-  });
+  const appendFiscalPendingRecords=(records,ctx)=>{
+    const arr=Array.isArray(ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger'))
+      ?ctx.stateTransaction.get('finance.resourceExtractionFiscalLedger').slice():[];
+    const batchIds=new Set(arr.map(row=>String(row.batchId||'')));
+    let added=0;
+    for(const record of records){
+      const batchId=String(record?.batchId||'');
+      if(!batchId||batchIds.has(batchId))continue;
+      batchIds.add(batchId);
+      arr.push({...record,status:'PENDING_MARKET_VALUATION',turn:state.simulation.turn,
+        cashPosted:false,valuationComplete:false});
+      added++;
+    }
+    if(added)ctx.stateTransaction.set('finance.resourceExtractionFiscalLedger',arr);
+    fiscalPendingCount+=added;
+    return{accepted:true,added,duplicates:records.length-added};
+  };
+  interop.registerCommandHandler('OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING','finance',(cmd,ctx)=>
+    appendFiscalPendingRecords([cmd.payload.record],ctx));
+  interop.registerCommandHandler('OMEGA_RESOURCE_ECON_EXTRACTION_FISCAL_PENDING_BATCH','finance',(cmd,ctx)=>
+    appendFiscalPendingRecords(Array.isArray(cmd.payload.records)?cmd.payload.records:[],ctx));
 
   vm.runInContext(readFileSync('omega_resource_endowment_runtime.js','utf8'),context,{filename:'omega_resource_endowment_runtime.js'});
   const runtime=context.OmegaResourceEndowmentRuntime;
