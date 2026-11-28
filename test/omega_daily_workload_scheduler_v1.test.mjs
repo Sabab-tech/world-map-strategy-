@@ -6,6 +6,7 @@ const source=readFileSync(new URL('../omega_daily_workload_scheduler_v1.js',impo
 function harness({mobile=false}={}){
   const state={simulation:{turn:0,session:{playerCountryId:'BGD',sessionId:'SESSION-1'}}};
   const progress={resources:0,industrial:0};
+  const progressReads={resources:0,industrial:0};
   const calls=[];
   let clock=0,yields=0,failResource=false;
   const sandbox={console,Promise,Map,Set,Object,Array,Number,String,Math,Date,JSON,
@@ -17,17 +18,17 @@ function harness({mobile=false}={}){
   vm.runInNewContext(source,sandbox,{filename:'omega_daily_workload_scheduler_v1.js'});
   const api=sandbox.Omega.DailyWorkloadScheduler;
   api.registerDomain({id:'resources',label:'Mining',pageId:'resource-ministry',priority:10,
-    getProgress(){return{lastProcessedTurn:progress.resources};},
+    getProgress(){progressReads.resources++;return{lastProcessedTurn:progress.resources};},
     async runSlice(ctx){calls.push(['resources',ctx.periodTurn]);clock+=3;
       if(failResource)return{status:'FAILED',reason:'MINE_LEDGER_NOT_RECONCILED'};
       progress.resources=ctx.periodTurn;return{status:'COMPLETED'};}});
   api.registerDomain({id:'industrial',label:'Industrial',pageId:'industry',priority:20,dependencies:['resources'],
-    getProgress(){return{lastProcessedTurn:progress.industrial};},
+    getProgress(){progressReads.industrial++;return{lastProcessedTurn:progress.industrial};},
     async runSlice(ctx){calls.push(['industrial',ctx.periodTurn]);clock+=3;
       progress.industrial=ctx.periodTurn;return{status:'COMPLETED'};}});
   api.registerDomain({id:'food',label:'Food & Agriculture',pageId:'agriculture_food',enabled:false,
     disabledReason:'AUTHORITATIVE_FOOD_RUNTIME_NOT_AVAILABLE',priority:30});
-  return{state,progress,calls,api,sandbox,yields:()=>yields,setTurn(v){state.simulation.turn=v;sandbox.Omega.Simulation.clock.turn=v;},
+  return{state,progress,progressReads,calls,api,sandbox,yields:()=>yields,setTurn(v){state.simulation.turn=v;sandbox.Omega.Simulation.clock.turn=v;},
     fail(v){failResource=v;}};
 }
 test('universal planner processes daily resource/industrial periods in dependency order and retains page mappings',async()=>{
@@ -47,6 +48,14 @@ test('universal planner processes daily resource/industrial periods in dependenc
   assert.equal(domains.find(x=>x.id==='food').pageId,'agriculture_food');
   assert.equal(h.api.diagnostics().domainCount,3);
 });
+test('scheduler reads each domain checkpoint once per plan plus its completed-slice refresh',async()=>{
+  const h=harness();h.setTurn(1);
+  const result=await h.api.runPlan({countryId:'BGD',sessionId:'SESSION-1',targetTurn:1,maxSlices:8,budgetMs:10000});
+  assert.equal(result.status,'COMPLETED');
+  assert.deepEqual(h.progressReads,{resources:2,industrial:2},
+    'candidate selection, dependencies and report generation must reuse the current per-domain progress snapshot');
+});
+
 test('catch-up automatically divides backlog into bounded reconciled period slices',async()=>{
   const h=harness({mobile:true});h.setTurn(8);
   const first=await h.api.runPlan({countryId:'BGD',sessionId:'SESSION-1',targetTurn:8,maxSlices:4,budgetMs:10000});
