@@ -3173,41 +3173,45 @@
   function sameMineStats(a,b){
     return!!a&&!!b&&a.total===b.total&&a.active===b.active&&a.blocked===b.blocked;
   }
+  function setWorldMineStatsForCountry(countryId,next){
+    var previous=worldMineStatsByCountry[countryId];
+    if(sameMineStats(previous,next))return false;
+    if(!worldMineStatsCache)worldMineStatsCache={total:0,active:0,blocked:0};
+    if(previous){
+      worldMineStatsCache.total-=previous.total;
+      worldMineStatsCache.active-=previous.active;
+      worldMineStatsCache.blocked-=previous.blocked;
+    }
+    worldMineStatsByCountry[countryId]=next;
+    worldMineStatsCache.total+=next.total;
+    worldMineStatsCache.active+=next.active;
+    worldMineStatsCache.blocked+=next.blocked;
+    return true;
+  }
   function getWorldMineStats(localCountryId,localStats){
-    var localId=localCountryId?canonical(localCountryId):null,changed=false;
+    var localId=localCountryId?canonical(localCountryId):null;
     if(worldMineStatsDirty||!worldMineStatsCache){
-      var next=Object.create(null);
+      var next=Object.create(null),total=0,active=0,blocked=0;
       countries().forEach(function(country){
-        var cid=canonical(country);
-        next[cid]=localId===cid&&localStats?localStats:mineStatsForCountry(country);
+        var cid=canonical(country),row=localId===cid&&localStats?localStats:mineStatsForCountry(country);
+        next[cid]=row;
+        total+=row.total;active+=row.active;blocked+=row.blocked;
       });
       worldMineStatsByCountry=next;
+      worldMineStatsCache={total:total,active:active,blocked:blocked};
       worldMineStatsDirty=false;
       worldMineStatsDirtyCountries.clear();
-      changed=true;
-    }else{
-      if(localId&&localStats){
-        if(!sameMineStats(worldMineStatsByCountry[localId],localStats)){
-          worldMineStatsByCountry[localId]=localStats;
-          changed=true;
-        }
-        worldMineStatsDirtyCountries.delete(localId);
-      }
-      worldMineStatsDirtyCountries.forEach(function(cid){
-        if(cid===localId&&localStats)return;
-        worldMineStatsByCountry[cid]=mineStatsForCountry(cid);
-        changed=true;
-      });
-      worldMineStatsDirtyCountries.clear();
+      return worldMineStatsCache;
     }
-    if(changed||!worldMineStatsCache){
-      var total=0,active=0,blocked=0;
-      Object.keys(worldMineStatsByCountry).forEach(function(cid){
-        var row=worldMineStatsByCountry[cid]||{};
-        total+=num(row.total)||0;active+=num(row.active)||0;blocked+=num(row.blocked)||0;
-      });
-      worldMineStatsCache={total:total,active:active,blocked:blocked};
+    if(localId&&localStats){
+      setWorldMineStatsForCountry(localId,localStats);
+      worldMineStatsDirtyCountries.delete(localId);
     }
+    worldMineStatsDirtyCountries.forEach(function(cid){
+      if(cid===localId&&localStats)return;
+      setWorldMineStatsForCountry(cid,mineStatsForCountry(cid));
+    });
+    worldMineStatsDirtyCountries.clear();
     return worldMineStatsCache;
   }
   function dashboardHealth(c){
