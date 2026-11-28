@@ -184,6 +184,8 @@ assert.doesNotMatch(extractionHandlerSource,/Object\.values\(mineOutputs\)|Objec
   'an extraction slice must never rescan every historical mine output and path stage');
 assert.match(extractionHandlerSource,/readOnlyStatePath\('resource\.minePaths'\)/,
   'extraction must read the historical path map without cloning the complete map');
+assert.match(extractionHandlerSource,/typeof ctx\.stateTransaction\.peek==='function'[\s\S]*?ctx\.stateTransaction\.get\(path\)/,
+  'legacy transaction adapters without peek must retain a compatible read fallback');
 assert.match(extractionHandlerSource,/readOnlyStatePath\('resource\.inventoryLots'\)/,
   'extraction must read the historical inventory-lot map without cloning the complete map');
 assert.match(extractionHandlerSource,/writeKeyedResourceRows\('resource\.minePaths',existingMinePaths,minePathWrites\)/,
