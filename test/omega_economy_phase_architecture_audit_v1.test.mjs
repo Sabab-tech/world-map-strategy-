@@ -43,6 +43,12 @@ test('universal workload planner owns player-domain order without replacing doma
   assert.match(planner, /pageId:'industry'/);
   assert.match(planner, /AUTHORITATIVE_FOOD_RUNTIME_NOT_AVAILABLE/);
   assert.match(planner, /throughTurn:context\.periodTurn/);
+  assert.match(economy, /function seedDailyWorkloadCheckpointBaselines/);
+  assert.match(economy, /resourcePhaseBaselineTurn\(countryId,targetTurn,session\)/);
+  assert.match(economy, /source:'LEGACY_SAVE_MIGRATION'/);
+  assert.ok(economy.indexOf('seedDailyWorkloadCheckpointBaselines(cid,sessionId,targetTurn,session)') <
+    economy.indexOf('scheduler.registerDomain({'),
+    'legacy period baselines must be seeded before workload selection');
   assert.match(dailyWorkloadScheduler, /runPlan/);
   assert.match(dailyWorkloadScheduler, /DOMAIN_SLICE_DID_NOT_ADVANCE_RECONCILED_CHECKPOINT/);
   assert.match(industrial, /runCountryTurn/);
