@@ -15,6 +15,7 @@
   });
   const domains=new Map();
   let sequence=0,inFlightKey=null,inFlightPromise=null;
+  let registeredDomainCache=null,disabledDomainCache=null;
   let totalSlices=0,totalFailures=0,totalYields=0,lastPlan=null;
   const num=(v,f=0)=>{const n=Number(v);return Number.isFinite(n)?n:f;};
   const canonical=v=>String(v||'').trim().toUpperCase();
@@ -70,7 +71,12 @@
       token:{}
     };
     domains.set(id,entry);
-    return()=>{if(domains.get(id)===entry)domains.delete(id);};
+    registeredDomainCache=null;disabledDomainCache=null;
+    return()=>{
+      if(domains.get(id)===entry){
+        domains.delete(id);registeredDomainCache=null;disabledDomainCache=null;
+      }
+    };
   }
   function snapshotProgress(entry,ctx){
     const raw=entry.getProgress(ctx)||{};
@@ -91,9 +97,15 @@
     if(!/^[A-Z]{2,3}$/.test(countryId)||!sessionId||
        canonical(session.playerCountryId)!==countryId||String(session.sessionId||'')!==sessionId)
       return{status:'FAILED',reason:'ACTIVE_PLAYER_SESSION_IDENTITY_MISMATCH',countryId:countryId||null,targetTurn,processedSlices:0};
-    const registered=[...domains.values()].filter(row=>row.enabled&&domains.get(row.id)===row)
-      .sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence);
-    const disabled=[...domains.values()].filter(row=>!row.enabled).map(row=>({id:row.id,pageId:row.pageId,reason:row.disabledReason}));
+    if(!registeredDomainCache){
+      registeredDomainCache=[...domains.values()].filter(row=>row.enabled&&domains.get(row.id)===row)
+        .sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence);
+    }
+    if(!disabledDomainCache){
+      disabledDomainCache=[...domains.values()].filter(row=>!row.enabled)
+        .map(row=>({id:row.id,pageId:row.pageId,reason:row.disabledReason}));
+    }
+    const registered=registeredDomainCache,disabled=disabledDomainCache;
     const unknownDependencies=registered.filter(row=>row.dependencies.some(id=>!domains.has(id)||!domains.get(id).enabled))
       .map(row=>({id:row.id,dependencies:row.dependencies.filter(id=>!domains.has(id)||!domains.get(id).enabled)}));
     if(unknownDependencies.length)return{status:'FAILED',reason:'DAILY_WORKLOAD_DEPENDENCY_UNAVAILABLE',
@@ -102,27 +114,37 @@
     const store=ensureStore(root),isMobile=constrained();
     const maxSlices=Math.max(1,Math.floor(num(input.maxSlices,isMobile?LIMITS.MOBILE_MAX_SLICES:LIMITS.DESKTOP_MAX_SLICES)));
     const budgetMs=Math.max(1,num(input.budgetMs,isMobile?LIMITS.MOBILE_BUDGET_MS:LIMITS.DESKTOP_BUDGET_MS));
-    const startedAt=now(),results=[],progress=new Map();
-    const refresh=entry=>{const value=snapshotProgress(entry,ctx);progress.set(entry.id,value);return value;};
+    const startedAt=now(),results=[];
+    const refresh=entry=>{
+      const value=snapshotProgress(entry,ctx);
+      entry._dailyWorkloadProgress=value;
+      return value;
+    };
     for(const entry of registered)refresh(entry);
     let failure=null,processedSlices=0,iterations=0;
     // Each unit is one domain's reconciled game-period. This keeps transaction and
     // warehouse/factory allocation boundaries intact; a domain may yield internally.
+    // The enabled list is already priority-sorted, so a single best-candidate pass
+    // preserves the old (turn, priority, registration-sequence) ordering without
+    // allocating and sorting a temporary candidate array on every slice.
     while(processedSlices<maxSlices&&iterations<maxSlices*4){
       iterations++;
-      const candidates=[];
+      let selectedEntry=null,selectedTurn=0;
       for(const entry of registered){
-        const current=refresh(entry),next=current.lastProcessedTurn+1;
+        const current=entry._dailyWorkloadProgress||refresh(entry),next=current.lastProcessedTurn+1;
         if(next>targetTurn||!due(entry,next))continue;
-        const blockedBy=entry.dependencies.find(depId=>{
-          const dep=domains.get(depId),depProgress=dep?refresh(dep):{lastProcessedTurn:0};
-          return depProgress.lastProcessedTurn<next;
-        });
-        if(!blockedBy)candidates.push({entry,next,current});
+        let blocked=false;
+        for(const depId of entry.dependencies){
+          const dep=domains.get(depId);
+          const depProgress=dep?(dep._dailyWorkloadProgress||refresh(dep)):null;
+          if(!depProgress||depProgress.lastProcessedTurn<next){blocked=true;break;}
+        }
+        if(!blocked&&(!selectedEntry||next<selectedTurn)){
+          selectedEntry=entry;selectedTurn=next;
+        }
       }
-      if(!candidates.length)break;
-      candidates.sort((a,b)=>a.next-b.next||a.entry.priority-b.entry.priority||a.entry.sequence-b.entry.sequence);
-      const selected=candidates[0],entry=selected.entry,periodTurn=selected.next;
+      if(!selectedEntry)break;
+      const entry=selectedEntry,periodTurn=selectedTurn;
       const runStarted=now();
       let value;
       try{
@@ -177,13 +199,15 @@
       // work consumes the rest of the budget.
       if(processedSlices>=registered.length&&now()-startedAt>=budgetMs)break;
     }
-    const progressRows=registered.map(entry=>{
-      const current=refresh(entry);
-      return{id:entry.id,label:entry.label,pageId:entry.pageId,priority:entry.priority,
+    const progressRows=[],pending=[];
+    for(const entry of registered){
+      const current=entry._dailyWorkloadProgress||refresh(entry);
+      const row={id:entry.id,label:entry.label,pageId:entry.pageId,priority:entry.priority,
         dependencies:entry.dependencies,lastProcessedTurn:current.lastProcessedTurn,
         pendingDays:Math.max(0,targetTurn-current.lastProcessedTurn),status:current.status};
-    });
-    const pending=progressRows.filter(row=>row.pendingDays>0);
+      progressRows.push(row);
+      if(row.pendingDays>0)pending.push(row);
+    }
     const status=failure?'FAILED':pending.length?'CATCHING_UP':'COMPLETED';
     const report={status,countryId,sessionId,targetTurn,processedSlices,maxSlices,budgetMs,
       elapsedMs:Number(Math.max(0,now()-startedAt).toFixed(2)),failure,pending,domains:progressRows,
@@ -221,6 +245,9 @@
         })):[]}:store?.lastPlan||null};
   }
   const API=Object.freeze({VERSION,LIMITS,registerDomain,runPlan,diagnostics,
-    dispose(){domains.clear();inFlightKey=null;inFlightPromise=null;return true;}});
+    dispose(){
+      domains.clear();registeredDomainCache=null;disabledDomainCache=null;
+      inFlightKey=null;inFlightPromise=null;return true;
+    }});
   g.Omega=g.Omega||{};g.Omega.DailyWorkloadScheduler=API;g.OmegaDailyWorkloadScheduler=API;
 })(typeof window!=='undefined'?window:globalThis);
