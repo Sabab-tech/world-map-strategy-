@@ -136,7 +136,7 @@ test('world scheduler exposes per-country-handler duration and main-thread block
  const result=await h.participant.handler({},{
   turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation,stepDurationMs:10000
  });
- assert.equal(result.player.handlers,1,'the selected player country handler should execute');
+ assert.equal(result.player.handlers,2,'both registered player handlers should execute');
  const handler=h.scheduler.diagnostics().domainTimings.find(row=>row.id==='world-scheduler.handler.PLAYER.test.perf.player-handler');
  assert.ok(handler,'the per-domain timing sample should be visible in diagnostics');
  assert.equal(handler.lastDurationMs,2.5);
