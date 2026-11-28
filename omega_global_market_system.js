@@ -461,6 +461,11 @@
         books[rid][side].push(order);counters.ordersIndexed++;
       }
     };
+    const stockIds=new Set();
+    const addStockKeys=source=>{
+      if(!source||typeof source!=='object')return;
+      for(const key in source)if(Object.prototype.hasOwnProperty.call(source,key))stockIds.add(key);
+    };
     for(let countryIndex=0;countryIndex<countryRows.length;countryIndex++){
       const c=countryRows[countryIndex],countryId=canonical(c);
       counters.countriesScanned++;
@@ -517,11 +522,7 @@
       const inv=countryValue(c,'resource.inventory')||{},prod=countryValue(c,'resource.production')||{},
         tradeable=countryValue(c,'resource.tradeAvailability')||{},
         availableStock=countryValue(c,'resource.strategicReserve')?.availableByResource||{};
-      const stockIds=new Set();
-      const addStockKeys=source=>{
-        if(!source||typeof source!=='object')return;
-        for(const key in source)if(Object.prototype.hasOwnProperty.call(source,key))stockIds.add(key);
-      };
+      stockIds.clear();
       addStockKeys(inv);addStockKeys(prod);addStockKeys(tradeable);addStockKeys(availableStock);
       for(const rid of stockIds){
         counters.stockResourceRowsScanned++;
