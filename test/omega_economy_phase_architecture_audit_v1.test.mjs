@@ -9,6 +9,7 @@ const simulation = read('../omega_simulation_runtime.js');
 const composition = read('../omega_enterprise_composition_root_v10.js');
 const finance = read('../omega_finance_ministry_runtime_v1.js');
 const worldScheduler = read('../omega_world_simulation_scheduler_v1.js');
+const dailyWorkloadScheduler = read('../omega_daily_workload_scheduler_v1.js');
 
 test('resource economy remains the single player-country ordered execution owner', () => {
   const start = economy.indexOf('function runTurnCore(cid){');
@@ -18,8 +19,7 @@ test('resource economy remains the single player-country ordered execution owner
   const order = [
     'capture-stock-flow-period',
     'national-demand-prepare-country',
-    'endowment-start-country-production',
-    'industrial-run-country-turn',
+    'universal-daily-workload-plan',
     'process-country-finalization',
     'global-market-rebuild-country',
     'global-trade-process-country',
@@ -35,10 +35,29 @@ test('resource economy remains the single player-country ordered execution owner
   assert.match(economy, /omega\.resource-economy\.player-country/);
 });
 
-test('industrial runtime remains downstream of extraction and owns its country turn', () => {
-  assert.match(economy, /industrial\.runCountryTurn\(cid\)/);
+test('universal workload planner owns player-domain order without replacing domain ledgers', () => {
+  const planner = economy.slice(economy.indexOf('function runDailyWorkloadPlan'), economy.indexOf('function runTurnCore'));
+  assert.ok(planner.indexOf("id:'resources'") < planner.indexOf("id:'industrial'"));
+  assert.match(planner, /dependencies:\['resources'\]/);
+  assert.match(planner, /pageId:'resource-ministry'/);
+  assert.match(planner, /pageId:'industry'/);
+  assert.match(planner, /AUTHORITATIVE_FOOD_RUNTIME_NOT_AVAILABLE/);
+  assert.match(planner, /throughTurn:context\.periodTurn/);
+  assert.match(economy, /function seedDailyWorkloadCheckpointBaselines/);
+  assert.match(economy, /resourcePhaseBaselineTurn\(countryId,targetTurn,session\)/);
+  assert.match(economy, /source:'LEGACY_SAVE_MIGRATION'/);
+  assert.ok(economy.indexOf('seedDailyWorkloadCheckpointBaselines(cid,sessionId,targetTurn,session)') <
+    economy.indexOf('scheduler.registerDomain({'),
+    'legacy period baselines must be seeded before workload selection');
+  assert.match(dailyWorkloadScheduler, /runPlan/);
+  assert.match(dailyWorkloadScheduler, /DOMAIN_SLICE_DID_NOT_ADVANCE_RECONCILED_CHECKPOINT/);
   assert.match(industrial, /runCountryTurn/);
   assert.match(industrial, /finishTurn|finishDate|due/i);
+});
+test('daily workload scheduler stays distinct from NPC and view-driven ministry schedulers', () => {
+  assert.match(dailyWorkloadScheduler, /DailyWorkloadScheduler/);
+  assert.match(worldScheduler, /registerCountryHandler/);
+  assert.match(composition, /ministryPump:/);
 });
 
 test('canonical simulation clock and turn participant failure stop remain authoritative', () => {

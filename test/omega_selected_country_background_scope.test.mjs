@@ -42,9 +42,9 @@ test('factory and resource-research background ticks are scoped to one player co
 test('resource economy and mine/action pipelines never call world-wide processing on the turn event', () => {
   const economy = read('omega_resource_economy_runtime_v2.js');
   const runTurnCore = between(economy, 'function runTurnCore(cid){', 'var resourceTurnPromises=');
-  assert.match(runTurnCore, /runCheckpointedResourceExtraction\(cid,endowment\)/,
-    'the single-country turn path must run the checkpointed resource phase');
-  const resourcePhase = between(economy, 'async function runCheckpointedResourceExtraction(countryId,endowment){', 'function runTurnCore(cid){');
+  assert.match(runTurnCore, /runDailyWorkloadPlan\(cid,endowment,industrial\)/,
+    'the single-country turn path must use the universal checkpointed workload planner');
+  const resourcePhase = between(economy, 'async function runCheckpointedResourceExtraction(countryId,endowment,options={}){', 'function dailyWorkloadProgress(');
   assert.match(resourcePhase, /endowment\.startCountryProduction\(cid,null,\{[\s\S]*?productionPeriodTurn:periodTurn,productionPeriodId:periodId/,
     'resource catch-up must retain the canonical country extraction entry point and pass the daily period identity');
   assert.match(resourcePhase, /!session\.playerCountryId\|\|canonical\(session\.playerCountryId\)!==cid/,
