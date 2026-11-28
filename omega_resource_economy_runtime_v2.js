@@ -3631,6 +3631,8 @@
     return{lastProcessedTurn:Math.max(0,Math.floor(num(checkpoint.lastProcessedTurn)||0)),
       status:String(checkpoint.status||'READY'),pendingDays:Math.max(0,Math.floor(num(checkpoint.pendingDays)||0))};
   }
+  var dailyWorkloadRegistrationScheduler=null,dailyWorkloadRegistrationEndowment=null,
+    dailyWorkloadRegistrationIndustrial=null,dailyWorkloadResourcesReady=null,dailyWorkloadIndustrialReady=null;
   function runDailyWorkloadPlan(countryId,endowment,industrial){
     var scheduler=g.Omega?.DailyWorkloadScheduler;
     if(!scheduler||typeof scheduler.registerDomain!=='function'||typeof scheduler.runPlan!=='function')return null;
@@ -3642,29 +3644,37 @@
     if(baselineStatus?.status!=='READY')return baselineStatus;
     var resourcesReady=!!endowment&&typeof endowment.startCountryProduction==='function';
     var industrialReady=!!industrial&&typeof industrial.runCountryTurn==='function';
-    scheduler.registerDomain({
-      id:'resources',label:'Mining & Raw Materials',pageId:'resource-ministry',priority:10,
-      enabled:resourcesReady,disabledReason:'RESOURCE_ENDOWMENT_RUNTIME_NOT_READY',
-      getProgress:function(){return dailyWorkloadProgress('resources',cid,sessionId);},
-      runSlice:function(context){
-        return runCheckpointedResourceExtraction(cid,endowment,{throughTurn:context.periodTurn});
-      }
-    });
-    scheduler.registerDomain({
-      id:'industrial',label:'Industrial Production',pageId:'industry',priority:20,
-      dependencies:['resources'],enabled:industrialReady&&resourcesReady,
-      disabledReason:!resourcesReady?'RESOURCE_PHASE_REQUIRED':'INDUSTRIAL_RUNTIME_NOT_READY',
-      getProgress:function(){return dailyWorkloadProgress('industrial',cid,sessionId);},
-      runSlice:function(context){
-        return runCheckpointedIndustrialProduction(cid,industrial,{throughTurn:context.periodTurn});
-      }
-    });
-    // The page/workstream identity is reserved, but execution remains disabled until
-    // an authoritative food-production, stock, demand and reconciliation runtime exists.
-    scheduler.registerDomain({
-      id:'food',label:'Food & Agriculture',pageId:'agriculture_food',priority:30,enabled:false,
-      disabledReason:'AUTHORITATIVE_FOOD_RUNTIME_NOT_AVAILABLE'
-    });
+    var registrationChanged=scheduler!==dailyWorkloadRegistrationScheduler||
+      endowment!==dailyWorkloadRegistrationEndowment||industrial!==dailyWorkloadRegistrationIndustrial||
+      resourcesReady!==dailyWorkloadResourcesReady||industrialReady!==dailyWorkloadIndustrialReady;
+    if(registrationChanged){
+      scheduler.registerDomain({
+        id:'resources',label:'Mining & Raw Materials',pageId:'resource-ministry',priority:10,
+        enabled:resourcesReady,disabledReason:'RESOURCE_ENDOWMENT_RUNTIME_NOT_READY',
+        getProgress:function(context){
+          return dailyWorkloadProgress('resources',context?.countryId||cid,context?.sessionId||sessionId);
+        },
+        runSlice:function(context){
+          return runCheckpointedResourceExtraction(context?.countryId||cid,endowment,{throughTurn:context.periodTurn});
+        }
+      });
+      scheduler.registerDomain({
+        id:'industrial',label:'Industrial Production',pageId:'industry',priority:20,
+        dependencies:['resources'],enabled:industrialReady&&resourcesReady,
+        disabledReason:!resourcesReady?'RESOURCE_PHASE_REQUIRED':'INDUSTRIAL_RUNTIME_NOT_READY',
+        getProgress:function(context){
+          return dailyWorkloadProgress('industrial',context?.countryId||cid,context?.sessionId||sessionId);
+        },
+        runSlice:function(context){
+          return runCheckpointedIndustrialProduction(context?.countryId||cid,industrial,{throughTurn:context.periodTurn});
+        }
+      });
+      dailyWorkloadRegistrationScheduler=scheduler;
+      dailyWorkloadRegistrationEndowment=endowment;
+      dailyWorkloadRegistrationIndustrial=industrial;
+      dailyWorkloadResourcesReady=resourcesReady;
+      dailyWorkloadIndustrialReady=industrialReady;
+    }
     return scheduler.runPlan({countryId:cid,sessionId,targetTurn});
   }
   function runTurnCore(cid){
