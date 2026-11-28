@@ -3563,7 +3563,7 @@
     // The page/workstream identity is reserved, but execution remains disabled until
     // an authoritative food-production, stock, demand and reconciliation runtime exists.
     scheduler.registerDomain({
-      id:'food',label:'Food & Agriculture',pageId:'food',priority:30,enabled:false,
+      id:'food',label:'Food & Agriculture',pageId:'agriculture_food',priority:30,enabled:false,
       disabledReason:'AUTHORITATIVE_FOOD_RUNTIME_NOT_AVAILABLE'
     });
     return scheduler.runPlan({countryId:cid,sessionId,targetTurn});
