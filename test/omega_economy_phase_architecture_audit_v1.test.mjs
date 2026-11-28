@@ -23,7 +23,7 @@ test('resource economy remains the single player-country ordered execution owner
     'process-country-finalization',
     'global-market-rebuild-country',
     'global-trade-process-country',
-    'dashboard-build'
+    'dashboard-health'
   ];
   let previous = -1;
   for (const token of order) {
