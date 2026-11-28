@@ -182,6 +182,18 @@ assert.match(extractionHandlerSource,/for\(let i=Math\.min\(startStageIndex,stag
   'period finalization must tag only newly appended stages on touched paths');
 assert.doesNotMatch(extractionHandlerSource,/Object\.values\(mineOutputs\)|Object\.values\(minePaths\)/,
   'an extraction slice must never rescan every historical mine output and path stage');
+assert.match(extractionHandlerSource,/ctx\.stateTransaction\.peek\('resource\.minePaths'\)/,
+  'extraction must read the historical path map without cloning the complete map');
+assert.match(extractionHandlerSource,/ctx\.stateTransaction\.peek\('resource\.inventoryLots'\)/,
+  'extraction must read the historical inventory-lot map without cloning the complete map');
+assert.match(extractionHandlerSource,/writeKeyedResourceRows\('resource\.minePaths',existingMinePaths,minePathWrites\)/,
+  'path updates must commit only the mine paths changed by this slice');
+assert.match(extractionHandlerSource,/writeKeyedResourceRows\('resource\.mineOutputs',existingMineOutputs,mineOutputWrites\)/,
+  'mine-output updates must commit only records changed by this slice');
+assert.match(extractionHandlerSource,/writeKeyedResourceRows\('resource\.inventoryLots',existingInventoryLots,inventoryLotWrites\)/,
+  'inventory-lot updates must commit only newly created batch lots');
+assert.doesNotMatch(extractionHandlerSource,/stateTransaction\.(?:get|set)\('resource\.(?:minePaths|mineOutputs|inventoryLots)'/,
+  'extraction must not deep-copy or replace the three growing keyed maps for each slice');
 assert.doesNotMatch(extractionHandlerSource,/existingBatches\.find\(/,
   'the extraction loop must not rescan the historical batch array for every occurrence');
 
@@ -1094,6 +1106,33 @@ const oneTapLedger=()=>((runtime.countryResourceState('BGD')||{}).mineProduction
 const oneTapLedgerBefore=oneTapLedger();
 assert.ok(oneTapLedgerBefore.length>0,'the one-tap site must create a successful production ledger row');
 const successfulQuantityBefore=oneTapLedgerBefore.reduce((sum,row)=>sum+Number(row.quantity||0),0);
+const oneTapTurn=Number(globalThis.Game.state.simulation.turn)||0;
+const oneTapPeriodId='GAME_DAY_'+oneTapTurn;
+const oneTapResourceState=runtime.countryResourceState('BGD')||{};
+const oneTapOutput=oneTapResourceState.mineOutputs?.[oneTapLedgerBefore[0].mineId];
+assert.equal(oneTapOutput?.productionPeriodId,oneTapPeriodId,
+  'sparse mine-output writes must retain the game-day identity on committed output rows');
+const oneTapPath=oneTapResourceState.minePaths?.[oneTapLedgerBefore[0].mineId];
+const oneTapCurrentStages=(oneTapPath?.stages||[]).filter(stage=>Number(stage?.turn)===oneTapTurn);
+assert.ok(oneTapCurrentStages.length>0,'the extracted mine path must retain its current-day stages');
+assert.ok(oneTapCurrentStages.every(stage=>stage.productionPeriodId===oneTapPeriodId),
+  'newly appended path stages must retain the same production-period identity');
+const probeState=globalThis.Game.state.resource.BGD;
+probeState.mineOutputs=probeState.mineOutputs&&typeof probeState.mineOutputs==='object'?probeState.mineOutputs:{};
+probeState.minePaths=probeState.minePaths&&typeof probeState.minePaths==='object'?probeState.minePaths:{};
+const untouchedProbeKey='__TEST_ONLY_UNTOUCHED_EXTRACTION_HISTORY__';
+probeState.mineOutputs[untouchedProbeKey]={simulationTurn:oneTapTurn,producedQuantity:0};
+probeState.minePaths[untouchedProbeKey]={pathId:untouchedProbeKey,stages:[{stage:'HISTORICAL_SCAN_PROBE',turn:oneTapTurn}]};
+try{
+  await runtime.extractCountry('BGD',[oneTapLedgerBefore[0].mineId]);
+  assert.equal(probeState.mineOutputs[untouchedProbeKey].productionPeriodId,undefined,
+    'a slice must not rewrite unrelated historical mine outputs that happen to share the same turn number');
+  assert.equal(probeState.minePaths[untouchedProbeKey].stages[0].productionPeriodId,undefined,
+    'a slice must not rewrite stages from unrelated historical mine paths');
+}finally{
+  delete probeState.mineOutputs[untouchedProbeKey];
+  delete probeState.minePaths[untouchedProbeKey];
+}
 await runtime.startCountryProduction('BGD',[oneTapSite.siteId]);
 const oneTapLedgerAfter=oneTapLedger();
 assert.equal(oneTapLedgerAfter.length,oneTapLedgerBefore.length,
