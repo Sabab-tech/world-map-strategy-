@@ -375,6 +375,7 @@
       seenEventIdCount:seenEventIds.size,processing:!!inFlightTurnPromise,inFlightTurn,
       deviceProfile:constrainedDevice()?'CONSTRAINED':'STANDARD',
       registeredCountryHandlers:countryHandlers.size,registeredEventHandlers:eventHandlers.size,
+      domainTimings:g.OmegaBootPerformanceMonitor?.getSpanDiagnostics?.('world-scheduler.')||[],
       browserPerformance:g.OmegaBootPerformanceMonitor?.snapshot?.()||null};
   }
   const API=Object.freeze({VERSION,LIMITS,engineIntegrated:true,install,processTurn,activateCountry,deactivateCountry,enqueueEvent,queueEvent:enqueueEvent,registerCountryHandler,registerEventHandler,diagnostics,getCountryRoster:roster,dispose(){try{turnUnregister?.();}catch(_){}try{ledgerUnsubscribe?.();}catch(_){}turnUnregister=null;ledgerUnsubscribe=null;installed=false;return true;}});
