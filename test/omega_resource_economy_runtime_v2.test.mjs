@@ -247,6 +247,8 @@ test('resource extraction phase catches up one stable game-day at a time and rec
     'the universal workload plan must expose resource slices before dependent industrial slices');
   assert.match(economySource,/async function runCheckpointedResourceExtraction\(countryId,endowment,options=\{\}\)/);
   assert.match(economySource,/async function runCheckpointedIndustrialProduction\(countryId,industrial,options=\{\}\)/);
+  assert.match(economySource,/function seedDailyWorkloadCheckpointBaselines\(countryId,sessionId,targetTurn,session\)/,
+    'legacy save baseline migration must run before period scheduling to avoid historical backfill');
 });
 
 test('extraction fiscal batch handlers read and write the growing ledger once per day',()=>{
