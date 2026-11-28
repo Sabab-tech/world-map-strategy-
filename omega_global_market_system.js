@@ -160,6 +160,26 @@
   function createMarketSnapshot(){
     return drainMarketWorkSync(createMarketSnapshotWork({validateDomainKeys:true}));
   }
+  const countries=()=>activeMarketSnapshot?activeMarketSnapshot.countryIds:(()=>{
+    const out=new Set();
+    const resolveRow=row=>{
+      const raw=row&&typeof row==='object'
+        ?(row.iso3||row.iso3Code||row.countryCode||row.country_id||row.countryId||row.canonicalId||row.id||row.code)
+        :row;
+      const value=canonical(raw);
+      if(value&&value!=='[OBJECT OBJECT]')out.add(value);
+    };
+    try{
+      const rows=registry()?.list?.('COUNTRY')||registry()?.list?.()||[];
+      if(Array.isArray(rows))rows.forEach(resolveRow);
+    }catch(_){}
+    const s=state()||{};
+    for(const domain of ['trade','resource','finance','foreign','economy']){
+      const root=s[domain];
+      if(root&&typeof root==='object')Object.keys(root).forEach(resolveRow);
+    }
+    return [...out].filter(Boolean).sort();
+  })();
   function countryValue(c,path){
     const cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();let bucket;
     if(activeMarketSnapshot){
