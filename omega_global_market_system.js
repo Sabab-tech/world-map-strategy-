@@ -77,26 +77,18 @@
   let marketSnapshotIndexCache=null,marketSnapshotCacheHits=0,marketSnapshotCacheBuilds=0;
   let productIndexCache=null,productIndexCacheSources=null,productIndexCacheHits=0,productIndexCacheBuilds=0;
   const MARKET_REFRESH_SLICE_MS=6;
-  function sameDomainKeys(source,expected){
-    if(!source||typeof source!=='object')return!expected||expected.length===0;
-    if(!Array.isArray(expected))return false;
-    let index=0;
-    for(const key in source){
-      if(!Object.prototype.hasOwnProperty.call(source,key))continue;
-      if(expected[index]!==key)return false;
-      index++;
-    }
-    return index===expected.length;
-  }
   function* createMarketSnapshotWork(){
     const root=state()||{},domains=['trade','resource','finance','foreign','economy'];
     const registryRef=registry(),cached=marketSnapshotIndexCache;
     let reusable=!!cached&&cached.root===root&&cached.registry===registryRef;
+    // Country state transactions update values inside existing country buckets. Their
+    // top-level domain objects remain stable for the life of a session, so checking
+    // every country key on every day only repeats a full roster scan without adding
+    // useful freshness. Rebuild on domain identity/session changes instead.
     if(reusable){
       for(const domain of domains){
-        const source=root[domain],keys=cached.domainKeys[domain];
-        if(cached.domainSources[domain]!==((source&&typeof source==='object')?source:null)||
-           !sameDomainKeys(source,keys)){
+        const source=root[domain];
+        if(cached.domainSources[domain]!==((source&&typeof source==='object')?source:null)){
           reusable=false;break;
         }
       }
@@ -109,8 +101,7 @@
       snapshot.cacheHit=true;
       return snapshot;
     }
-    const countryIds=new Set(),buckets=Object.create(null),domainSources=Object.create(null),
-      domainKeys=Object.create(null);
+    const countryIds=new Set(),buckets=Object.create(null),domainSources=Object.create(null);
     let scanned=0;
     const resolveRow=row=>{
       const raw=row&&typeof row==='object'
@@ -130,10 +121,9 @@
     }catch(_){}
     for(const domain of domains){
       const source=root[domain];
-      if(!source||typeof source!=='object'){domainSources[domain]=null;domainKeys[domain]=[];continue;}
+      if(!source||typeof source!=='object'){domainSources[domain]=null;continue;}
       domainSources[domain]=source;
       const index=Object.create(null),keys=Object.keys(source);
-      domainKeys[domain]=keys;
       for(const key of keys){
         const cid=canonical(key);
         if(cid){
@@ -146,9 +136,9 @@
       buckets[domain]=index;
     }
     const countryRows=[...countryIds].filter(Boolean).sort();
-    const snapshot={countryIds:countryRows,buckets,domainSources,domainKeys,
+    const snapshot={countryIds:countryRows,buckets,domainSources,
       currencyByCountry:new Map(),usdRateByCountry:new Map(),cacheHit:false};
-    marketSnapshotIndexCache={root,registry:registryRef,domainSources,domainKeys,buckets,countryIds:countryRows,snapshot};
+    marketSnapshotIndexCache={root,registry:registryRef,domainSources,buckets,countryIds:countryRows,snapshot};
     marketSnapshotCacheBuilds++;
     return snapshot;
   }
@@ -179,7 +169,10 @@
     const cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();let bucket;
     if(activeMarketSnapshot){
       const source=activeMarketSnapshot.domainSources?.[domain],key=activeMarketSnapshot.buckets[domain]?.[cid];
-      bucket=source&&key!==undefined?source[key]:undefined;
+      // Canonical keys remain directly readable even if a country bucket is first
+      // materialized after the one-time structural index was built.
+      bucket=source&&Object.prototype.hasOwnProperty.call(source,cid)?source[cid]:
+        (source&&key!==undefined?source[key]:undefined);
     }else{
       bucket=state()?.[domain];
       if(bucket&&typeof bucket==='object')bucket=bucket[cid]??bucket[Object.keys(bucket).find(k=>canonical(k)===cid)];
@@ -246,12 +239,29 @@
     const p=n(price),r=usdRate(c);if(p===null||r===null)return null;
     return currency(c)==='USD'?p:p/r;
   }
-  function* resourceIdsWork(countryRows){
+  function* resourceIdsWork(countryRows,options={}){
     const ids=new Set;
     let scanned=0;
+    const playerCountryId=options.playerCountryId?canonical(options.playerCountryId):null;
+    const scoped=!!playerCountryId;
     const rt=g.ResourceMinistryEngine?.resourceTypes;
     if(Array.isArray(rt))for(const x of rt)if(x?.id)ids.add(String(x.id));
-    const rows=Array.isArray(countryRows)?countryRows:countries();
+    // A player-day market refresh starts from the authoritative resource/factory
+    // catalog and the selected country's live stock keys. NPC stock is a baseline,
+    // not a daily production feed, so it must not trigger a world inventory scan.
+    if(scoped){
+      const index=currentProductIndex();
+      for(const source of [index.rawById,index.factoryById]){
+        if(!source||typeof source!=='object')continue;
+        for(const key in source){
+          if(!Object.prototype.hasOwnProperty.call(source,key))continue;
+          const row=source[key],resourceId=String(row?.id||key).trim();
+          if(resourceId)ids.add(resourceId);
+          if(++scanned%64===0)yield null;
+        }
+      }
+    }
+    const rows=scoped?[playerCountryId]:(Array.isArray(countryRows)?countryRows:countries());
     const addKeys=function*(source){
       if(!source||typeof source!=='object')return;
       for(const key in source){
@@ -266,24 +276,26 @@
       yield* addKeys(inv);
       yield* addKeys(prod);
       yield* addKeys(cons);
-      const req=countryValue(c,'trade.importRequests');
-      if(Array.isArray(req))for(const row of req){
-        if(row?.resourceId)ids.add(row.resourceId);
-        if(++scanned%64===0)yield null;
-      }
-      const offers=countryValue(c,'trade.offerBook');
-      if(offers&&typeof offers==='object'){
-        if(Array.isArray(offers)){
-          for(const row of offers){
-            if(row?.resourceId)ids.add(row.resourceId);
-            if(++scanned%64===0)yield null;
-          }
-        }else{
-          for(const key in offers){
-            if(!Object.prototype.hasOwnProperty.call(offers,key))continue;
-            const value=offers[key];
-            if(value&&typeof value==='object')ids.add(value.resourceId||key);
-            if(++scanned%64===0)yield null;
+      if(options.includeMarketOrders!==false){
+        const req=countryValue(c,'trade.importRequests');
+        if(Array.isArray(req))for(const row of req){
+          if(row?.resourceId)ids.add(row.resourceId);
+          if(++scanned%64===0)yield null;
+        }
+        const offers=countryValue(c,'trade.offerBook');
+        if(offers&&typeof offers==='object'){
+          if(Array.isArray(offers)){
+            for(const row of offers){
+              if(row?.resourceId)ids.add(row.resourceId);
+              if(++scanned%64===0)yield null;
+            }
+          }else{
+            for(const key in offers){
+              if(!Object.prototype.hasOwnProperty.call(offers,key))continue;
+              const value=offers[key];
+              if(value&&typeof value==='object')ids.add(value.resourceId||key);
+              if(++scanned%64===0)yield null;
+            }
           }
         }
       }
@@ -436,10 +448,11 @@
   }
 
   function pushOrder(book,order){if(!order.resourceId||order.quantity<=0||order.price===null)return;const key=String(order.resourceId);if(!book[key])book[key]={bids:[],asks:[]};book[key][order.side].push(order);}
-  function* indexCountryOrdersWork(countryRows,resourceRows){
+  function* indexCountryOrdersWork(countryRows,resourceRows,options={}){
     const books=Object.create(null),products=Object.create(null),idsByToken=new Map();
+    const scopedPlayerCountryId=options.playerCountryId?canonical(options.playerCountryId):null;
     const counters={countriesScanned:0,importRequestsScanned:0,offerRowsScanned:0,
-      stockResourceRowsScanned:0,ordersIndexed:0};
+      stockResourceRowsScanned:0,stockCountriesScanned:0,nonPlayerStockCountriesSkipped:0,ordersIndexed:0};
     for(const rid of resourceRows){
       books[rid]={bids:[],asks:[]};
       products[rid]=describeProduct(rid);
@@ -453,8 +466,18 @@
       if(workSinceYield>=workLimit){workSinceYield=0;yield null;}
     };
     const pushForResource=(resourceId,side,orderFactory)=>{
-      const targets=idsByToken.get(token(resourceId));
-      if(!targets)return;
+      const normalized=String(resourceId||'').trim(),key=token(normalized);
+      if(!key)return;
+      let targets=idsByToken.get(key);
+      // Trade orders can reference a legacy or newly introduced catalog identity.
+      // Discover it while indexing the order itself instead of scanning every
+      // country's order book a second time in resourceIdsWork.
+      if(!targets){
+        targets=[normalized];idsByToken.set(key,targets);
+        books[normalized]={bids:[],asks:[]};
+        products[normalized]=describeProduct(normalized);
+        resourceRows.push(normalized);
+      }
       for(const rid of targets){
         const order=orderFactory(rid,products[rid]);
         if(!order||!order.resourceId||order.quantity<=0||order.price===null)continue;
@@ -519,6 +542,15 @@
           }
         }
       }
+      // NPCs retain their real posted import requests and seller offers above.
+      // Their untouched baseline inventory is not re-read into daily reference-only
+      // market liquidity. Only the active player's live inventory contributes stock.
+      if(scopedPlayerCountryId&&countryId!==scopedPlayerCountryId){
+        counters.nonPlayerStockCountriesSkipped++;
+        if((countryIndex+1)%8===0)yield null;
+        continue;
+      }
+      counters.stockCountriesScanned++;
       const inv=countryValue(c,'resource.inventory')||{},prod=countryValue(c,'resource.production')||{},
         tradeable=countryValue(c,'resource.tradeAvailability')||{},
         availableStock=countryValue(c,'resource.strategicReserve')?.availableByResource||{};
@@ -545,6 +577,7 @@
       }
       if((countryIndex+1)%8===0)yield null;
     }
+    resourceRows.sort((a,b)=>token(a).localeCompare(token(b)));
     for(const rid of resourceRows){
       books[rid].bids=books[rid].bids.slice(-MAX_ORDERS);
       books[rid].asks=books[rid].asks.slice(-MAX_ORDERS);
@@ -612,8 +645,10 @@
       generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.filter(x=>x.referenceOnly!==true).length,referenceAsks:asks.filter(x=>x.referenceOnly===true).length}};
   }
   function clearResource(rid,orders,history=[]){return drainMarketWorkSync(clearResourceWork(rid,orders,history));}
-  async function rebuildCooperatively(){
+  async function rebuildCooperatively(options={}){
     const previousSnapshot=activeMarketSnapshot,previousProductIndex=activeProductIndex;
+    const playerCountryId=options.playerCountryId?canonical(options.playerCountryId):null;
+    const marketScope=playerCountryId?{playerCountryId,includeMarketOrders:false}:{};
     const startedAt=marketNow(),pacing={sliceStartedAt:startedAt,yieldCount:0,maxSliceMs:0};
     const snapshotYieldStart=pacing.yieldCount,snapshotStartedAt=marketNow();
     activeMarketSnapshot=await drainMarketWorkCooperatively(createMarketSnapshotWork(),pacing);
@@ -634,14 +669,14 @@
     try{
       const markets={},countryRows=activeMarketSnapshot.countryIds;
       const discoveryYieldStart=pacing.yieldCount,discoveryStartedAt=marketNow();
-      const resourceRows=await drainMarketWorkCooperatively(resourceIdsWork(countryRows),pacing);
+      const resourceRows=await drainMarketWorkCooperatively(resourceIdsWork(countryRows,marketScope),pacing);
       const resourceDiscoveryDurationMs=Number(Math.max(0,marketNow()-discoveryStartedAt).toFixed(2));
       const resourceDiscoveryYieldCount=pacing.yieldCount-discoveryYieldStart;
       const seedCountry=countryRows[0];
       const persisted=seedCountry?countryValue(seedCountry,'trade.marketHistory'):{};
       const orderBookStartedAt=marketNow();
       const indexingStartedAt=marketNow();
-      const orderIndex=await drainMarketWorkCooperatively(indexCountryOrdersWork(countryRows,resourceRows),pacing);
+      const orderIndex=await drainMarketWorkCooperatively(indexCountryOrdersWork(countryRows,resourceRows,marketScope),pacing);
       const indexingDurationMs=Number(Math.max(0,marketNow()-indexingStartedAt).toFixed(2));
       for(let index=0;index<resourceRows.length;index++){
         const rid=resourceRows[index],orders=orderIndex.books[rid]||{bids:[],asks:[]};
@@ -655,6 +690,10 @@
       const completedAt=marketNow();
       g.__omegaGlobalMarketRefreshDiagnostics={
         status:'COMPLETED',turn:turn(),countryCount:countryRows.length,resourceCount:resourceRows.length,
+        marketScope:playerCountryId?'PLAYER_COUNTRY_STOCK_PLUS_GLOBAL_ORDERS':'GLOBAL_FULL_INDEX',
+        resourceDiscoveryCountryCount:playerCountryId?1:countryRows.length,
+        stockCountriesScanned:orderIndex.counters.stockCountriesScanned,
+        nonPlayerStockCountriesSkipped:orderIndex.counters.nonPlayerStockCountriesSkipped,
         yieldCount:pacing.yieldCount,snapshotYieldCount,resourceDiscoveryYieldCount,
         snapshotDurationMs,productIndexDurationMs,resourceDiscoveryDurationMs,indexingDurationMs,orderBookDurationMs,
         countriesScanned:orderIndex.counters.countriesScanned,
@@ -1244,7 +1283,7 @@
     }
     const task=(async()=>{
       install();
-      const markets=await rebuildCooperatively();
+      const markets=await rebuildCooperatively({playerCountryId:selected});
       const result=writeProjection(selected,markets);
       const researchResolution=resolveCompanyResearch(selected);
       try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',selected,'trade',{turn:turn(),resources:Object.keys(markets).length},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+selected});}catch(_){}
