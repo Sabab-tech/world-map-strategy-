@@ -2093,6 +2093,31 @@ function batchFromExtraction(x,record){
         return siteId?controllerKeyBySiteId.get(siteId):null;
       }).filter(Boolean))]
       :Object.keys(mineSiteControllers);
+    // Only records touched by this extraction slice need period-ID finalization.
+    // Scanning every historical output/path after every small slice makes later
+    // game days progressively slower as their retained ledgers and path stages grow.
+    const touchedMineOutputKeys=new Set(allSiteKeys);
+    const touchedMinePathStageOffsets=new Map();
+    const rememberMinePathStageOffset=(key,path)=>{
+      const normalized=String(key||'');
+      if(!normalized||touchedMinePathStageOffsets.has(normalized))return;
+      touchedMinePathStageOffsets.set(normalized,Array.isArray(path?.stages)?path.stages.length:0);
+    };
+    for(const key of allSiteKeys){
+      rememberMinePathStageOffset(key,minePaths[key]);
+    }
+    for(const occurrence of selected){
+      const occurrenceKey=String(occurrence?.occurrenceKey||'');
+      const siteKey=String(occurrence?.siteReferenceKey||'');
+      if(occurrenceKey){
+        touchedMineOutputKeys.add(occurrenceKey);
+        rememberMinePathStageOffset(occurrenceKey,minePaths[occurrenceKey]);
+      }
+      if(siteKey){
+        touchedMineOutputKeys.add(siteKey);
+        rememberMinePathStageOffset(siteKey,minePaths[siteKey]);
+      }
+    }
     for(const siteKey of allSiteKeys){
       const controller=mineSiteControllers[siteKey];
       const hasExecutable=Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>0;
@@ -2445,10 +2470,20 @@ function batchFromExtraction(x,record){
         minePaths[fiscalRecord.mineId]=fiscalPath;
       }
     }
-    for(const row of Object.values(mineOutputs))if(n(row?.simulationTurn??row?.turn)===productionPeriodTurn&&!row.productionPeriodId)
-      row.productionPeriodId=productionPeriodId;
-    for(const path of Object.values(minePaths))for(const stage of Array.isArray(path?.stages)?path.stages:[])
-      if(n(stage?.turn)===productionPeriodTurn&&!stage.productionPeriodId)stage.productionPeriodId=productionPeriodId;
+    for(const key of touchedMineOutputKeys){
+      const row=mineOutputs[key];
+      if(row&&n(row?.simulationTurn??row?.turn)===productionPeriodTurn&&!row.productionPeriodId)
+        row.productionPeriodId=productionPeriodId;
+    }
+    for(const [key,startStageIndex] of touchedMinePathStageOffsets){
+      const stages=minePaths[key]?.stages;
+      if(!Array.isArray(stages))continue;
+      for(let i=Math.min(startStageIndex,stages.length);i<stages.length;i++){
+        const stage=stages[i];
+        if(n(stage?.turn)===productionPeriodTurn&&!stage.productionPeriodId)
+          stage.productionPeriodId=productionPeriodId;
+      }
+    }
     const warehouseCheck=boundary()?.validateWarehouse?.(warehouse,c);
     if(warehouseCheck&&!warehouseCheck.ok)return{accepted:false,countryId:c,extracted:0,blocked:[warehouseCheck],records:[]};
     ctx.stateTransaction.set('resource.mineStates',current);
