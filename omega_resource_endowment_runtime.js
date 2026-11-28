@@ -1997,7 +1997,9 @@ function batchFromExtraction(x,record){
       const entries=[...writes.entries()];
       if(entries.some(([key])=>!key||key.includes('.')||key==='__proto__'||key==='constructor')){
         const merged={...(base&&typeof base==='object'?base:{})};
-        for(const [key,value] of entries)merged[key]=value;
+        for(const [key,value] of entries)Object.defineProperty(merged,key,{
+          value,writable:true,enumerable:true,configurable:true
+        });
         ctx.stateTransaction.set(path,merged);
         return;
       }
