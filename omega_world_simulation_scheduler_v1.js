@@ -21,6 +21,11 @@
   const state=()=>sim()?.world?.state||g.Game?.state||g.gameState||null;
   const turnOf=ctx=>Math.max(0,Math.floor(num(ctx?.turn??ctx?.event?.simulationTurn??state()?.simulation?.turn??sim()?.clock?.turn)));
   const clockNow=()=>{try{const n=Number(g.performance?.now?.());if(Number.isFinite(n))return n;}catch(_){}return Date.now();};
+  const recordWorldSpan=(id,start,end,metadata)=>{
+    const monitor=g.OmegaBootPerformanceMonitor;
+    if(!monitor||typeof monitor.recordSpan!=='function')return null;
+    try{return monitor.recordSpan('world-scheduler.'+id,start,end,metadata||{});}catch(_){return null;}
+  };
   function constrainedDevice(){const nav=g.navigator||{},ua=String(nav.userAgent||'');return /Android|iPhone|iPad|Mobile/i.test(ua)||num(nav.deviceMemory,8)<=4||num(nav.hardwareConcurrency,8)<=4;}
   function yieldToBrowser(){
     totalYieldCount++;
@@ -189,7 +194,16 @@
       const handlers=[...eventHandlers.values()].filter(row=>row.eventType===event.eventType||row.eventType==='*')
         .sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence);
       for(const handler of handlers)if(eventHandlers.get(handler.eventType+'::'+handler.id)===handler){
-        try{await handler.handler(clone(event),ctx);}catch(_){totalEvaluationErrors++;}
+        const handlerStartedAt=clockNow();
+        let status='COMPLETED',error=null;
+        try{await handler.handler(clone(event),ctx);}catch(e){totalEvaluationErrors++;status='FAILED';error=String(e?.message||e);}
+        const handlerEndedAt=clockNow();
+        const metrics=recordWorldSpan('event.'+handler.eventType+'.'+handler.id,handlerStartedAt,handlerEndedAt,
+          {turn:ctx.turn,eventType:event.eventType,status});
+        if(metrics&&metrics.durationMs>=0)(event.timingResults||(event.timingResults=[])).push({
+          handlerId:handler.id,status,durationMs:metrics.durationMs,
+          mainThreadBlockingMs:metrics.mainThreadBlockingMs,longTaskCount:metrics.longTaskCount,
+          maxLongTaskMs:metrics.maxLongTaskMs,error});
       }
       done.push({eventId:event.eventId,eventType:event.eventType,priority:event.priority});
       persistEventState(meta);
@@ -203,19 +217,41 @@
     let sliceStartedAt=clockNow();
     for(const h of rows){
       if(countryHandlers.get(h.id)!==h)continue;
-      try{out.push({id:h.id,status:'COMPLETED',result:await h.handler(cid,{...ctx,countryId:cid,tier,state:state(),simulation:sim()})});}
-      catch(e){totalEvaluationErrors++;out.push({id:h.id,status:'FAILED',error:String(e?.message||e)});}
+      const handlerStartedAt=clockNow();
+      let result=null,status='COMPLETED',error=null;
+      try{result=await h.handler(cid,{...ctx,countryId:cid,tier,state:state(),simulation:sim()});}
+      catch(e){totalEvaluationErrors++;status='FAILED';error=String(e?.message||e);}
+      const handlerEndedAt=clockNow();
+      const metrics=recordWorldSpan('handler.'+tier+'.'+h.id,handlerStartedAt,handlerEndedAt,
+        {turn:ctx.turn,countryId:cid,tier,status});
+      out.push({id:h.id,status,result:status==='COMPLETED'?result:null,
+        durationMs:metrics?.durationMs??Number((handlerEndedAt-handlerStartedAt).toFixed(2)),
+        mainThreadBlockingMs:Number.isFinite(metrics?.mainThreadBlockingMs)?metrics.mainThreadBlockingMs:null,
+        longTaskCount:Number.isFinite(metrics?.longTaskCount)?metrics.longTaskCount:null,
+        maxLongTaskMs:Number.isFinite(metrics?.maxLongTaskMs)?metrics.maxLongTaskMs:null,
+        error});
       if(clockNow()-sliceStartedAt>=LIMITS.COUNTRY_BATCH_BUDGET_MS){await yieldToBrowser();sliceStartedAt=clockNow();}
     }
     return out;
   }
   async function evaluateOpponent(cid,turn,tier){
     const rules=g.Omega?.OpponentCountryRules||g.OmegaOpponentCountryRules;if(typeof rules?.evaluateCountry!=='function')return{status:'SKIPPED',reason:'OPPONENT_RULES_UNAVAILABLE'};
+    const startedAt=clockNow();
     try{const result=await rules.evaluateCountry(cid,turn);let queued=0;
       if(result?.status==='COMPLETE'&&typeof rules.queueDecision==='function'){const decisions=(Array.isArray(result.decisions)?result.decisions:[]).filter(row=>{const a=row?.selected?.action||row?.selectedActions?.[0];return!!a&&String(a).toUpperCase()!=='HOLD';}).sort((a,b)=>num(b?.priorityScore??b?.priority)-num(a?.priorityScore??a?.priority)||String(a?.decisionId||'').localeCompare(String(b?.decisionId||'')));
         for(const d of decisions.slice(0,LIMITS.MAX_QUEUED_DECISIONS_PER_COUNTRY))if(rules.queueDecision(d,turn))queued++;}
-      return{status:result?.status||'UNKNOWN',countryId:cid,tier,queued,decisionCount:result?.decisions?.length||0};
-    }catch(e){totalEvaluationErrors++;return{status:'ERROR',countryId:cid,tier,error:String(e?.message||e)};}
+      const endedAt=clockNow();
+      const metrics=recordWorldSpan('npc-evaluation.'+tier,startedAt,endedAt,{turn,countryId:cid,tier,status:result?.status||'UNKNOWN'});
+      return{status:result?.status||'UNKNOWN',countryId:cid,tier,queued,decisionCount:result?.decisions?.length||0,
+        durationMs:metrics?.durationMs??Number((endedAt-startedAt).toFixed(2)),
+        mainThreadBlockingMs:Number.isFinite(metrics?.mainThreadBlockingMs)?metrics.mainThreadBlockingMs:null,
+        longTaskCount:Number.isFinite(metrics?.longTaskCount)?metrics.longTaskCount:null,
+        maxLongTaskMs:Number.isFinite(metrics?.maxLongTaskMs)?metrics.maxLongTaskMs:null};
+    }catch(e){totalEvaluationErrors++;const endedAt=clockNow();
+      const metrics=recordWorldSpan('npc-evaluation.'+tier,startedAt,endedAt,{turn,countryId:cid,tier,status:'ERROR'});
+      return{status:'ERROR',countryId:cid,tier,error:String(e?.message||e),
+        durationMs:metrics?.durationMs??Number((endedAt-startedAt).toFixed(2)),
+        mainThreadBlockingMs:Number.isFinite(metrics?.mainThreadBlockingMs)?metrics.mainThreadBlockingMs:null};}
   }
   function selectActive(meta,turn,player){
     const rows=[];for(const[cid,row]of Object.entries(meta.activeCountries)){if(cid===player){delete meta.activeCountries[cid];continue;}if(num(row?.expiresAtTurn,-1)<turn){delete meta.activeCountries[cid];continue;}rows.push({id:cid,row});}
@@ -342,7 +378,8 @@
       persistedEventCount:Array.isArray(m.pendingEvents)?m.pendingEvents.length:0,
       seenEventIdCount:seenEventIds.size,processing:!!inFlightTurnPromise,inFlightTurn,
       deviceProfile:constrainedDevice()?'CONSTRAINED':'STANDARD',
-      registeredCountryHandlers:countryHandlers.size,registeredEventHandlers:eventHandlers.size};
+      registeredCountryHandlers:countryHandlers.size,registeredEventHandlers:eventHandlers.size,
+      browserPerformance:g.OmegaBootPerformanceMonitor?.snapshot?.()||null};
   }
   const API=Object.freeze({VERSION,LIMITS,engineIntegrated:true,install,processTurn,activateCountry,deactivateCountry,enqueueEvent,queueEvent:enqueueEvent,registerCountryHandler,registerEventHandler,diagnostics,getCountryRoster:roster,dispose(){try{turnUnregister?.();}catch(_){}try{ledgerUnsubscribe?.();}catch(_){}turnUnregister=null;ledgerUnsubscribe=null;installed=false;return true;}});
   g.Omega=g.Omega||{};g.Omega.WorldSimulationScheduler=API;g.OmegaWorldSimulationScheduler=API;
