@@ -163,11 +163,17 @@ test('canonical simulation reports phase and participant execution and blocking 
     assert.equal(phases[id].mainThreadBlockingMs,4);
   }
   assert.ok(h.spans.some(row=>row.id==='simulation.phase.SIMULATE'));
+  assert.ok(h.spans.some(row=>row.id==='simulation.domain.world-ecosystem'));
+  assert.ok(h.spans.some(row=>row.id==='simulation.domain.ministry-pump'));
+  assert.ok(h.spans.some(row=>row.id==='simulation.domain.interoperability-advance'));
   assert.ok(h.spans.some(row=>row.id==='simulation.participant.test.domain.telemetry'));
   assert.equal(participant.lastMainThreadBlockingMs,4);
   assert.equal(participant.lastLongTaskCount,1);
   assert.equal(diagnostics.lastTurnPerformance.turn,8);
   assert.equal(diagnostics.lastTurnPerformance.browser.fps,58);
+  assert.ok(diagnostics.lastTurnPerformance.domains.some(row=>row.id==='world-ecosystem'));
+  assert.ok(diagnostics.lastTurnPerformance.domains.some(row=>row.id==='ministry-pump'));
+  assert.ok(diagnostics.lastTurnPerformance.domains.some(row=>row.id==='interoperability-advance'));
   assert.ok(Number.isFinite(diagnostics.lastTurnPerformance.totalDurationMs));
   assert.equal(participant.sampleCount,8);
   assert.equal(diagnostics.phaseTimings.find(row=>row.id==='SIMULATE').sampleCount,8);
