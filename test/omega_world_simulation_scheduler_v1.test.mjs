@@ -123,6 +123,11 @@ test('world scheduler exposes per-country-handler duration and main-thread block
    spanIds.push({id,metadata});
    return{durationMs:2.5,mainThreadBlockingMs:4,longTaskCount:1,maxLongTaskMs:58};
   },
+  getSpanDiagnostics(prefix){
+   return spanIds.filter(row=>row.id.startsWith(prefix)).map(row=>({
+    id:row.id,sampleCount:1,lastDurationMs:2.5,lastMainThreadBlockingMs:4,lastLongTaskCount:1
+   }));
+  },
   snapshot(){return{fps:60,frameIntervalMsP95:16.7};}
  };
  h.scheduler.registerCountryHandler('test.perf.player-handler',async()=>({status:'COMPLETED'}),
@@ -131,11 +136,12 @@ test('world scheduler exposes per-country-handler duration and main-thread block
  const result=await h.participant.handler({},{
   turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation,stepDurationMs:10000
  });
- const handler=result.player.handlers.find(row=>row.id==='test.perf.player-handler');
- assert.ok(handler,'the selected player country handler should execute');
- assert.equal(handler.durationMs,2.5);
- assert.equal(handler.mainThreadBlockingMs,4);
- assert.equal(handler.longTaskCount,1);
+ assert.equal(result.player.handlers,1,'the selected player country handler should execute');
+ const handler=h.scheduler.diagnostics().domainTimings.find(row=>row.id==='world-scheduler.handler.PLAYER.test.perf.player-handler');
+ assert.ok(handler,'the per-domain timing sample should be visible in diagnostics');
+ assert.equal(handler.lastDurationMs,2.5);
+ assert.equal(handler.lastMainThreadBlockingMs,4);
+ assert.equal(handler.lastLongTaskCount,1);
  assert.ok(spanIds.some(row=>row.id==='world-scheduler.handler.PLAYER.test.perf.player-handler'));
  assert.equal(h.scheduler.diagnostics().browserPerformance.fps,60);
 });
