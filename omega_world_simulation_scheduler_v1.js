@@ -200,10 +200,6 @@
         const handlerEndedAt=clockNow();
         const metrics=recordWorldSpan('event.'+handler.eventType+'.'+handler.id,handlerStartedAt,handlerEndedAt,
           {turn:ctx.turn,eventType:event.eventType,status});
-        if(metrics&&metrics.durationMs>=0)(event.timingResults||(event.timingResults=[])).push({
-          handlerId:handler.id,status,durationMs:metrics.durationMs,
-          mainThreadBlockingMs:metrics.mainThreadBlockingMs,longTaskCount:metrics.longTaskCount,
-          maxLongTaskMs:metrics.maxLongTaskMs,error});
       }
       done.push({eventId:event.eventId,eventType:event.eventType,priority:event.priority});
       persistEventState(meta);
