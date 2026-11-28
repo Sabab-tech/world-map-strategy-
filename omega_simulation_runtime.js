@@ -839,6 +839,7 @@
       this.phaseTimings=new Map();
       this.lastTurnPhaseTimings=[];
       this.lastTurnPerformance=null;
+      this.turnPerformanceHistory=[];
       this.timeDropDiagnostics={count:0,last:null};
       this.turnFinalizers=new Map();
       this.turnFinalizerSequence=0;
@@ -1568,7 +1569,14 @@
         phaseTimings.TOTAL=this.recordPhaseDuration('TOTAL',stepStartedAt,monotonicNow(),{turn});
         this.lastTurnPhaseTimings=clone(phaseTimings);
         this.lastTurnPerformance={turn,totalDurationMs:phaseTimings.TOTAL.durationMs,
-          phases:clone(phaseTimings),browser:global.OmegaBootPerformanceMonitor?.snapshot?.()||null};
+          phases:clone(phaseTimings),browser:global.OmegaBootPerformanceMonitor?.snapshot?.()||null,
+          participants:this.lastTurnParticipantResults.map(row=>({
+            id:row.id,status:row.status,durationMs:row.durationMs??null,
+            mainThreadBlockingMs:row.mainThreadBlockingMs??null,
+            longTaskCount:row.longTaskCount??null,maxLongTaskMs:row.maxLongTaskMs??null
+          }))};
+        this.turnPerformanceHistory.push(clone(this.lastTurnPerformance));
+        if(this.turnPerformanceHistory.length>16)this.turnPerformanceHistory.shift();
         this.lastStepSummary.phases=clone(phaseResults);
         this.lastStepSummary.phaseTimings=clone(phaseTimings);
         this.lastStepSummary.performance=clone(this.lastTurnPerformance);
@@ -1578,7 +1586,14 @@
           {turn:this.clock.turn,status:'FAILED'});
         this.lastTurnPhaseTimings=clone(phaseTimings);
         this.lastTurnPerformance={turn:this.clock.turn,totalDurationMs:phaseTimings.TOTAL.durationMs,
-          phases:clone(phaseTimings),browser:global.OmegaBootPerformanceMonitor?.snapshot?.(),status:'FAILED'};
+          phases:clone(phaseTimings),browser:global.OmegaBootPerformanceMonitor?.snapshot?.(),
+          participants:this.lastTurnParticipantResults.map(row=>({
+            id:row.id,status:row.status,durationMs:row.durationMs??null,
+            mainThreadBlockingMs:row.mainThreadBlockingMs??null,
+            longTaskCount:row.longTaskCount??null,maxLongTaskMs:row.maxLongTaskMs??null
+          })),status:'FAILED'};
+        this.turnPerformanceHistory.push(clone(this.lastTurnPerformance));
+        if(this.turnPerformanceHistory.length>16)this.turnPerformanceHistory.shift();
         this.lastError=String(error?.message||error);
         this.status='ERROR';
         this.clock.pause();
@@ -1828,6 +1843,7 @@
         phaseTimings:this.phaseDiagnostics(),
         lastTurnPhaseTimings:clone(this.lastTurnPhaseTimings),
         lastTurnPerformance:clone(this.lastTurnPerformance),
+        recentTurnPerformance:clone(this.turnPerformanceHistory.slice(-8)),
         browserPerformance:global.OmegaBootPerformanceMonitor?.snapshot?.()||null,
         timeDiscards:{
           totalScaledMs:Number(this.clock.droppedScaledTimeMs.toFixed(2)),
