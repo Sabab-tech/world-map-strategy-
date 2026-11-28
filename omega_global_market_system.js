@@ -76,7 +76,6 @@
   let rebuildCountryInFlight=null;
   let marketSnapshotIndexCache=null,marketSnapshotCacheHits=0,marketSnapshotCacheBuilds=0;
   let productIndexCache=null,productIndexCacheSources=null,productIndexCacheHits=0,productIndexCacheBuilds=0;
-  let lastProductIndexCacheHit=false;
   const MARKET_REFRESH_SLICE_MS=6;
   function* createMarketSnapshotWork(){
     const root=state()||{},domains=['trade','resource','finance','foreign','economy'];
@@ -348,22 +347,15 @@
     const productUses=catalog?.productUseCatalog?.products||null;
     const processingRules=catalog?.processingRules||null;
     const downstreamRecipes=catalog?.downstreamFactoryRecipes||null;
-    const resourceCount=Array.isArray(resourceRows)?resourceRows.length:0;
-    const processingRuleCount=processingRules&&typeof processingRules==='object'?Object.keys(processingRules).length:0;
-    const downstreamRecipeCount=downstreamRecipes&&typeof downstreamRecipes==='object'?Object.keys(downstreamRecipes).length:0;
-    const productUseCount=productUses&&typeof productUses==='object'?Object.keys(productUses).length:0;
     const cached=productIndexCacheSources;
     if(productIndexCache&&cached&&cached.resourceRows===resourceRows&&cached.catalog===catalog&&
        cached.productUses===productUses&&cached.processingRules===processingRules&&
-       cached.downstreamRecipes===downstreamRecipes&&cached.resourceCount===resourceCount&&
-       cached.processingRuleCount===processingRuleCount&&cached.downstreamRecipeCount===downstreamRecipeCount&&
-       cached.productUseCount===productUseCount){
-      productIndexCacheHits++;lastProductIndexCacheHit=true;return productIndexCache;
+       cached.downstreamRecipes===downstreamRecipes){
+      productIndexCacheHits++;return productIndexCache;
     }
     productIndexCache=buildProductIndex();
-    productIndexCacheSources={resourceRows,catalog,productUses,processingRules,downstreamRecipes,
-      resourceCount,processingRuleCount,downstreamRecipeCount,productUseCount};
-    productIndexCacheBuilds++;lastProductIndexCacheHit=false;
+    productIndexCacheSources={resourceRows,catalog,productUses,processingRules,downstreamRecipes};
+    productIndexCacheBuilds++;
     return productIndexCache;
   }
   function describeProduct(resourceId){
@@ -1238,8 +1230,11 @@
     if(!g.__omegaGlobalMarketHook){
       g.__omegaGlobalMarketHook=true;
       g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
-      g.addEventListener?.('OMEGA_READY',function(){marketSnapshotIndexCache=null;install();});
-      g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',function(){marketSnapshotIndexCache=null;install();});
+      const invalidateMarketIndexes=function(){
+        marketSnapshotIndexCache=null;productIndexCache=null;productIndexCacheSources=null;
+      };
+      g.addEventListener?.('OMEGA_READY',function(){invalidateMarketIndexes();install();});
+      g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',function(){invalidateMarketIndexes();install();});
     }
     if(state()?.simulation?.turn!==undefined)rebuild();
     return diagnostics();
