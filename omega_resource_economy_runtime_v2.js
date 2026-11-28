@@ -3598,18 +3598,26 @@
   }
   function runTurnCore(cid){
     var perfEnabled=g.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
+    var bootPerformance=g.OmegaBootPerformanceMonitor;
+    var telemetryEnabled=!!(bootPerformance&&typeof bootPerformance.recordSpan==='function');
     var perfStarted=perfEnabled?(typeof performance!=='undefined'&&typeof performance.now==='function'?performance.now():Date.now()):0;
     var perfProfile=perfEnabled?{turn:turn(),countryId:cid,phases:[]}:null;
     if(perfEnabled)g.__OMEGA_RESOURCE_ECONOMY_LAST_TURN_PROFILE=perfProfile;
     function measure(label,work){
-      if(!perfEnabled)return work();
+      if(!perfEnabled&&!telemetryEnabled)return work();
       var started=typeof performance!=='undefined'&&typeof performance.now==='function'?performance.now():Date.now();
       function finish(status,error){
         var ended=typeof performance!=='undefined'&&typeof performance.now==='function'?performance.now():Date.now();
         var row={label:label,status:status,durationMs:Number((ended-started).toFixed(2))};
         if(error)row.error=String(error&&error.message||error);
-        perfProfile.phases.push(row);
-        try{console.info('[SAB34_PROGRESS] RESOURCE_ECONOMY_PHASE '+JSON.stringify(Object.assign({turn:turn(),countryId:cid},row)));}catch(_){}
+        if(telemetryEnabled){
+          try{bootPerformance.recordSpan('resource-economy.'+label,started,ended,
+            {turn:turn(),countryId:cid,status:status});}catch(_){}
+        }
+        if(perfEnabled){
+          perfProfile.phases.push(row);
+          try{console.info('[SAB34_PROGRESS] RESOURCE_ECONOMY_PHASE '+JSON.stringify(Object.assign({turn:turn(),countryId:cid},row)));}catch(_){}
+        }
       }
       try{
         var value=work();

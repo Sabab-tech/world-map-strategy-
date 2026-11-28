@@ -20,6 +20,11 @@
   const canonical=v=>String(v||'').trim().toUpperCase();
   const isObject=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
   const now=()=>{try{const v=Number(g.performance?.now?.());if(Number.isFinite(v))return v;}catch(_){}return Date.now();};
+  const recordDomainSpan=(id,start,end,metadata)=>{
+    const monitor=g.OmegaBootPerformanceMonitor;
+    if(!monitor||typeof monitor.recordSpan!=='function')return null;
+    try{return monitor.recordSpan('daily-workload.'+id,start,end,metadata||{});}catch(_){return null;}
+  };
   const state=()=>g.Omega?.Simulation?.world?.state||g.Game?.state||g.gameState||null;
   function constrained(){
     const nav=g.navigator||{},ua=String(nav.userAgent||'');
@@ -125,14 +130,23 @@
           remainingSliceBudgetMs:Math.max(0,budgetMs-(now()-startedAt)),
           sliceIndex:processedSlices});
       }catch(error){value={status:'FAILED',reason:String(error?.message||error)};}
-      const durationMs=Math.max(0,now()-runStarted);
+      const endedAt=now();
+      const durationMs=Math.max(0,endedAt-runStarted);
+      const browserMetrics=recordDomainSpan(entry.id,runStarted,endedAt,
+        {targetTurn,periodTurn,countryId,status:String(value?.status||'UNKNOWN')});
+      const timingFields={
+        mainThreadBlockingMs:Number.isFinite(browserMetrics?.mainThreadBlockingMs)?browserMetrics.mainThreadBlockingMs:null,
+        longTaskCount:Number.isFinite(browserMetrics?.longTaskCount)?browserMetrics.longTaskCount:null,
+        maxLongTaskMs:Number.isFinite(browserMetrics?.maxLongTaskMs)?browserMetrics.maxLongTaskMs:null,
+        longAnimationFrameCount:Number.isFinite(browserMetrics?.longAnimationFrameCount)?browserMetrics.longAnimationFrameCount:null
+      };
       const nextProgress=refresh(entry);
       const status=String(value?.status||'UNKNOWN').toUpperCase();
       if(status==='FAILED'||status==='BLOCKED'||status==='WAITING'||status==='NOT_AVAILABLE'){
         failure={domainId:entry.id,periodTurn,reason:value?.reason||status,result:value||null};
         totalFailures++;store.counters.failures=num(store.counters.failures)+1;
         const row={id:entry.id,pageId:entry.pageId,periodTurn,status:'FAILED',
-          reason:failure.reason,durationMs};
+          reason:failure.reason,durationMs,...timingFields};
         results.push(row);store.domains[entry.id]={...(store.domains[entry.id]||{}),lastAttemptTurn:targetTurn,
           lastPeriodTurn:periodTurn,lastStatus:'FAILED',lastError:failure.reason,lastDurationMs:durationMs};
         break;
@@ -140,7 +154,7 @@
       if(nextProgress.lastProcessedTurn<periodTurn){
         failure={domainId:entry.id,periodTurn,reason:'DOMAIN_SLICE_DID_NOT_ADVANCE_RECONCILED_CHECKPOINT',result:value||null};
         totalFailures++;store.counters.failures=num(store.counters.failures)+1;
-        results.push({id:entry.id,pageId:entry.pageId,periodTurn,status:'FAILED',reason:failure.reason,durationMs});
+        results.push({id:entry.id,pageId:entry.pageId,periodTurn,status:'FAILED',reason:failure.reason,durationMs,...timingFields});
         store.domains[entry.id]={...(store.domains[entry.id]||{}),lastAttemptTurn:targetTurn,
           lastPeriodTurn:periodTurn,lastStatus:'PENDING',lastError:failure.reason,lastDurationMs:durationMs};
         break;
@@ -156,7 +170,7 @@
         completedSlices:num(previous.completedSlices)+1,pageId:entry.pageId};
       results.push({id:entry.id,pageId:entry.pageId,periodTurn,status:'COMPLETED',
         lastProcessedTurn:nextProgress.lastProcessedTurn,durationMs:Number(durationMs.toFixed(2)),
-        result:value||null});
+        ...timingFields,result:value||null});
       // Always give the UI a chance between atomic domain-period transactions.
       await yieldToUi();
       // Reserve one initial pass for each enabled domain before optional catch-up
@@ -199,7 +213,12 @@
         priority:row.priority,dependencies:row.dependencies,enabled:row.enabled,disabledReason:row.disabledReason})),
       domainCount:domains.size,totalSlices,totalFailures,totalYields,lastPlan:lastPlan?{
         status:lastPlan.status,countryId:lastPlan.countryId,targetTurn:lastPlan.targetTurn,
-        processedSlices:lastPlan.processedSlices,elapsedMs:lastPlan.elapsedMs,pending:lastPlan.pending}:store?.lastPlan||null};
+        processedSlices:lastPlan.processedSlices,elapsedMs:lastPlan.elapsedMs,pending:lastPlan.pending,
+        results:Array.isArray(lastPlan.results)?lastPlan.results.map(row=>({
+          id:row.id,periodTurn:row.periodTurn,status:row.status,durationMs:row.durationMs,
+          mainThreadBlockingMs:row.mainThreadBlockingMs??null,longTaskCount:row.longTaskCount??null,
+          maxLongTaskMs:row.maxLongTaskMs??null,longAnimationFrameCount:row.longAnimationFrameCount??null
+        })):[]}:store?.lastPlan||null};
   }
   const API=Object.freeze({VERSION,LIMITS,registerDomain,runPlan,diagnostics,
     dispose(){domains.clear();inFlightKey=null;inFlightPromise=null;return true;}});

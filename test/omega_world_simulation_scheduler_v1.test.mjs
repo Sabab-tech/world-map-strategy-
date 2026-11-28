@@ -16,7 +16,7 @@ function harness(count=197,existingState=null,userAgent=''){
  const scheduler=sandbox.Omega.WorldSimulationScheduler,participant=participants.get('omega.world-simulation.scheduler.v1');
  assert.ok(participant,'scheduler must register one canonical turn participant');
  scheduler.registerCountryHandler('test.player-active-handler',async(cid,ctx)=>handled.push({countryId:cid,tier:ctx.tier,turn:ctx.turn}),{tiers:['PLAYER','ACTIVE']});
- return{ids,participants,listeners,evaluations,queued,handled,yields:()=>yields,rosterCalls:()=>rosterCalls,state,simulation,scheduler,participant};
+ return{ids,participants,listeners,evaluations,queued,handled,yields:()=>yields,rosterCalls:()=>rosterCalls,state,simulation,scheduler,participant,sandbox};
 }
 test('100-game-day schedule is bounded and all 196 non-player test countries are evaluated',async()=>{
  const h=harness(197);
@@ -112,4 +112,36 @@ test('concurrent callbacks for one turn share one execution and do not duplicate
    'opponent evaluations must not be doubled');
  assert.equal(h.scheduler.diagnostics().processing,false);
  assert.equal(h.scheduler.diagnostics().inFlightTurn,null);
+});
+
+
+test('world scheduler exposes per-country-handler duration and main-thread blocking',async()=>{
+ const h=harness(12);
+ const spanIds=[];
+ h.sandbox.OmegaBootPerformanceMonitor={
+  recordSpan(id,start,end,metadata){
+   spanIds.push({id,metadata});
+   return{durationMs:2.5,mainThreadBlockingMs:4,longTaskCount:1,maxLongTaskMs:58};
+  },
+  getSpanDiagnostics(prefix){
+   return spanIds.filter(row=>row.id.startsWith(prefix)).map(row=>({
+    id:row.id,sampleCount:1,lastDurationMs:2.5,lastMainThreadBlockingMs:4,lastLongTaskCount:1
+   }));
+  },
+  snapshot(){return{fps:60,frameIntervalMsP95:16.7};}
+ };
+ h.scheduler.registerCountryHandler('test.perf.player-handler',async()=>({status:'COMPLETED'}),
+  {tiers:['PLAYER'],priority:5});
+ h.state.simulation.turn=1;h.simulation.clock.turn=1;
+ const result=await h.participant.handler({},{
+  turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation,stepDurationMs:10000
+ });
+ assert.equal(result.player.handlers,2,'both registered player handlers should execute');
+ const handler=h.scheduler.diagnostics().domainTimings.find(row=>row.id==='world-scheduler.handler.PLAYER.test.perf.player-handler');
+ assert.ok(handler,'the per-domain timing sample should be visible in diagnostics');
+ assert.equal(handler.lastDurationMs,2.5);
+ assert.equal(handler.lastMainThreadBlockingMs,4);
+ assert.equal(handler.lastLongTaskCount,1);
+ assert.ok(spanIds.some(row=>row.id==='world-scheduler.handler.PLAYER.test.perf.player-handler'));
+ assert.equal(h.scheduler.diagnostics().browserPerformance.fps,60);
 });
