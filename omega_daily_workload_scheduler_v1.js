@@ -214,7 +214,11 @@
       domainCount:domains.size,totalSlices,totalFailures,totalYields,lastPlan:lastPlan?{
         status:lastPlan.status,countryId:lastPlan.countryId,targetTurn:lastPlan.targetTurn,
         processedSlices:lastPlan.processedSlices,elapsedMs:lastPlan.elapsedMs,pending:lastPlan.pending,
-        results:Array.isArray(lastPlan.results)?lastPlan.results.map(row=>({...row})):[]}:store?.lastPlan||null};
+        results:Array.isArray(lastPlan.results)?lastPlan.results.map(row=>({
+          id:row.id,periodTurn:row.periodTurn,status:row.status,durationMs:row.durationMs,
+          mainThreadBlockingMs:row.mainThreadBlockingMs??null,longTaskCount:row.longTaskCount??null,
+          maxLongTaskMs:row.maxLongTaskMs??null,longAnimationFrameCount:row.longAnimationFrameCount??null
+        })):[]}:store?.lastPlan||null};
   }
   const API=Object.freeze({VERSION,LIMITS,registerDomain,runPlan,diagnostics,
     dispose(){domains.clear();inFlightKey=null;inFlightPromise=null;return true;}});
