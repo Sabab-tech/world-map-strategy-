@@ -151,7 +151,9 @@ test('canonical simulation reports phase and participant execution and blocking 
   sim.createSession({playerCountryId:'BANGLADESH'});
   sim.registerTurnParticipant('test.domain.telemetry',async()=>({status:'COMPLETED'}),{priority:20});
 
-  const result = await h.sandbox.Omega.GameSession.advance(1);
+  const batch = await h.sandbox.Omega.GameSession.advance(8);
+  assert.equal(batch.steps,8);
+  assert.equal(batch.turn,8);
   const diagnostics = sim.diagnostics();
   const phases = diagnostics.lastTurnPhaseTimings;
   const participant = diagnostics.turnParticipants.find(row=>row.id==='test.domain.telemetry');
@@ -164,8 +166,12 @@ test('canonical simulation reports phase and participant execution and blocking 
   assert.ok(h.spans.some(row=>row.id==='simulation.participant.test.domain.telemetry'));
   assert.equal(participant.lastMainThreadBlockingMs,4);
   assert.equal(participant.lastLongTaskCount,1);
+  assert.equal(diagnostics.lastTurnPerformance.turn,8);
   assert.equal(diagnostics.lastTurnPerformance.browser.fps,58);
-  assert.ok(Number.isFinite(result.performance.totalDurationMs));
+  assert.ok(Number.isFinite(diagnostics.lastTurnPerformance.totalDurationMs));
+  assert.equal(participant.sampleCount,8);
+  assert.equal(diagnostics.phaseTimings.find(row=>row.id==='SIMULATE').sampleCount,8);
+  assert.equal(h.state.simulation.turn,8);
   assert.equal(h.state.simulation.participantTimings,undefined,
     'performance samples must remain process-local and outside persisted world state');
 });
