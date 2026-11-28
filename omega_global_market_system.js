@@ -74,9 +74,28 @@
   let activeMarketSnapshot=null;
   let activeProductIndex=null;
   let rebuildCountryInFlight=null;
+  let marketSnapshotIndexCache=null,marketSnapshotCacheHits=0,marketSnapshotCacheBuilds=0;
+  let productIndexCache=null,productIndexCacheSources=null,productIndexCacheHits=0,productIndexCacheBuilds=0;
+  let lastProductIndexCacheHit=false;
   const MARKET_REFRESH_SLICE_MS=6;
   function* createMarketSnapshotWork(){
-    const root=state()||{},countryIds=new Set();
+    const root=state()||{},domains=['trade','resource','finance','foreign','economy'];
+    const registryRef=registry(),cached=marketSnapshotIndexCache;
+    let reusable=!!cached&&cached.root===root&&cached.registry===registryRef;
+    if(reusable){
+      for(const domain of domains){
+        const source=root[domain];
+        if(cached.domainSources[domain]!==((source&&typeof source==='object')?source:null)){
+          reusable=false;break;
+        }
+      }
+    }
+    if(reusable){
+      marketSnapshotCacheHits++;
+      return{countryIds:cached.countryIds,buckets:cached.buckets,domainSources:cached.domainSources,
+        currencyByCountry:new Map(),usdRateByCountry:new Map(),cacheHit:true};
+    }
+    const countryIds=new Set(),buckets=Object.create(null),domainSources=Object.create(null);
     let scanned=0;
     const resolveRow=row=>{
       const raw=row&&typeof row==='object'
@@ -86,7 +105,7 @@
       if(value&&value!=='[OBJECT OBJECT]')countryIds.add(value);
     };
     try{
-      const rows=registry()?.list?.('COUNTRY')||registry()?.list?.()||[];
+      const rows=registryRef?.list?.('COUNTRY')||registryRef?.list?.()||[];
       if(Array.isArray(rows)){
         for(const row of rows){
           resolveRow(row);
@@ -94,35 +113,26 @@
         }
       }
     }catch(_){}
-    const domains=['trade','resource','finance','foreign','economy'];
     for(const domain of domains){
       const source=root[domain];
-      if(!source||typeof source!=='object')continue;
-      const keys=Object.keys(source);
-      for(const key of keys){
-        resolveRow(key);
-        if(++scanned%8===0)yield null;
-      }
-    }
-    const buckets=Object.create(null);
-    for(const domain of domains){
-      const source=root[domain];
-      if(!source||typeof source!=='object')continue;
-      const index=Object.create(null);
-      const keys=Object.keys(source);
+      if(!source||typeof source!=='object'){domainSources[domain]=null;continue;}
+      domainSources[domain]=source;
+      const index=Object.create(null),keys=Object.keys(source);
       for(const key of keys){
         const cid=canonical(key);
-        if(cid&&!Object.prototype.hasOwnProperty.call(index,cid))index[cid]=source[key];
-        if(++scanned%8===0)yield null;
-      }
-      // Preserve the old direct-key preference when canonical and alias keys coexist.
-      for(const cid of countryIds){
-        if(Object.prototype.hasOwnProperty.call(source,cid))index[cid]=source[cid];
+        if(cid){
+          countryIds.add(cid);
+          // A direct canonical key must win over an alias regardless of key order.
+          if(key===cid||!Object.prototype.hasOwnProperty.call(index,cid))index[cid]=key;
+        }
         if(++scanned%8===0)yield null;
       }
       buckets[domain]=index;
     }
-    return{countryIds:[...countryIds].filter(Boolean).sort(),buckets,currencyByCountry:new Map(),usdRateByCountry:new Map()};
+    const countryRows=[...countryIds].filter(Boolean).sort();
+    marketSnapshotIndexCache={root,registry:registryRef,domainSources,buckets,countryIds:countryRows};
+    marketSnapshotCacheBuilds++;
+    return{countryIds:countryRows,buckets,domainSources,currencyByCountry:new Map(),usdRateByCountry:new Map(),cacheHit:false};
   }
   function createMarketSnapshot(){
     return drainMarketWorkSync(createMarketSnapshotWork());
@@ -149,8 +159,10 @@
   })();
   function countryValue(c,path){
     const cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();let bucket;
-    if(activeMarketSnapshot)bucket=activeMarketSnapshot.buckets[domain]?.[cid];
-    else{
+    if(activeMarketSnapshot){
+      const source=activeMarketSnapshot.domainSources?.[domain],key=activeMarketSnapshot.buckets[domain]?.[cid];
+      bucket=source&&key!==undefined?source[key]:undefined;
+    }else{
       bucket=state()?.[domain];
       if(bucket&&typeof bucket==='object')bucket=bucket[cid]??bucket[Object.keys(bucket).find(k=>canonical(k)===cid)];
     }
@@ -328,7 +340,32 @@
     });
     return{rawById:rawById,factoryById:factoryById};
   }
-  function currentProductIndex(){return activeProductIndex||buildProductIndex();}
+  function currentProductIndex(){
+    if(activeProductIndex)return activeProductIndex;
+    const resourceRows=g.ResourceMinistryEngine?.resourceTypes||null;
+    const catalog=g.OmegaResourceIndustrialCatalogData||g.Omega?.ResourceIndustrialCatalogData||
+      g.OmegaResourceIndustrialNetwork?.catalog||g.Omega?.ResourceIndustrialNetwork?.catalog||null;
+    const productUses=catalog?.productUseCatalog?.products||null;
+    const processingRules=catalog?.processingRules||null;
+    const downstreamRecipes=catalog?.downstreamFactoryRecipes||null;
+    const resourceCount=Array.isArray(resourceRows)?resourceRows.length:0;
+    const processingRuleCount=processingRules&&typeof processingRules==='object'?Object.keys(processingRules).length:0;
+    const downstreamRecipeCount=downstreamRecipes&&typeof downstreamRecipes==='object'?Object.keys(downstreamRecipes).length:0;
+    const productUseCount=productUses&&typeof productUses==='object'?Object.keys(productUses).length:0;
+    const cached=productIndexCacheSources;
+    if(productIndexCache&&cached&&cached.resourceRows===resourceRows&&cached.catalog===catalog&&
+       cached.productUses===productUses&&cached.processingRules===processingRules&&
+       cached.downstreamRecipes===downstreamRecipes&&cached.resourceCount===resourceCount&&
+       cached.processingRuleCount===processingRuleCount&&cached.downstreamRecipeCount===downstreamRecipeCount&&
+       cached.productUseCount===productUseCount){
+      productIndexCacheHits++;lastProductIndexCacheHit=true;return productIndexCache;
+    }
+    productIndexCache=buildProductIndex();
+    productIndexCacheSources={resourceRows,catalog,productUses,processingRules,downstreamRecipes,
+      resourceCount,processingRuleCount,downstreamRecipeCount,productUseCount};
+    productIndexCacheBuilds++;lastProductIndexCacheHit=false;
+    return productIndexCache;
+  }
   function describeProduct(resourceId){
     const key=token(resourceId),index=currentProductIndex();
     const row=index.rawById[key]||index.factoryById[key];
@@ -557,7 +594,7 @@
     const snapshotDurationMs=Number(Math.max(0,marketNow()-snapshotStartedAt).toFixed(2));
     const snapshotYieldCount=pacing.yieldCount-snapshotYieldStart;
     const productIndexStartedAt=marketNow();
-    activeProductIndex=buildProductIndex();
+    activeProductIndex=currentProductIndex();
     const productIndexDurationMs=Number(Math.max(0,marketNow()-productIndexStartedAt).toFixed(2));
     try{
       const markets={},countryRows=activeMarketSnapshot.countryIds.slice();
@@ -604,7 +641,7 @@
     if(rebuildCountryInFlight)return g.__OmegaMarketBooks||{};
     const previousSnapshot=activeMarketSnapshot,previousProductIndex=activeProductIndex;
     activeMarketSnapshot=createMarketSnapshot();
-    activeProductIndex=buildProductIndex();
+    activeProductIndex=currentProductIndex();
     try{
       const markets={},countryRows=countries(),
         resourceRows=drainMarketWorkSync(resourceIdsWork(countryRows));
@@ -1191,15 +1228,18 @@
   }
   function diagnostics(){
     const markets=g.__OmegaMarketBooks||{},rows=Object.values(markets),catalogRows=productCatalog();
-    return{version:VERSION,handlerInstalled:!!interop()?.commandHandlers?.has?.('OMEGA_MARKET_PUBLISH_PROJECTION'),resourceMarkets:rows.length,clearedMarkets:rows.filter(x=>x.clearing?.status==='CLEARED').length,marketOrderCount:rows.reduce((s,x)=>s+(x.orders?.bids?.length||0)+(x.orders?.asks?.length||0),0),rawResourceProducts:catalogRows.filter(x=>x.productType==='RAW_RESOURCE').length,factoryProducts:catalogRows.filter(x=>x.productType==='FACTORY_PRODUCT').length,lastCountryRefresh:clone(g.__omegaGlobalMarketRefreshDiagnostics||null),refreshInFlight:!!rebuildCountryInFlight,numeraire:'USD',settlementAuthority:'PRICE_DISCOVERY_ONLY'};
+    return{version:VERSION,handlerInstalled:!!interop()?.commandHandlers?.has?.('OMEGA_MARKET_PUBLISH_PROJECTION'),resourceMarkets:rows.length,clearedMarkets:rows.filter(x=>x.clearing?.status==='CLEARED').length,marketOrderCount:rows.reduce((s,x)=>s+(x.orders?.bids?.length||0)+(x.orders?.asks?.length||0),0),rawResourceProducts:catalogRows.filter(x=>x.productType==='RAW_RESOURCE').length,factoryProducts:catalogRows.filter(x=>x.productType==='FACTORY_PRODUCT').length,lastCountryRefresh:clone(g.__omegaGlobalMarketRefreshDiagnostics||null),refreshInFlight:!!rebuildCountryInFlight,
+      snapshotIndexCacheHits:marketSnapshotCacheHits,snapshotIndexCacheBuilds:marketSnapshotCacheBuilds,
+      productIndexCacheHits:productIndexCacheHits,productIndexCacheBuilds:productIndexCacheBuilds,
+      numeraire:'USD',settlementAuthority:'PRICE_DISCOVERY_ONLY'};
   }
   function init(){
     install();
     if(!g.__omegaGlobalMarketHook){
       g.__omegaGlobalMarketHook=true;
       g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
-      g.addEventListener?.('OMEGA_READY',install);
-      g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',install);
+      g.addEventListener?.('OMEGA_READY',function(){marketSnapshotIndexCache=null;install();});
+      g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',function(){marketSnapshotIndexCache=null;install();});
     }
     if(state()?.simulation?.turn!==undefined)rebuild();
     return diagnostics();
