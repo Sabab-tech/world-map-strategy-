@@ -1705,12 +1705,14 @@ test('daily resource health publication avoids building the full dashboard snaps
   assert.notEqual(turnStart,-1,'the canonical resource-economy turn runner must exist');
   const healthPublication=source.indexOf("measure('dashboard-health',function(){return dashboardHealth(cid);})",turnStart);
   assert.ok(healthPublication>turnStart,'the committed turn must compute only its lightweight health payload');
-  assert.doesNotMatch(source.slice(turnStart,source.indexOf("function installResourceEconomyTurnParticipant",turnStart)),
-    /dashboard-build[\\s\\S]*dashboard\\(cid\\)/,
+  const turnEnd=source.indexOf("function installResourceEconomyTurnParticipant",turnStart);
+  assert.ok(turnEnd>turnStart,'the resource turn runner boundary must be identifiable');
+  const turnCore=source.slice(turnStart,turnEnd);
+  assert.ok(!turnCore.includes("dashboard-build")&&!turnCore.includes("dashboard(cid)"),
     'the daily turn must not materialize the full Resource Ministry dashboard');
 
   const helperStart=source.indexOf('function dashboardHealth(c){');
-  const helperEnd=source.indexOf('\\n  function dashboard(c){',helperStart);
+  const helperEnd=source.indexOf('  function dashboard(c){',helperStart);
   assert.ok(helperStart>=0&&helperEnd>helperStart,'the lightweight health helper must be present before the full dashboard');
   const helperSource=source.slice(helperStart,helperEnd);
   assert.doesNotMatch(helperSource,/cloneInventoryQuantities|mineProductionLedger|factoryInputEvents|minePaths|inventoryLots|offerBook/,
