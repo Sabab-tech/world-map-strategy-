@@ -107,7 +107,8 @@
     "test:private-international-investment": "node --check omega_private_international_investment_runtime_v1.js && node --check omega_autonomous_private_investment_decision_engine_v1.js && node --test test/omega_private_international_investment_runtime_v1.test.mjs test/omega_autonomous_private_investment_decision_engine_v1.test.mjs",
     "test:government-investment": "node --check omega_government_international_investment_runtime_v1.js && node --check omega_government_international_investment_ui_v1.js && node --check test/omega_government_international_investment_runtime_v1.test.mjs && node --check test/omega_government_international_investment_ui_v1.test.mjs && node --test test/omega_government_international_investment_runtime_v1.test.mjs test/omega_government_international_investment_ui_v1.test.mjs",
     "test:commercial-baseline": "node --check omega_autonomous_national_trade_decision_engine_v1.js && node --check omega_phase6_national_population_capacity_runtime_v1.js && node --check scripts/build_omega_commercial_partner_profiles_v1.mjs && node --test test/omega_global_commercial_baseline_v1.test.mjs test/omega_commercial_role_baseline_v1.test.mjs test/omega_commercial_partner_profile_ingest_v1.test.mjs test/omega_phase6_national_population_capacity_runtime_v1.test.mjs test/omega_simulation_phase6_save_provenance.test.mjs",
-    "test:omega-economy-phase-audit": "node --test test/omega_economy_phase_architecture_audit_v1.test.mjs"
+    "test:omega-economy-phase-audit": "node --test test/omega_economy_phase_architecture_audit_v1.test.mjs test/omega_daily_workload_scheduler_v1.test.mjs",
+    "test:daily-workload-scheduler": "node --test test/omega_daily_workload_scheduler_v1.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
