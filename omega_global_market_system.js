@@ -103,6 +103,9 @@
     }
     if(reusable){
       marketSnapshotCacheHits++;
+      // Preserve a cooperative boundary before order-book collection without
+      // rebuilding the unchanged country/domain indexes.
+      yield null;
       return{countryIds:cached.countryIds,buckets:cached.buckets,domainSources:cached.domainSources,
         domainKeys:cached.domainKeys,currencyByCountry:new Map(),usdRateByCountry:new Map(),cacheHit:true};
     }
