@@ -1697,3 +1697,59 @@ test('industrial journal completion follows reconciliation; failed reconciliatio
   assert.match(reconcile,/batchesById=new Map\(\)/,
     'period batch identities must be indexed once while preserving duplicate detection');
 });
+
+
+test('daily resource health publication avoids building the full dashboard snapshot',()=>{
+  const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  const turnStart=source.indexOf('function runTurnCore(cid){');
+  assert.notEqual(turnStart,-1,'the canonical resource-economy turn runner must exist');
+  const healthPublication=source.indexOf("measure('dashboard-health',function(){return dashboardHealth(cid);})",turnStart);
+  assert.ok(healthPublication>turnStart,'the committed turn must compute only its lightweight health payload');
+  assert.doesNotMatch(source.slice(turnStart,source.indexOf("function installResourceEconomyTurnParticipant",turnStart)),
+    /dashboard-build[\\s\\S]*dashboard\\(cid\\)/,
+    'the daily turn must not materialize the full Resource Ministry dashboard');
+
+  const helperStart=source.indexOf('function dashboardHealth(c){');
+  const helperEnd=source.indexOf('\\n  function dashboard(c){',helperStart);
+  assert.ok(helperStart>=0&&helperEnd>helperStart,'the lightweight health helper must be present before the full dashboard');
+  const helperSource=source.slice(helperStart,helperEnd);
+  assert.doesNotMatch(helperSource,/cloneInventoryQuantities|mineProductionLedger|factoryInputEvents|minePaths|inventoryLots|offerBook/,
+    'health generation must not copy inventories, ledgers, factory histories, routes or market books');
+
+  const resource={
+    mines:[
+      {occurrenceKey:'MINE_A',operationalStatus:'OPERATING'},
+      {occurrenceKey:'MINE_B',operationalStatus:'UNKNOWN'},
+      {occurrenceKey:'MINE_C',operationalStatus:'BLOCKED'}
+    ],
+    mineOutputs:{MINE_B:{status:'ACTIVE'},MINE_C:{status:'FAILED'}},
+    warehouse:{warehouseId:'WH-BGD-RAW'},
+    inventoryIntegrity:{status:'OK'},
+    resourceAuthority:{source:'CANONICAL_TEST_SOURCE'}
+  };
+  const economy={industrialRuntime:{status:'DEGRADED'}};
+  let worldScans=0;
+  const sandbox={
+    canonical:value=>String(value||'').trim().toUpperCase(),
+    bucket:(countryId,domain)=>domain==='resource'?resource:domain==='economy'?economy:{},
+    getWorldMineStats(){worldScans++;return{total:197,active:120,blocked:8};},
+    turn:()=>12,
+    VERSION:'TEST_VERSION',
+    rules:()=>({schemaVersion:7})
+  };
+  const getHealth=vm.runInNewContext('('+helperSource+')',sandbox);
+  const actual=getHealth('bgd');
+  assert.deepEqual(JSON.parse(JSON.stringify(actual)),{
+    status:'DEGRADED',
+    worldMineCount:197,
+    worldActiveMines:120,
+    worldBlockedMines:8,
+    runtimeVersion:'TEST_VERSION',
+    rulesVersion:7,
+    warehouseAuthoritative:true,
+    dataAuthority:'CANONICAL_TEST_SOURCE'
+  });
+  assert.equal(worldScans,1,'the existing world mine health counters remain available');
+  assert.match(source,/getCountryDashboard:dashboard/,
+    'the complete dashboard remains available on demand for the Resource Ministry UI');
+});
