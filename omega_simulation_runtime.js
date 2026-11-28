@@ -538,6 +538,12 @@
     return Date.now();
   }
 
+  function recordPerformanceSpan(id,start,end,metadata){
+    const monitor=global.OmegaBootPerformanceMonitor;
+    if(!monitor||typeof monitor.recordSpan!=='function')return null;
+    try{return monitor.recordSpan(id,start,end,metadata||{});}catch(_){return null;}
+  }
+
   class SimulationClock{
     constructor(options={}){
       this.version=VERSION;
@@ -830,9 +836,13 @@
       this.lastTurnParticipantResults=[];
       // Bounded, process-local diagnostics do not enter the durable simulation snapshot.
       this.participantTimings=new Map();
+      this.phaseTimings=new Map();
+      this.lastTurnPhaseTimings=[];
+      this.lastTurnPerformance=null;
       this.timeDropDiagnostics={count:0,last:null};
       this.turnFinalizers=new Map();
       this.turnFinalizerSequence=0;
+      this.finalizerTimings=new Map();
       this.lastTurnFinalizerResults=[];
       this.installDefaultHandlers();
     }
@@ -884,13 +894,27 @@
             clock:this.clock,
             simulation:this
           });
-          const durationMs=this.recordParticipantDuration(entry.id,monotonicNow()-participantStartedAt);
+          const participantEndedAt=monotonicNow();
+          const performanceMetrics=recordPerformanceSpan('simulation.participant.'+entry.id,
+            participantStartedAt,participantEndedAt,{turn});
+          const durationMs=this.recordParticipantDuration(entry.id,participantEndedAt-participantStartedAt,performanceMetrics);
           this.world.state.simulation.subsystemTurns=this.world.state.simulation.subsystemTurns||{};
           this.world.state.simulation.subsystemTurns[entry.id]=turn;
-          results.push({id:entry.id,turn,status:'COMPLETED',durationMs,result:compactTurnParticipantResult(value)});
+          results.push({id:entry.id,turn,status:'COMPLETED',durationMs,
+            mainThreadBlockingMs:Number.isFinite(performanceMetrics?.mainThreadBlockingMs)?performanceMetrics.mainThreadBlockingMs:null,
+            longTaskCount:Number.isFinite(performanceMetrics?.longTaskCount)?performanceMetrics.longTaskCount:null,
+            maxLongTaskMs:Number.isFinite(performanceMetrics?.maxLongTaskMs)?performanceMetrics.maxLongTaskMs:null,
+            result:compactTurnParticipantResult(value)});
         }catch(error){
-          const durationMs=this.recordParticipantDuration(entry.id,monotonicNow()-participantStartedAt);
-          const failure={id:entry.id,turn,status:'FAILED',durationMs,error:String(error?.message||error)};
+          const participantEndedAt=monotonicNow();
+          const performanceMetrics=recordPerformanceSpan('simulation.participant.'+entry.id,
+            participantStartedAt,participantEndedAt,{turn,status:'FAILED'});
+          const durationMs=this.recordParticipantDuration(entry.id,participantEndedAt-participantStartedAt,performanceMetrics);
+          const failure={id:entry.id,turn,status:'FAILED',durationMs,
+            mainThreadBlockingMs:Number.isFinite(performanceMetrics?.mainThreadBlockingMs)?performanceMetrics.mainThreadBlockingMs:null,
+            longTaskCount:Number.isFinite(performanceMetrics?.longTaskCount)?performanceMetrics.longTaskCount:null,
+            maxLongTaskMs:Number.isFinite(performanceMetrics?.maxLongTaskMs)?performanceMetrics.maxLongTaskMs:null,
+            error:String(error?.message||error)};
           results.push(failure);
           // Stop the world immediately rather than silently let one sector miss a day.
           this.status='ERROR';
@@ -950,6 +974,7 @@
       const results=[];
       for(const entry of rows){
         if(this.turnFinalizers.get(entry.id)!==entry)continue;
+        const finalizerStartedAt=monotonicNow();
         try{
           const value=await entry.handler.call(global,context);
           results.push({id:entry.id,turn:context.turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
@@ -966,6 +991,10 @@
           this.world.setSession(session);
           try{console.error('[OMEGA TURN FINALIZER]',failure);}catch(_){}
         }
+        const finalizerEndedAt=monotonicNow();
+        this.recordFinalizerDuration(entry.id,finalizerEndedAt-finalizerStartedAt,
+          recordPerformanceSpan('simulation.finalizer.'+entry.id,finalizerStartedAt,finalizerEndedAt,
+            {turn:context.turn}));
         this.lastTurnFinalizerResults=results.slice(-64);
         this.world.state.simulation.lastTurnFinalizerResults=clone(this.lastTurnFinalizerResults);
       }
@@ -975,25 +1004,78 @@
     finalizerDiagnostics(){
       return [...this.turnFinalizers.values()]
         .sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence)
-        .map(entry=>({id:entry.id,priority:entry.priority,sequence:entry.sequence}));
+        .map(entry=>{
+          const timing=this.finalizerTimings.get(entry.id);
+          return{id:entry.id,priority:entry.priority,sequence:entry.sequence,
+            sampleCount:timing?.count||0,lastDurationMs:timing?.lastMs??null,
+            averageDurationMs:timing?.count?Number((timing.totalMs/timing.count).toFixed(2)):null,
+            maxDurationMs:timing?.maxMs??null,
+            lastMainThreadBlockingMs:timing?.lastMainThreadBlockingMs??null};
+        });
     }
 
-    recordParticipantDuration(id,duration){
+    recordFinalizerDuration(id,duration,metrics){
+      const durationMs=Math.round(Math.max(0,finite(duration,0))*100)/100;
+      let row=this.finalizerTimings.get(id);
+      if(!row){row={count:0,totalMs:0,maxMs:0,lastMs:0,lastMainThreadBlockingMs:null};this.finalizerTimings.set(id,row);}
+      row.count++;row.totalMs+=durationMs;row.lastMs=durationMs;row.maxMs=Math.max(row.maxMs,durationMs);
+      if(Number.isFinite(metrics?.mainThreadBlockingMs))row.lastMainThreadBlockingMs=metrics.mainThreadBlockingMs;
+      while(this.finalizerTimings.size>128)this.finalizerTimings.delete(this.finalizerTimings.keys().next().value);
+      return durationMs;
+    }
+
+    recordParticipantDuration(id,duration,metrics){
       const durationMs=Math.round(Math.max(0,finite(duration,0))*100)/100;
       let row=this.participantTimings.get(id);
       if(!row){
-        row={count:0,totalMs:0,maxMs:0,lastMs:0,samples:[]};
+        row={count:0,totalMs:0,maxMs:0,lastMs:0,samples:[],blockingSamples:[],
+          lastMainThreadBlockingMs:null,maxMainThreadBlockingMs:0,lastLongTaskCount:null,maxLongTaskMs:0};
         this.participantTimings.set(id,row);
       }
-      row.count+=1;
-      row.totalMs+=durationMs;
-      row.lastMs=durationMs;
-      row.maxMs=Math.max(row.maxMs,durationMs);
-      row.samples.push(durationMs);
-      if(row.samples.length>32)row.samples.shift();
-      while(this.participantTimings.size>256)
-        this.participantTimings.delete(this.participantTimings.keys().next().value);
+      row.count++;row.totalMs+=durationMs;row.lastMs=durationMs;row.maxMs=Math.max(row.maxMs,durationMs);
+      row.samples.push(durationMs);if(row.samples.length>32)row.samples.shift();
+      if(Number.isFinite(metrics?.mainThreadBlockingMs)){
+        row.lastMainThreadBlockingMs=metrics.mainThreadBlockingMs;
+        row.maxMainThreadBlockingMs=Math.max(row.maxMainThreadBlockingMs,metrics.mainThreadBlockingMs);
+        row.blockingSamples.push(metrics.mainThreadBlockingMs);
+        if(row.blockingSamples.length>32)row.blockingSamples.shift();
+      }
+      if(Number.isFinite(metrics?.longTaskCount))row.lastLongTaskCount=metrics.longTaskCount;
+      if(Number.isFinite(metrics?.maxLongTaskMs))row.maxLongTaskMs=Math.max(row.maxLongTaskMs,metrics.maxLongTaskMs);
+      while(this.participantTimings.size>256)this.participantTimings.delete(this.participantTimings.keys().next().value);
       return durationMs;
+    }
+
+    recordPhaseDuration(id,start,end,metadata){
+      const durationMs=Math.round(Math.max(0,finite(end,0)-finite(start,0))*100)/100;
+      const metrics=recordPerformanceSpan('simulation.phase.'+id,start,end,metadata||{});
+      let row=this.phaseTimings.get(id);
+      if(!row){row={count:0,totalMs:0,maxMs:0,lastMs:0,samples:[],blockingSamples:[],lastMainThreadBlockingMs:null};this.phaseTimings.set(id,row);}
+      row.count++;row.totalMs+=durationMs;row.lastMs=durationMs;row.maxMs=Math.max(row.maxMs,durationMs);
+      row.samples.push(durationMs);if(row.samples.length>32)row.samples.shift();
+      if(Number.isFinite(metrics?.mainThreadBlockingMs)){
+        row.lastMainThreadBlockingMs=metrics.mainThreadBlockingMs;
+        row.blockingSamples.push(metrics.mainThreadBlockingMs);
+        if(row.blockingSamples.length>32)row.blockingSamples.shift();
+      }
+      while(this.phaseTimings.size>32)this.phaseTimings.delete(this.phaseTimings.keys().next().value);
+      return{id,durationMs,mainThreadBlockingMs:Number.isFinite(metrics?.mainThreadBlockingMs)?metrics.mainThreadBlockingMs:null,
+        longTaskCount:Number.isFinite(metrics?.longTaskCount)?metrics.longTaskCount:null,
+        maxLongTaskMs:Number.isFinite(metrics?.maxLongTaskMs)?metrics.maxLongTaskMs:null,
+        longAnimationFrameCount:Number.isFinite(metrics?.longAnimationFrameCount)?metrics.longAnimationFrameCount:null};
+    }
+
+    phaseDiagnostics(){
+      const percentile=values=>{
+        const sorted=values.slice().sort((a,b)=>a-b);
+        return sorted.length?Number(sorted[Math.min(sorted.length-1,Math.ceil(sorted.length*0.95)-1)].toFixed(2)):null;
+      };
+      return [...this.phaseTimings.entries()].map(([id,row])=>({
+        id,sampleCount:row.count,rollingSampleCount:row.samples.length,lastDurationMs:row.lastMs,
+        averageDurationMs:Number((row.totalMs/Math.max(1,row.count)).toFixed(2)),maxDurationMs:row.maxMs,
+        p95DurationMs:percentile(row.samples),lastMainThreadBlockingMs:row.lastMainThreadBlockingMs,
+        p95MainThreadBlockingMs:percentile(row.blockingSamples)
+      }));
     }
 
     recordDroppedScaledTime(amount,source){
@@ -1027,7 +1109,13 @@
             averageDurationMs:timing?Number((timing.totalMs/timing.count).toFixed(2)):null,
             maxDurationMs:timing?timing.maxMs:null,
             p95DurationMs:timing?Number(p95.toFixed(2)):null,
-            rollingSampleCount:samples.length
+            rollingSampleCount:samples.length,
+            lastMainThreadBlockingMs:timing?.lastMainThreadBlockingMs??null,
+            averageMainThreadBlockingMs:timing?.blockingSamples?.length
+              ?Number((timing.blockingSamples.reduce((sum,value)=>sum+value,0)/timing.blockingSamples.length).toFixed(2)):null,
+            maxMainThreadBlockingMs:timing?.maxMainThreadBlockingMs??null,
+            lastLongTaskCount:timing?.lastLongTaskCount??null,
+            maxLongTaskMs:timing?.maxLongTaskMs??null
           };
         });
     }
@@ -1401,6 +1489,8 @@
       this.lastError=null;
       const finalizersAtTurnStart=[...this.turnFinalizers.values()];
       const commandResults=[];
+      const stepStartedAt=monotonicNow();
+      const phaseTimings={};
       try{
         this.world.hydrateCompatibility();
         const time=this.clock.advanceTurn();
@@ -1419,15 +1509,27 @@
         };
 
         const phaseResults={};
-        const inputResult=await this.phaseHandlers.get('INPUT')(context);
+        phaseTimings.PREPARE=this.recordPhaseDuration('PREPARE',stepStartedAt,monotonicNow(),{turn});
+        const runPhase=async(name,work)=>{
+          const startedAt=monotonicNow();
+          try{
+            const value=await work();
+            phaseTimings[name]=this.recordPhaseDuration(name,startedAt,monotonicNow(),{turn});
+            return value;
+          }catch(error){
+            phaseTimings[name]=this.recordPhaseDuration(name,startedAt,monotonicNow(),{turn,status:'FAILED'});
+            throw error;
+          }
+        };
+        const inputResult=await runPhase('INPUT',()=>this.phaseHandlers.get('INPUT')(context));
         commandResults.push(...(Array.isArray(inputResult)?inputResult:[]));
         phaseResults.INPUT=clone(inputResult);
 
-        phaseResults.VALIDATE=clone(await this.phaseHandlers.get('VALIDATE')({...context,commandResults}));
-        phaseResults.SIMULATE=clone(await this.phaseHandlers.get('SIMULATE')({...context,commandResults}));
-        phaseResults.COMMIT=clone(await this.phaseHandlers.get('COMMIT')({...context,commandResults,simulationResult:phaseResults.SIMULATE}));
-        phaseResults.PUBLISH=clone(await this.phaseHandlers.get('PUBLISH')({...context,commandResults,phaseResults}));
-        phaseResults.CHECKPOINT=clone(await this.phaseHandlers.get('CHECKPOINT')({...context,commandResults,phaseResults}));
+        phaseResults.VALIDATE=clone(await runPhase('VALIDATE',()=>this.phaseHandlers.get('VALIDATE')({...context,commandResults})));
+        phaseResults.SIMULATE=clone(await runPhase('SIMULATE',()=>this.phaseHandlers.get('SIMULATE')({...context,commandResults})));
+        phaseResults.COMMIT=clone(await runPhase('COMMIT',()=>this.phaseHandlers.get('COMMIT')({...context,commandResults,simulationResult:phaseResults.SIMULATE})));
+        phaseResults.PUBLISH=clone(await runPhase('PUBLISH',()=>this.phaseHandlers.get('PUBLISH')({...context,commandResults,phaseResults})));
+        phaseResults.CHECKPOINT=clone(await runPhase('CHECKPOINT',()=>this.phaseHandlers.get('CHECKPOINT')({...context,commandResults,phaseResults})));
 
         // Mark the world/session as committed before the finalizer phase so its
         // durable snapshot contains the exact date, turn, and completion metadata.
@@ -1445,13 +1547,15 @@
           turn,
           phases:clone(phaseResults),
           commandResults:clone(commandResults),
-          stateRevision:this.world.state.simulation.worldStateRevision
+          stateRevision:this.world.state.simulation.worldStateRevision,
+          phaseTimings:clone(phaseTimings)
         };
+        this.lastTurnPhaseTimings=clone(phaseTimings);
         this.events.emit('OMEGA_SIMULATION_STEP_COMPLETED',this.lastStepSummary,turn);
 
         // The save finalizer executes after all state mutations and the completion
         // event, so the durable snapshot represents the completed turn, not a preview.
-        phaseResults.FINALIZE=clone(await this.runTurnFinalizers({
+        phaseResults.FINALIZE=clone(await runPhase('FINALIZE',()=>this.runTurnFinalizers({
           turn,
           day:turn+1,
           stepDurationMs:this.clock.stepDurationMs,
@@ -1460,10 +1564,21 @@
           state:this.world.state,
           clock:this.clock,
           simulation:this
-        },finalizersAtTurnStart));
+        },finalizersAtTurnStart)));
+        phaseTimings.TOTAL=this.recordPhaseDuration('TOTAL',stepStartedAt,monotonicNow(),{turn});
+        this.lastTurnPhaseTimings=clone(phaseTimings);
+        this.lastTurnPerformance={turn,totalDurationMs:phaseTimings.TOTAL.durationMs,
+          phases:clone(phaseTimings),browser:global.OmegaBootPerformanceMonitor?.snapshot?.()||null};
         this.lastStepSummary.phases=clone(phaseResults);
+        this.lastStepSummary.phaseTimings=clone(phaseTimings);
+        this.lastStepSummary.performance=clone(this.lastTurnPerformance);
         return clone(this.lastStepSummary);
       }catch(error){
+        phaseTimings.TOTAL=this.recordPhaseDuration('TOTAL',stepStartedAt,monotonicNow(),
+          {turn:this.clock.turn,status:'FAILED'});
+        this.lastTurnPhaseTimings=clone(phaseTimings);
+        this.lastTurnPerformance={turn:this.clock.turn,totalDurationMs:phaseTimings.TOTAL.durationMs,
+          phases:clone(phaseTimings),browser:global.OmegaBootPerformanceMonitor?.snapshot?.(),status:'FAILED'};
         this.lastError=String(error?.message||error);
         this.status='ERROR';
         this.clock.pause();
@@ -1710,6 +1825,10 @@
         turnParticipantCount:this.turnParticipants.size,
         turnParticipants:this.participantDiagnostics(),
         lastTurnParticipantResults:clone(this.lastTurnParticipantResults),
+        phaseTimings:this.phaseDiagnostics(),
+        lastTurnPhaseTimings:clone(this.lastTurnPhaseTimings),
+        lastTurnPerformance:clone(this.lastTurnPerformance),
+        browserPerformance:global.OmegaBootPerformanceMonitor?.snapshot?.()||null,
         timeDiscards:{
           totalScaledMs:Number(this.clock.droppedScaledTimeMs.toFixed(2)),
           eventCount:this.timeDropDiagnostics.count,
