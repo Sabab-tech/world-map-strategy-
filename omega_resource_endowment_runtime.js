@@ -1976,9 +1976,14 @@ function batchFromExtraction(x,record){
     // Read the large keyed maps without cloning them. Each extraction transaction
     // stages only the entries it actually changes, avoiding a full historical-map
     // copy and commit for every small mobile slice.
-    const existingInventoryLots=ctx.stateTransaction.peek('resource.inventoryLots')||{};
+    // Production StateTransaction supports a zero-copy peek. Keep a safe
+    // compatibility fallback for older harnesses/adapters that expose only get/set.
+    const readOnlyStatePath=path=>typeof ctx.stateTransaction.peek==='function'
+      ?ctx.stateTransaction.peek(path)
+      :ctx.stateTransaction.get(path);
+    const existingInventoryLots=readOnlyStatePath('resource.inventoryLots')||{};
     const inventoryLotWrites=new Map();
-    const existingMinePaths=ctx.stateTransaction.peek('resource.minePaths')||{};
+    const existingMinePaths=readOnlyStatePath('resource.minePaths')||{};
     const minePathWrites=new Map();
     const readMinePath=key=>{
       const normalized=String(key||'');
@@ -1989,7 +1994,7 @@ function batchFromExtraction(x,record){
       return path&&typeof path==='object'?clone(path):null;
     };
     const writeMinePath=(key,path)=>minePathWrites.set(String(key||''),path);
-    const existingMineOutputs=ctx.stateTransaction.peek('resource.mineOutputs')||{};
+    const existingMineOutputs=readOnlyStatePath('resource.mineOutputs')||{};
     const mineOutputWrites=new Map();
     const writeMineOutput=(key,row)=>mineOutputWrites.set(String(key||''),row);
     const writeKeyedResourceRows=(path,base,writes)=>{
