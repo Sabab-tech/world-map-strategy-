@@ -77,6 +77,6 @@ The selected country owns the detailed daily resource and industrial workload. A
 - Other countries' posted import requests and seller offers remain in the global order-book pass. They are needed for real cross-border price discovery and are not discarded.
 - Other countries' baseline inventory, production, consumption and strategic-reserve keys are not scanned to manufacture daily reference-only liquidity.
 - The explicit unscoped market rebuild remains available for full-world diagnostics and legacy callers.
-- The snapshot index is rebuilt when the root/domain source identity or session changes. Daily country transactions update values inside existing country buckets; validating every top-level country key on every day would repeat a world-wide scan without refreshing those values.
+- The automatic daily snapshot reuses stable root/domain source identities; it does not enumerate every top-level country key to validate a cache hit. Explicit synchronous full-world rebuilds retain structural-key validation for legacy callers and out-of-session data changes. Session/domain identity changes also rebuild the index. Daily country transactions update values inside existing country buckets, so this keeps the player-day path free of repeat world-wide key scans without removing structural validation everywhere.
 
 This preserves one authoritative player-country simulation, bounded NPC/event work and the existing market/settlement authorities. It does not add another scheduler or game clock.
