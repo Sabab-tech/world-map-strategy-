@@ -241,10 +241,12 @@ test('resource extraction phase catches up one stable game-day at a time and rec
     'failed ledger reconciliation must leave the resource checkpoint pending');
   assert.match(economySource,/phase:'RESOURCE_EXTRACTION',\s*lastProcessedEventId:periodId,\s*reconciliation:\{status:'RECONCILED'/,
     'the resource checkpoint must advance only with reconciliation evidence');
-  const resourcePhase=economySource.indexOf("runCheckpointedResourceExtraction(cid,endowment)");
-  const industrialPhase=economySource.indexOf("runCheckpointedIndustrialProduction(cid,industrial)",resourcePhase);
-  assert.ok(resourcePhase>=0&&industrialPhase>resourcePhase,
-    'the existing industrial phase must remain after the resource extraction phase');
+  const resourceRunner=economySource.indexOf("runCheckpointedResourceExtraction(cid,endowment,{throughTurn:context.periodTurn})");
+  const industrialRunner=economySource.indexOf("runCheckpointedIndustrialProduction(cid,industrial,{throughTurn:context.periodTurn})");
+  assert.ok(resourceRunner>=0&&industrialRunner>resourceRunner,
+    'the universal workload plan must expose resource slices before dependent industrial slices');
+  assert.match(economySource,/async function runCheckpointedResourceExtraction\(countryId,endowment,options=\{\}\)/);
+  assert.match(economySource,/async function runCheckpointedIndustrialProduction\(countryId,industrial,options=\{\}\)/);
 });
 
 test('extraction fiscal batch handlers read and write the growing ledger once per day',()=>{
