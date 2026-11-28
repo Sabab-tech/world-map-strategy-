@@ -597,9 +597,9 @@
     const startedAt=marketNow(),pacing={sliceStartedAt:startedAt,yieldCount:0,maxSliceMs:0};
     const snapshotYieldStart=pacing.yieldCount,snapshotStartedAt=marketNow();
     activeMarketSnapshot=await drainMarketWorkCooperatively(createMarketSnapshotWork(),pacing);
-    if(activeMarketSnapshot.cacheHit){
-      // A zero-work cache hit still gives the browser one paint opportunity before
-      // order indexing, without manufacturing work or scanning unchanged countries.
+    if(pacing.yieldCount===snapshotYieldStart){
+      // Small first-time snapshots and zero-work cache hits both give the browser
+      // one paint opportunity before the heavier resource/order-book stages.
       await yieldMarketRefresh();
       pacing.yieldCount+=1;
       const resumedAt=marketNow();
