@@ -171,7 +171,7 @@ test('canonical simulation reports phase and participant execution and blocking 
   assert.ok(Number.isFinite(diagnostics.lastTurnPerformance.totalDurationMs));
   assert.equal(participant.sampleCount,8);
   assert.equal(diagnostics.phaseTimings.find(row=>row.id==='SIMULATE').sampleCount,8);
-  assert.deepEqual(diagnostics.recentTurnPerformance.map(row=>row.turn),[1,2,3,4,5,6,7,8]);
+  assert.equal(Array.from(diagnostics.recentTurnPerformance,row=>row.turn).join(','),'1,2,3,4,5,6,7,8');
   assert.ok(diagnostics.recentTurnPerformance.every(row=>row.phases.SIMULATE.mainThreadBlockingMs===4));
   assert.equal(h.state.simulation.turn,8);
   assert.equal(h.state.simulation.participantTimings,undefined,
