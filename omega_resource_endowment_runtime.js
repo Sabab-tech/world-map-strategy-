@@ -1995,7 +1995,10 @@ function batchFromExtraction(x,record){
     const writeKeyedResourceRows=(path,base,writes)=>{
       if(!writes.size)return;
       const entries=[...writes.entries()];
-      if(entries.some(([key])=>!key||key.includes('.')||key==='__proto__'||key==='constructor')){
+      if(entries.some(([key])=>{
+        const normalized=String(key||'');
+        return!normalized||normalized.includes('.')||normalized==='__proto__'||normalized==='constructor';
+      })){
         const merged={...(base&&typeof base==='object'?base:{})};
         for(const [key,value] of entries)Object.defineProperty(merged,key,{
           value,writable:true,enumerable:true,configurable:true
@@ -2387,7 +2390,7 @@ function batchFromExtraction(x,record){
           existingPath.stages.push({stage:'ENVIRONMENTAL_IMPACT',turn:productionPeriodTurn,status:'DEGRADED',reason:environmentalResult.reason||'ENVIRONMENTAL_IMPACT_NOT_RECORDED'});
         }
       }
-      inventoryLotWrites.set(batch.batchId,{
+      inventoryLotWrites.set(batchIdentity,{
         batchId:batch.batchId,resourceId:resource,countryId:c,sourceCountryId:c,originCountryId:c,
         destinationCountryId:c,warehouseId:batch.warehouseId,quantity:q,remainingQuantity:q,
         stage:'RAW_INVENTORY',purity:batch.purity,gradePercent:batch.grade,qualityState:clone(batch.qualityState),
