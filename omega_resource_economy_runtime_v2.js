@@ -3676,6 +3676,12 @@
           return runCheckpointedIndustrialProduction(context?.countryId||cid,industrial,{throughTurn:context.periodTurn});
         }
       });
+      // Keep the reserved Food & Agriculture page identity, but register its
+      // disabled placeholder only when the workload runtime itself changes.
+      scheduler.registerDomain({
+        id:'food',label:'Food & Agriculture',pageId:'agriculture_food',priority:30,enabled:false,
+        disabledReason:'AUTHORITATIVE_FOOD_RUNTIME_NOT_AVAILABLE'
+      });
       dailyWorkloadRegistrationScheduler=scheduler;
       dailyWorkloadRegistrationEndowment=endowment;
       dailyWorkloadRegistrationIndustrial=industrial;
