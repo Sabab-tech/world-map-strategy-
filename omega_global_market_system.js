@@ -77,18 +77,31 @@
   let marketSnapshotIndexCache=null,marketSnapshotCacheHits=0,marketSnapshotCacheBuilds=0;
   let productIndexCache=null,productIndexCacheSources=null,productIndexCacheHits=0,productIndexCacheBuilds=0;
   const MARKET_REFRESH_SLICE_MS=6;
-  function* createMarketSnapshotWork(){
+  function sameDomainKeys(source,expected){
+    if(!source||typeof source!=='object')return!expected||expected.length===0;
+    if(!Array.isArray(expected))return false;
+    let index=0;
+    for(const key in source){
+      if(!Object.prototype.hasOwnProperty.call(source,key))continue;
+      if(expected[index]!==key)return false;
+      index++;
+    }
+    return index===expected.length;
+  }
+  function* createMarketSnapshotWork(options={}){
     const root=state()||{},domains=['trade','resource','finance','foreign','economy'];
     const registryRef=registry(),cached=marketSnapshotIndexCache;
+    const validateDomainKeys=options.validateDomainKeys===true;
     let reusable=!!cached&&cached.root===root&&cached.registry===registryRef;
-    // Country state transactions update values inside existing country buckets. Their
-    // top-level domain objects remain stable for the life of a session, so checking
-    // every country key on every day only repeats a full roster scan without adding
-    // useful freshness. Rebuild on domain identity/session changes instead.
+    // Country state transactions update values inside existing country buckets.
+    // The automatic committed-day path can therefore reuse stable domain references
+    // without enumerating every country key. Explicit synchronous full-market rebuilds
+    // retain structural validation for legacy callers and out-of-session data changes.
     if(reusable){
       for(const domain of domains){
-        const source=root[domain];
-        if(cached.domainSources[domain]!==((source&&typeof source==='object')?source:null)){
+        const source=root[domain],keys=cached.domainKeys[domain];
+        if(cached.domainSources[domain]!==((source&&typeof source==='object')?source:null)||
+           (validateDomainKeys&&!sameDomainKeys(source,keys))){
           reusable=false;break;
         }
       }
@@ -101,7 +114,8 @@
       snapshot.cacheHit=true;
       return snapshot;
     }
-    const countryIds=new Set(),buckets=Object.create(null),domainSources=Object.create(null);
+    const countryIds=new Set(),buckets=Object.create(null),domainSources=Object.create(null),
+      domainKeys=Object.create(null);
     let scanned=0;
     const resolveRow=row=>{
       const raw=row&&typeof row==='object'
@@ -121,9 +135,10 @@
     }catch(_){}
     for(const domain of domains){
       const source=root[domain];
-      if(!source||typeof source!=='object'){domainSources[domain]=null;continue;}
+      if(!source||typeof source!=='object'){domainSources[domain]=null;domainKeys[domain]=[];continue;}
       domainSources[domain]=source;
       const index=Object.create(null),keys=Object.keys(source);
+      domainKeys[domain]=keys;
       for(const key of keys){
         const cid=canonical(key);
         if(cid){
@@ -136,35 +151,15 @@
       buckets[domain]=index;
     }
     const countryRows=[...countryIds].filter(Boolean).sort();
-    const snapshot={countryIds:countryRows,buckets,domainSources,
+    const snapshot={countryIds:countryRows,buckets,domainSources,domainKeys,
       currencyByCountry:new Map(),usdRateByCountry:new Map(),cacheHit:false};
-    marketSnapshotIndexCache={root,registry:registryRef,domainSources,buckets,countryIds:countryRows,snapshot};
+    marketSnapshotIndexCache={root,registry:registryRef,domainSources,domainKeys,buckets,countryIds:countryRows,snapshot};
     marketSnapshotCacheBuilds++;
     return snapshot;
   }
   function createMarketSnapshot(){
-    return drainMarketWorkSync(createMarketSnapshotWork());
+    return drainMarketWorkSync(createMarketSnapshotWork({validateDomainKeys:true}));
   }
-  const countries=()=>activeMarketSnapshot?activeMarketSnapshot.countryIds:(()=>{
-    const out=new Set();
-    const resolveRow=row=>{
-      const raw=row&&typeof row==='object'
-        ?(row.iso3||row.iso3Code||row.countryCode||row.country_id||row.countryId||row.canonicalId||row.id||row.code)
-        :row;
-      const value=canonical(raw);
-      if(value&&value!=='[OBJECT OBJECT]')out.add(value);
-    };
-    try{
-      const rows=registry()?.list?.('COUNTRY')||registry()?.list?.()||[];
-      if(Array.isArray(rows))rows.forEach(resolveRow);
-    }catch(_){}
-    const s=state()||{};
-    for(const domain of ['trade','resource','finance','foreign','economy']){
-      const root=s[domain];
-      if(root&&typeof root==='object')Object.keys(root).forEach(resolveRow);
-    }
-    return [...out].filter(Boolean).sort();
-  })();
   function countryValue(c,path){
     const cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();let bucket;
     if(activeMarketSnapshot){
