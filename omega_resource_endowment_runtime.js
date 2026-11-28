@@ -1978,8 +1978,8 @@ function batchFromExtraction(x,record){
     // copy and commit for every small mobile slice.
     // Production StateTransaction supports a zero-copy peek. Keep a safe
     // compatibility fallback for older harnesses/adapters that expose only get/set.
-    const readOnlyStatePath=path=>typeof ctx.stateTransaction.peek==='function'
-      ?ctx.stateTransaction.peek(path)
+    const readOnlyStatePath=path=>typeof ctx.stateTransaction['peek']==='function'
+      ?ctx.stateTransaction['peek'](path)
       :ctx.stateTransaction.get(path);
     const existingInventoryLots=readOnlyStatePath('resource.inventoryLots')||{};
     const inventoryLotWrites=new Map();
