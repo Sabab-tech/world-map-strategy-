@@ -839,6 +839,7 @@
       this.phaseTimings=new Map();
       this.lastTurnPhaseTimings=[];
       this.lastTurnPerformance=null;
+      this.lastTurnDomainResults=[];
       this.turnPerformanceHistory=[];
       this.timeDropDiagnostics={count:0,last:null};
       this.turnFinalizers=new Map();
@@ -1047,6 +1048,18 @@
       return durationMs;
     }
 
+    recordDomainDuration(id,start,end,metadata){
+      const durationMs=Math.round(Math.max(0,finite(end,0)-finite(start,0))*100)/100;
+      const metrics=recordPerformanceSpan('simulation.domain.'+id,start,end,metadata||{});
+      const row={id,durationMs,
+        mainThreadBlockingMs:Number.isFinite(metrics?.mainThreadBlockingMs)?metrics.mainThreadBlockingMs:null,
+        longTaskCount:Number.isFinite(metrics?.longTaskCount)?metrics.longTaskCount:null,
+        maxLongTaskMs:Number.isFinite(metrics?.maxLongTaskMs)?metrics.maxLongTaskMs:null,
+        longAnimationFrameCount:Number.isFinite(metrics?.longAnimationFrameCount)?metrics.longAnimationFrameCount:null};
+      this.lastTurnDomainResults.push(row);
+      return row;
+    }
+
     recordPhaseDuration(id,start,end,metadata){
       const durationMs=Math.round(Math.max(0,finite(end,0)-finite(start,0))*100)/100;
       const metrics=recordPerformanceSpan('simulation.phase.'+id,start,end,metadata||{});
@@ -1165,16 +1178,28 @@
       this.phaseHandlers.set('SIMULATE',async({turn,stepDurationMs})=>{
         const worldEngine=this.worldEngine||global.WorldEcosystemEngine||null;
         let worldResult=null;
-        if(worldEngine?.setAuthoritativeState){
-          worldEngine.setAuthoritativeState(this.world.state);
-        }
-        if(worldEngine?.processSimulationTick){
-          worldResult=worldEngine.processSimulationTick(stepDurationMs,turn);
+        if(worldEngine?.setAuthoritativeState||worldEngine?.processSimulationTick){
+          const startedAt=monotonicNow();
+          try{
+            if(worldEngine?.setAuthoritativeState)worldEngine.setAuthoritativeState(this.world.state);
+            if(worldEngine?.processSimulationTick)worldResult=worldEngine.processSimulationTick(stepDurationMs,turn);
+          }catch(error){
+            this.recordDomainDuration('world-ecosystem',startedAt,monotonicNow(),{turn,status:'FAILED'});
+            throw error;
+          }
+          this.recordDomainDuration('world-ecosystem',startedAt,monotonicNow(),{turn,status:'COMPLETED'});
         }
 
         let ministryResult=null;
         if(typeof this.ministryPump==='function'){
-          ministryResult=await this.ministryPump({turn,stepDurationMs,countryId:this.getPlayerCountryId(),state:this.world.state});
+          const startedAt=monotonicNow();
+          try{
+            ministryResult=await this.ministryPump({turn,stepDurationMs,countryId:this.getPlayerCountryId(),state:this.world.state});
+          }catch(error){
+            this.recordDomainDuration('ministry-pump',startedAt,monotonicNow(),{turn,status:'FAILED'});
+            throw error;
+          }
+          this.recordDomainDuration('ministry-pump',startedAt,monotonicNow(),{turn,status:'COMPLETED'});
         }
 
         return {worldResult,ministryResult};
@@ -1187,7 +1212,16 @@
         s.worldStateRevision=finite(s.worldStateRevision,0)+1;
         s.subsystemTurns.worldEcosystem=turn;
         s.subsystemTurns.ministries=turn;
-        if(this.interoperability?.advanceTurn)this.interoperability.advanceTurn(turn);
+        if(this.interoperability?.advanceTurn){
+          const startedAt=monotonicNow();
+          try{
+            this.interoperability.advanceTurn(turn);
+          }catch(error){
+            this.recordDomainDuration('interoperability-advance',startedAt,monotonicNow(),{turn,status:'FAILED'});
+            throw error;
+          }
+          this.recordDomainDuration('interoperability-advance',startedAt,monotonicNow(),{turn,status:'COMPLETED'});
+        }
         return {
           turn,
           worldStateRevision:s.worldStateRevision,
@@ -1492,6 +1526,7 @@
       const commandResults=[];
       const stepStartedAt=monotonicNow();
       const phaseTimings={};
+      this.lastTurnDomainResults=[];
       try{
         this.world.hydrateCompatibility();
         const time=this.clock.advanceTurn();
@@ -1571,7 +1606,8 @@
         phaseTimings.TOTAL=this.recordPhaseDuration('TOTAL',stepStartedAt,monotonicNow(),{turn});
         this.lastTurnPhaseTimings=clone(phaseTimings);
         this.lastTurnPerformance={turn,totalDurationMs:phaseTimings.TOTAL.durationMs,
-          phases:clone(phaseTimings),browser:global.OmegaBootPerformanceMonitor?.snapshot?.()||null,
+          phases:clone(phaseTimings),domains:clone(this.lastTurnDomainResults),
+          browser:global.OmegaBootPerformanceMonitor?.snapshot?.()||null,
           participants:this.lastTurnParticipantResults.map(row=>({
             id:row.id,status:row.status,durationMs:row.durationMs??null,
             mainThreadBlockingMs:row.mainThreadBlockingMs??null,
@@ -1588,7 +1624,8 @@
           {turn:this.clock.turn,status:'FAILED'});
         this.lastTurnPhaseTimings=clone(phaseTimings);
         this.lastTurnPerformance={turn:this.clock.turn,totalDurationMs:phaseTimings.TOTAL.durationMs,
-          phases:clone(phaseTimings),browser:global.OmegaBootPerformanceMonitor?.snapshot?.(),
+          phases:clone(phaseTimings),domains:clone(this.lastTurnDomainResults),
+          browser:global.OmegaBootPerformanceMonitor?.snapshot?.(),
           participants:this.lastTurnParticipantResults.map(row=>({
             id:row.id,status:row.status,durationMs:row.durationMs??null,
             mainThreadBlockingMs:row.mainThreadBlockingMs??null,
@@ -1845,6 +1882,8 @@
         phaseTimings:this.phaseDiagnostics(),
         lastTurnPhaseTimings:clone(this.lastTurnPhaseTimings),
         lastTurnPerformance:clone(this.lastTurnPerformance),
+        lastTurnDomainResults:clone(this.lastTurnDomainResults),
+        domainTimings:global.OmegaBootPerformanceMonitor?.getSpanDiagnostics?.('simulation.domain.')||[],
         recentTurnPerformance:clone(this.turnPerformanceHistory.slice(-8)),
         browserPerformance:global.OmegaBootPerformanceMonitor?.snapshot?.()||null,
         timeDiscards:{
