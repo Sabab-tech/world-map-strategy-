@@ -57,8 +57,8 @@ test('industrial catch-up uses the existing resources/industrial/fiscal checkpoi
   assert.ok(simulation.includes("ECONOMY_PHASE_DOMAINS=new Set(['resources','industrial','fiscal'])"));
   assert.ok(economy.includes("domain:'industrial',countryId:cid,sessionId"));
   assert.ok(economy.includes("phase:'INDUSTRIAL_PRODUCTION'"));
-  assert.ok(economy.includes("runCheckpointedIndustrialProduction(cid,industrial,{throughTurn:context.periodTurn})"));
+  assert.ok(economy.includes("runCheckpointedIndustrialProduction(context?.countryId||cid,industrial,{throughTurn:context.periodTurn})"));
   assert.ok(economy.includes("industrial.markProductionPeriodRecovery(cid,periodId"));
-  assert.ok(economy.indexOf("runCheckpointedResourceExtraction(cid,endowment,{throughTurn:context.periodTurn})") <
-    economy.indexOf("runCheckpointedIndustrialProduction(cid,industrial,{throughTurn:context.periodTurn})"));
+  assert.ok(economy.indexOf("runCheckpointedResourceExtraction(context?.countryId||cid,endowment,{throughTurn:context.periodTurn})") <
+    economy.indexOf("runCheckpointedIndustrialProduction(context?.countryId||cid,industrial,{throughTurn:context.periodTurn})"));
 });

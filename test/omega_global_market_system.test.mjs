@@ -443,4 +443,16 @@ assert.equal((await market.rebuildCountry(refreshPlayerCountryId)).status,'ALREA
 assert.equal(market.getCompanyResearchRequests(refreshPlayerCountryId,'AURORA_INDUSTRIAL_GROUP')[0]?.status,'RESOLVED',
   'queued market research must still resolve after the cooperative refresh');
 
+const marketIndexBefore=market.diagnostics();
+market.rebuild();
+const marketIndexAfter=market.diagnostics();
+assert.equal(marketIndexAfter.snapshotIndexCacheBuilds,marketIndexBefore.snapshotIndexCacheBuilds,
+  'stable country/domain index sources must not trigger a complete country index rebuild');
+assert.equal(marketIndexAfter.productIndexCacheBuilds,marketIndexBefore.productIndexCacheBuilds,
+  'stable canonical raw/factory catalogs must reuse their product index');
+assert.ok(marketIndexAfter.snapshotIndexCacheHits>marketIndexBefore.snapshotIndexCacheHits,
+  'subsequent market refreshes must reuse the country/domain index');
+assert.ok(marketIndexAfter.productIndexCacheHits>marketIndexBefore.productIndexCacheHits,
+  'subsequent market refreshes must reuse the product catalog index');
+
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');

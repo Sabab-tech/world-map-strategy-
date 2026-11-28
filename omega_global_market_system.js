@@ -74,9 +74,43 @@
   let activeMarketSnapshot=null;
   let activeProductIndex=null;
   let rebuildCountryInFlight=null;
+  let marketSnapshotIndexCache=null,marketSnapshotCacheHits=0,marketSnapshotCacheBuilds=0;
+  let productIndexCache=null,productIndexCacheSources=null,productIndexCacheHits=0,productIndexCacheBuilds=0;
   const MARKET_REFRESH_SLICE_MS=6;
+  function sameDomainKeys(source,expected){
+    if(!source||typeof source!=='object')return!expected||expected.length===0;
+    if(!Array.isArray(expected))return false;
+    let index=0;
+    for(const key in source){
+      if(!Object.prototype.hasOwnProperty.call(source,key))continue;
+      if(expected[index]!==key)return false;
+      index++;
+    }
+    return index===expected.length;
+  }
   function* createMarketSnapshotWork(){
-    const root=state()||{},countryIds=new Set();
+    const root=state()||{},domains=['trade','resource','finance','foreign','economy'];
+    const registryRef=registry(),cached=marketSnapshotIndexCache;
+    let reusable=!!cached&&cached.root===root&&cached.registry===registryRef;
+    if(reusable){
+      for(const domain of domains){
+        const source=root[domain],keys=cached.domainKeys[domain];
+        if(cached.domainSources[domain]!==((source&&typeof source==='object')?source:null)||
+           !sameDomainKeys(source,keys)){
+          reusable=false;break;
+        }
+      }
+    }
+    if(reusable){
+      marketSnapshotCacheHits++;
+      const snapshot=cached.snapshot;
+      snapshot.currencyByCountry.clear();
+      snapshot.usdRateByCountry.clear();
+      snapshot.cacheHit=true;
+      return snapshot;
+    }
+    const countryIds=new Set(),buckets=Object.create(null),domainSources=Object.create(null),
+      domainKeys=Object.create(null);
     let scanned=0;
     const resolveRow=row=>{
       const raw=row&&typeof row==='object'
@@ -86,7 +120,7 @@
       if(value&&value!=='[OBJECT OBJECT]')countryIds.add(value);
     };
     try{
-      const rows=registry()?.list?.('COUNTRY')||registry()?.list?.()||[];
+      const rows=registryRef?.list?.('COUNTRY')||registryRef?.list?.()||[];
       if(Array.isArray(rows)){
         for(const row of rows){
           resolveRow(row);
@@ -94,35 +128,29 @@
         }
       }
     }catch(_){}
-    const domains=['trade','resource','finance','foreign','economy'];
     for(const domain of domains){
       const source=root[domain];
-      if(!source||typeof source!=='object')continue;
-      const keys=Object.keys(source);
-      for(const key of keys){
-        resolveRow(key);
-        if(++scanned%8===0)yield null;
-      }
-    }
-    const buckets=Object.create(null);
-    for(const domain of domains){
-      const source=root[domain];
-      if(!source||typeof source!=='object')continue;
-      const index=Object.create(null);
-      const keys=Object.keys(source);
+      if(!source||typeof source!=='object'){domainSources[domain]=null;domainKeys[domain]=[];continue;}
+      domainSources[domain]=source;
+      const index=Object.create(null),keys=Object.keys(source);
+      domainKeys[domain]=keys;
       for(const key of keys){
         const cid=canonical(key);
-        if(cid&&!Object.prototype.hasOwnProperty.call(index,cid))index[cid]=source[key];
-        if(++scanned%8===0)yield null;
-      }
-      // Preserve the old direct-key preference when canonical and alias keys coexist.
-      for(const cid of countryIds){
-        if(Object.prototype.hasOwnProperty.call(source,cid))index[cid]=source[cid];
+        if(cid){
+          countryIds.add(cid);
+          // A direct canonical key must win over an alias regardless of key order.
+          if(key===cid||!Object.prototype.hasOwnProperty.call(index,cid))index[cid]=key;
+        }
         if(++scanned%8===0)yield null;
       }
       buckets[domain]=index;
     }
-    return{countryIds:[...countryIds].filter(Boolean).sort(),buckets,currencyByCountry:new Map(),usdRateByCountry:new Map()};
+    const countryRows=[...countryIds].filter(Boolean).sort();
+    const snapshot={countryIds:countryRows,buckets,domainSources,domainKeys,
+      currencyByCountry:new Map(),usdRateByCountry:new Map(),cacheHit:false};
+    marketSnapshotIndexCache={root,registry:registryRef,domainSources,domainKeys,buckets,countryIds:countryRows,snapshot};
+    marketSnapshotCacheBuilds++;
+    return snapshot;
   }
   function createMarketSnapshot(){
     return drainMarketWorkSync(createMarketSnapshotWork());
@@ -149,8 +177,10 @@
   })();
   function countryValue(c,path){
     const cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();let bucket;
-    if(activeMarketSnapshot)bucket=activeMarketSnapshot.buckets[domain]?.[cid];
-    else{
+    if(activeMarketSnapshot){
+      const source=activeMarketSnapshot.domainSources?.[domain],key=activeMarketSnapshot.buckets[domain]?.[cid];
+      bucket=source&&key!==undefined?source[key]:undefined;
+    }else{
       bucket=state()?.[domain];
       if(bucket&&typeof bucket==='object')bucket=bucket[cid]??bucket[Object.keys(bucket).find(k=>canonical(k)===cid)];
     }
@@ -222,16 +252,20 @@
     const rt=g.ResourceMinistryEngine?.resourceTypes;
     if(Array.isArray(rt))for(const x of rt)if(x?.id)ids.add(String(x.id));
     const rows=Array.isArray(countryRows)?countryRows:countries();
+    const addKeys=function*(source){
+      if(!source||typeof source!=='object')return;
+      for(const key in source){
+        if(!Object.prototype.hasOwnProperty.call(source,key))continue;
+        ids.add(key);
+        if(++scanned%64===0)yield null;
+      }
+    };
     for(let countryIndex=0;countryIndex<rows.length;countryIndex++){
       const c=rows[countryIndex];
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),cons=countryValue(c,'resource.consumption');
-      for(const source of [inv,prod,cons]){
-        if(!source||typeof source!=='object')continue;
-        for(const key of Object.keys(source)){
-          ids.add(key);
-          if(++scanned%64===0)yield null;
-        }
-      }
+      yield* addKeys(inv);
+      yield* addKeys(prod);
+      yield* addKeys(cons);
       const req=countryValue(c,'trade.importRequests');
       if(Array.isArray(req))for(const row of req){
         if(row?.resourceId)ids.add(row.resourceId);
@@ -245,7 +279,9 @@
             if(++scanned%64===0)yield null;
           }
         }else{
-          for(const [key,value] of Object.entries(offers)){
+          for(const key in offers){
+            if(!Object.prototype.hasOwnProperty.call(offers,key))continue;
+            const value=offers[key];
             if(value&&typeof value==='object')ids.add(value.resourceId||key);
             if(++scanned%64===0)yield null;
           }
@@ -328,7 +364,25 @@
     });
     return{rawById:rawById,factoryById:factoryById};
   }
-  function currentProductIndex(){return activeProductIndex||buildProductIndex();}
+  function currentProductIndex(){
+    if(activeProductIndex)return activeProductIndex;
+    const resourceRows=g.ResourceMinistryEngine?.resourceTypes||null;
+    const catalog=g.OmegaResourceIndustrialCatalogData||g.Omega?.ResourceIndustrialCatalogData||
+      g.OmegaResourceIndustrialNetwork?.catalog||g.Omega?.ResourceIndustrialNetwork?.catalog||null;
+    const productUses=catalog?.productUseCatalog?.products||null;
+    const processingRules=catalog?.processingRules||null;
+    const downstreamRecipes=catalog?.downstreamFactoryRecipes||null;
+    const cached=productIndexCacheSources;
+    if(productIndexCache&&cached&&cached.resourceRows===resourceRows&&cached.catalog===catalog&&
+       cached.productUses===productUses&&cached.processingRules===processingRules&&
+       cached.downstreamRecipes===downstreamRecipes){
+      productIndexCacheHits++;return productIndexCache;
+    }
+    productIndexCache=buildProductIndex();
+    productIndexCacheSources={resourceRows,catalog,productUses,processingRules,downstreamRecipes};
+    productIndexCacheBuilds++;
+    return productIndexCache;
+  }
   function describeProduct(resourceId){
     const key=token(resourceId),index=currentProductIndex();
     const row=index.rawById[key]||index.factoryById[key];
@@ -407,13 +461,19 @@
         books[rid][side].push(order);counters.ordersIndexed++;
       }
     };
+    const stockIds=new Set();
+    const addStockKeys=source=>{
+      if(!source||typeof source!=='object')return;
+      for(const key in source)if(Object.prototype.hasOwnProperty.call(source,key))stockIds.add(key);
+    };
     for(let countryIndex=0;countryIndex<countryRows.length;countryIndex++){
       const c=countryRows[countryIndex],countryId=canonical(c);
       counters.countriesScanned++;
       const reqs=countryValue(c,'trade.importRequests');
       if(Array.isArray(reqs)){
-        const requests=reqs.slice(-256);
-        for(const q of requests){
+        const requestStart=Math.max(0,reqs.length-256);
+        for(let requestIndex=requestStart;requestIndex<reqs.length;requestIndex++){
+          const q=reqs[requestIndex];
           counters.importRequestsScanned++;
           if(['SENT','COUNTER_OFFERED','ACCEPTED'].includes(id(q?.status))){
             pushForResource(q?.resourceId,'bids',(rid,product)=>{
@@ -449,7 +509,9 @@
       if(Array.isArray(offers)){
         for(const q of offers){indexOffer(q,null);yield* maybeYield();}
       }else if(offers&&typeof offers==='object'){
-        for(const [key,value] of Object.entries(offers)){
+        for(const key in offers){
+          if(!Object.prototype.hasOwnProperty.call(offers,key))continue;
+          const value=offers[key];
           if(Array.isArray(value)){
             for(const q of value){indexOffer(q,key);yield* maybeYield();}
           }else if(value&&typeof value==='object'){
@@ -460,7 +522,8 @@
       const inv=countryValue(c,'resource.inventory')||{},prod=countryValue(c,'resource.production')||{},
         tradeable=countryValue(c,'resource.tradeAvailability')||{},
         availableStock=countryValue(c,'resource.strategicReserve')?.availableByResource||{};
-      const stockIds=new Set([...Object.keys(inv),...Object.keys(prod),...Object.keys(tradeable),...Object.keys(availableStock)]);
+      stockIds.clear();
+      addStockKeys(inv);addStockKeys(prod);addStockKeys(tradeable);addStockKeys(availableStock);
       for(const rid of stockIds){
         counters.stockResourceRowsScanned++;
         // The old resource-scoped scan reads stock by the exact product key, not by
@@ -554,13 +617,22 @@
     const startedAt=marketNow(),pacing={sliceStartedAt:startedAt,yieldCount:0,maxSliceMs:0};
     const snapshotYieldStart=pacing.yieldCount,snapshotStartedAt=marketNow();
     activeMarketSnapshot=await drainMarketWorkCooperatively(createMarketSnapshotWork(),pacing);
+    if(pacing.yieldCount===snapshotYieldStart){
+      // Small first-time snapshots and zero-work cache hits both give the browser
+      // one paint opportunity before the heavier resource/order-book stages.
+      await yieldMarketRefresh();
+      pacing.yieldCount+=1;
+      const resumedAt=marketNow();
+      pacing.maxSliceMs=Math.max(pacing.maxSliceMs,Math.max(0,resumedAt-pacing.sliceStartedAt));
+      pacing.sliceStartedAt=resumedAt;
+    }
     const snapshotDurationMs=Number(Math.max(0,marketNow()-snapshotStartedAt).toFixed(2));
     const snapshotYieldCount=pacing.yieldCount-snapshotYieldStart;
     const productIndexStartedAt=marketNow();
-    activeProductIndex=buildProductIndex();
+    activeProductIndex=currentProductIndex();
     const productIndexDurationMs=Number(Math.max(0,marketNow()-productIndexStartedAt).toFixed(2));
     try{
-      const markets={},countryRows=activeMarketSnapshot.countryIds.slice();
+      const markets={},countryRows=activeMarketSnapshot.countryIds;
       const discoveryYieldStart=pacing.yieldCount,discoveryStartedAt=marketNow();
       const resourceRows=await drainMarketWorkCooperatively(resourceIdsWork(countryRows),pacing);
       const resourceDiscoveryDurationMs=Number(Math.max(0,marketNow()-discoveryStartedAt).toFixed(2));
@@ -604,7 +676,7 @@
     if(rebuildCountryInFlight)return g.__OmegaMarketBooks||{};
     const previousSnapshot=activeMarketSnapshot,previousProductIndex=activeProductIndex;
     activeMarketSnapshot=createMarketSnapshot();
-    activeProductIndex=buildProductIndex();
+    activeProductIndex=currentProductIndex();
     try{
       const markets={},countryRows=countries(),
         resourceRows=drainMarketWorkSync(resourceIdsWork(countryRows));
@@ -1191,15 +1263,21 @@
   }
   function diagnostics(){
     const markets=g.__OmegaMarketBooks||{},rows=Object.values(markets),catalogRows=productCatalog();
-    return{version:VERSION,handlerInstalled:!!interop()?.commandHandlers?.has?.('OMEGA_MARKET_PUBLISH_PROJECTION'),resourceMarkets:rows.length,clearedMarkets:rows.filter(x=>x.clearing?.status==='CLEARED').length,marketOrderCount:rows.reduce((s,x)=>s+(x.orders?.bids?.length||0)+(x.orders?.asks?.length||0),0),rawResourceProducts:catalogRows.filter(x=>x.productType==='RAW_RESOURCE').length,factoryProducts:catalogRows.filter(x=>x.productType==='FACTORY_PRODUCT').length,lastCountryRefresh:clone(g.__omegaGlobalMarketRefreshDiagnostics||null),refreshInFlight:!!rebuildCountryInFlight,numeraire:'USD',settlementAuthority:'PRICE_DISCOVERY_ONLY'};
+    return{version:VERSION,handlerInstalled:!!interop()?.commandHandlers?.has?.('OMEGA_MARKET_PUBLISH_PROJECTION'),resourceMarkets:rows.length,clearedMarkets:rows.filter(x=>x.clearing?.status==='CLEARED').length,marketOrderCount:rows.reduce((s,x)=>s+(x.orders?.bids?.length||0)+(x.orders?.asks?.length||0),0),rawResourceProducts:catalogRows.filter(x=>x.productType==='RAW_RESOURCE').length,factoryProducts:catalogRows.filter(x=>x.productType==='FACTORY_PRODUCT').length,lastCountryRefresh:clone(g.__omegaGlobalMarketRefreshDiagnostics||null),refreshInFlight:!!rebuildCountryInFlight,
+      snapshotIndexCacheHits:marketSnapshotCacheHits,snapshotIndexCacheBuilds:marketSnapshotCacheBuilds,
+      productIndexCacheHits:productIndexCacheHits,productIndexCacheBuilds:productIndexCacheBuilds,
+      numeraire:'USD',settlementAuthority:'PRICE_DISCOVERY_ONLY'};
   }
   function init(){
     install();
     if(!g.__omegaGlobalMarketHook){
       g.__omegaGlobalMarketHook=true;
       g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
-      g.addEventListener?.('OMEGA_READY',install);
-      g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',install);
+      const invalidateMarketIndexes=function(){
+        marketSnapshotIndexCache=null;productIndexCache=null;productIndexCacheSources=null;
+      };
+      g.addEventListener?.('OMEGA_READY',function(){invalidateMarketIndexes();install();});
+      g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',function(){invalidateMarketIndexes();install();});
     }
     if(state()?.simulation?.turn!==undefined)rebuild();
     return diagnostics();
