@@ -77,14 +77,26 @@
   let marketSnapshotIndexCache=null,marketSnapshotCacheHits=0,marketSnapshotCacheBuilds=0;
   let productIndexCache=null,productIndexCacheSources=null,productIndexCacheHits=0,productIndexCacheBuilds=0;
   const MARKET_REFRESH_SLICE_MS=6;
+  function sameDomainKeys(source,expected){
+    if(!source||typeof source!=='object')return!expected||expected.length===0;
+    if(!Array.isArray(expected))return false;
+    let index=0;
+    for(const key in source){
+      if(!Object.prototype.hasOwnProperty.call(source,key))continue;
+      if(expected[index]!==key)return false;
+      index++;
+    }
+    return index===expected.length;
+  }
   function* createMarketSnapshotWork(){
     const root=state()||{},domains=['trade','resource','finance','foreign','economy'];
     const registryRef=registry(),cached=marketSnapshotIndexCache;
     let reusable=!!cached&&cached.root===root&&cached.registry===registryRef;
     if(reusable){
       for(const domain of domains){
-        const source=root[domain];
-        if(cached.domainSources[domain]!==((source&&typeof source==='object')?source:null)){
+        const source=root[domain],keys=cached.domainKeys[domain];
+        if(cached.domainSources[domain]!==((source&&typeof source==='object')?source:null)||
+           !sameDomainKeys(source,keys)){
           reusable=false;break;
         }
       }
@@ -92,9 +104,10 @@
     if(reusable){
       marketSnapshotCacheHits++;
       return{countryIds:cached.countryIds,buckets:cached.buckets,domainSources:cached.domainSources,
-        currencyByCountry:new Map(),usdRateByCountry:new Map(),cacheHit:true};
+        domainKeys:cached.domainKeys,currencyByCountry:new Map(),usdRateByCountry:new Map(),cacheHit:true};
     }
-    const countryIds=new Set(),buckets=Object.create(null),domainSources=Object.create(null);
+    const countryIds=new Set(),buckets=Object.create(null),domainSources=Object.create(null),
+      domainKeys=Object.create(null);
     let scanned=0;
     const resolveRow=row=>{
       const raw=row&&typeof row==='object'
@@ -114,9 +127,10 @@
     }catch(_){}
     for(const domain of domains){
       const source=root[domain];
-      if(!source||typeof source!=='object'){domainSources[domain]=null;continue;}
+      if(!source||typeof source!=='object'){domainSources[domain]=null;domainKeys[domain]=[];continue;}
       domainSources[domain]=source;
       const index=Object.create(null),keys=Object.keys(source);
+      domainKeys[domain]=keys;
       for(const key of keys){
         const cid=canonical(key);
         if(cid){
@@ -129,9 +143,9 @@
       buckets[domain]=index;
     }
     const countryRows=[...countryIds].filter(Boolean).sort();
-    marketSnapshotIndexCache={root,registry:registryRef,domainSources,buckets,countryIds:countryRows};
+    marketSnapshotIndexCache={root,registry:registryRef,domainSources,domainKeys,buckets,countryIds:countryRows};
     marketSnapshotCacheBuilds++;
-    return{countryIds:countryRows,buckets,domainSources,currencyByCountry:new Map(),usdRateByCountry:new Map(),cacheHit:false};
+    return{countryIds:countryRows,buckets,domainSources,domainKeys,currencyByCountry:new Map(),usdRateByCountry:new Map(),cacheHit:false};
   }
   function createMarketSnapshot(){
     return drainMarketWorkSync(createMarketSnapshotWork());
