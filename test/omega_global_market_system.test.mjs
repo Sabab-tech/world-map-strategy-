@@ -335,6 +335,10 @@ for(const countryId of ['USA','CHN','IND','JPN','GBR','DEU','FRA','BRA']){
   globalThis.Game.state.resource[countryId] ||= {};
   globalThis.Game.state.trade[countryId] ||= {};
 }
+// This legacy stock-only NPC identity must not be promoted into daily live market
+// discovery: the country has no current posted trade order and is not being simulated.
+const nonPlayerOnlyResourceId='NPC_STOCK_ONLY_NOT_LIVE';
+globalThis.Game.state.resource.SAU.inventory[nonPlayerOnlyResourceId]=321;
 const refreshTurn=Number(globalThis.Game.state.simulation.turn||0)+1;
 globalThis.Game.state.simulation.turn=refreshTurn;
 const refreshPlayerCountryId=identity.resolveCountry('BGD')?.id||'BGD';
@@ -370,8 +374,15 @@ assert.ok(countryRefresh.refresh?.resourceCount>0,JSON.stringify(countryRefresh.
 assert.ok(countryRefresh.refresh?.yieldCount>0,JSON.stringify(countryRefresh.refresh));
 assert.ok(countryRefresh.refresh?.snapshotYieldCount>0,
   'canonical country/domain snapshot preparation must yield before order-book collection');
-assert.ok(countryRefresh.refresh?.resourceDiscoveryYieldCount>0,
-  'resource-ID discovery across the canonical country roster must yield before order-book collection');
+assert.equal(countryRefresh.refresh?.resourceDiscoveryCountryCount,1,
+  'daily resource discovery must touch only the selected country plus the canonical catalog');
+assert.equal(countryRefresh.refresh?.marketScope,'PLAYER_COUNTRY_STOCK_PLUS_GLOBAL_ORDERS');
+assert.equal(countryRefresh.refresh?.stockCountriesScanned,1,
+  'daily indicative stock scanning must be limited to the selected player country');
+assert.equal(countryRefresh.refresh?.nonPlayerStockCountriesSkipped,countryRefresh.refresh?.countryCount-1,
+  'all non-player baseline stock buckets must be skipped while their posted trade orders remain indexed');
+assert.equal(market.quote(nonPlayerOnlyResourceId).status,'UNAVAILABLE',
+  'a stock-only NPC baseline identity must not be exposed as daily live market liquidity');
 assert.ok(countryRefresh.refresh?.snapshotDurationMs>=0,JSON.stringify(countryRefresh.refresh));
 assert.ok(countryRefresh.refresh?.resourceDiscoveryDurationMs>=0,JSON.stringify(countryRefresh.refresh));
 assert.ok(marketRefreshYieldCount>0,'the market refresh must yield control to the browser between workload slices');
@@ -429,6 +440,9 @@ assert.equal(secondDayRefresh.turn,secondRefreshTurn);
 assert.deepEqual(concurrentSecondDayRefresh,secondDayRefresh,
   'concurrent day refresh requests must share one committed market build');
 assert.ok(secondDayRefresh.refresh?.yieldCount>0,JSON.stringify(secondDayRefresh.refresh));
+assert.equal(secondDayRefresh.refresh?.resourceDiscoveryCountryCount,1);
+assert.equal(secondDayRefresh.refresh?.stockCountriesScanned,1);
+assert.equal(secondDayRefresh.refresh?.nonPlayerStockCountriesSkipped,secondDayRefresh.refresh?.countryCount-1);
 assert.equal(secondDayRefresh.refresh?.countriesScanned,secondDayRefresh.refresh?.countryCount,
   'the cooperative index scans each country once for the whole global market');
 assert.equal(secondDayRefresh.refresh?.offerRowsScanned,expectedMarketOfferRows,
@@ -454,5 +468,25 @@ assert.ok(marketIndexAfter.snapshotIndexCacheHits>marketIndexBefore.snapshotInde
   'subsequent market refreshes must reuse the country/domain index');
 assert.ok(marketIndexAfter.productIndexCacheHits>marketIndexBefore.productIndexCacheHits,
   'subsequent market refreshes must reuse the product catalog index');
+
+// Snapshot cache hits must not enumerate the top-level country keys again each day.
+// The first use of this new source builds its one-time index; later days reuse it by
+// source identity while still reading the current mutable values inside each bucket.
+const foreignDomain=globalThis.Game.state.foreign;
+let foreignDomainKeyScans=0;
+globalThis.Game.state.foreign=new Proxy(foreignDomain,{
+  ownKeys(target){foreignDomainKeyScans++;return Reflect.ownKeys(target);}
+});
+const proxyWarmTurn=secondRefreshTurn+1;
+globalThis.Game.state.simulation.turn=proxyWarmTurn;
+const proxyWarm=await market.rebuildCountry(refreshPlayerCountryId);
+assert.equal(proxyWarm.status,'COMPLETED',JSON.stringify(proxyWarm));
+assert.ok(foreignDomainKeyScans>0,'a changed domain reference should build its structural index once');
+foreignDomainKeyScans=0;
+globalThis.Game.state.simulation.turn=proxyWarmTurn+1;
+const proxyCacheHit=await market.rebuildCountry(refreshPlayerCountryId);
+assert.equal(proxyCacheHit.status,'COMPLETED',JSON.stringify(proxyCacheHit));
+assert.equal(foreignDomainKeyScans,0,
+  'a stable domain source must not trigger a full country-key validation scan on the next game day');
 
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
