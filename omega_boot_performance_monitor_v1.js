@@ -28,6 +28,9 @@
             if (g.performance && typeof g.performance.now === "function") {
                 return g.performance.now();
             }
+            if (typeof performance !== "undefined" && typeof performance.now === "function") {
+                return performance.now();
+            }
         } catch (_) {}
         return Date.now();
     }
