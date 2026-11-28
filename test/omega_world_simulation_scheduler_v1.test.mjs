@@ -16,7 +16,7 @@ function harness(count=197,existingState=null,userAgent=''){
  const scheduler=sandbox.Omega.WorldSimulationScheduler,participant=participants.get('omega.world-simulation.scheduler.v1');
  assert.ok(participant,'scheduler must register one canonical turn participant');
  scheduler.registerCountryHandler('test.player-active-handler',async(cid,ctx)=>handled.push({countryId:cid,tier:ctx.tier,turn:ctx.turn}),{tiers:['PLAYER','ACTIVE']});
- return{ids,participants,listeners,evaluations,queued,handled,yields:()=>yields,rosterCalls:()=>rosterCalls,state,simulation,scheduler,participant};
+ return{ids,participants,listeners,evaluations,queued,handled,yields:()=>yields,rosterCalls:()=>rosterCalls,state,simulation,scheduler,participant,sandbox};
 }
 test('100-game-day schedule is bounded and all 196 non-player test countries are evaluated',async()=>{
  const h=harness(197);
@@ -112,4 +112,30 @@ test('concurrent callbacks for one turn share one execution and do not duplicate
    'opponent evaluations must not be doubled');
  assert.equal(h.scheduler.diagnostics().processing,false);
  assert.equal(h.scheduler.diagnostics().inFlightTurn,null);
+});
+
+
+test('world scheduler exposes per-country-handler duration and main-thread blocking',async()=>{
+ const h=harness(12);
+ const spanIds=[];
+ h.sandbox.OmegaBootPerformanceMonitor={
+  recordSpan(id,start,end,metadata){
+   spanIds.push({id,metadata});
+   return{durationMs:2.5,mainThreadBlockingMs:4,longTaskCount:1,maxLongTaskMs:58};
+  },
+  snapshot(){return{fps:60,frameIntervalMsP95:16.7};}
+ };
+ h.scheduler.registerCountryHandler('test.perf.player-handler',async()=>({status:'COMPLETED'}),
+  {tiers:['PLAYER'],priority:5});
+ h.state.simulation.turn=1;h.simulation.clock.turn=1;
+ const result=await h.participant.handler({},{
+  turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation,stepDurationMs:10000
+ });
+ const handler=result.player.handlers.find(row=>row.id==='test.perf.player-handler');
+ assert.ok(handler,'the selected player country handler should execute');
+ assert.equal(handler.durationMs,2.5);
+ assert.equal(handler.mainThreadBlockingMs,4);
+ assert.equal(handler.longTaskCount,1);
+ assert.ok(spanIds.some(row=>row.id==='world-scheduler.handler.PLAYER.test.perf.player-handler'));
+ assert.equal(h.scheduler.diagnostics().browserPerformance.fps,60);
 });
