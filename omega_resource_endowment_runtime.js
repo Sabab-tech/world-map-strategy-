@@ -2101,7 +2101,6 @@ function batchFromExtraction(x,record){
     const replayedRecords=[];
     const blocked=[];
     const pendingFiscalRecords=[];
-    const mineOutputs=ctx.stateTransaction.get('resource.mineOutputs')||{};
     const mineSiteControllers=ctx.stateTransaction.get('resource.mineSiteControllers')||{};
     const mines=ctx.stateTransaction.get('resource.mines')||[];
     // Capacity and demand are both expressed as rates per day, while extraction
