@@ -203,7 +203,7 @@ assert.doesNotMatch(extractionHandlerSource,/existingBatches\.find\(/,
 
 
 const day2OfflineShellSource=fs.readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),'utf8');
-const shellCacheVersion=Number(day2OfflineShellSource.match(/const CACHE_NAME = "omega-offline-atlas-shell-v(\\d+)"/)?.[1]||0);
+const shellCacheVersion=Number(day2OfflineShellSource.match(/const CACHE_NAME = "omega-offline-atlas-shell-v([0-9]+)"/)?.[1]||0);
 assert.ok(shellCacheVersion>160,
   'the updated core extraction runtime must be fetched by a new offline shell cache');
 assert.match(day2OfflineShellSource,/const DATA_CACHE_NAME = "omega-country-data-v1"/,
