@@ -100,6 +100,11 @@ function createSimulationHarness() {
       return {durationMs:12.5,mainThreadBlockingMs:4,longTaskCount:1,
         maxLongTaskMs:57,longAnimationFrameCount:1,longAnimationFrameBlockingMs:3};
     },
+    getSpanDiagnostics(prefix) {
+      return spans.filter(row=>!prefix||row.id.startsWith(prefix)).map(row=>({
+        id:row.id,sampleCount:8,lastDurationMs:12.5,lastMainThreadBlockingMs:4,lastLongTaskCount:1
+      }));
+    },
     snapshot() {
       return {fps:58,frameIntervalMsP95:17.2,maxFrameGapMs:41,
         longTaskSupported:true,longTaskCount10s:1};
@@ -171,6 +176,8 @@ test('canonical simulation reports phase and participant execution and blocking 
   assert.equal(participant.lastLongTaskCount,1);
   assert.equal(diagnostics.lastTurnPerformance.turn,8);
   assert.equal(diagnostics.lastTurnPerformance.browser.fps,58);
+  assert.ok(diagnostics.performanceSpans.some(row=>row.id==='simulation.domain.world-ecosystem'));
+  assert.ok(diagnostics.performanceSpans.some(row=>row.id==='simulation.participant.test.domain.telemetry'));
   assert.ok(diagnostics.lastTurnPerformance.domains.some(row=>row.id==='world-ecosystem'));
   assert.ok(diagnostics.lastTurnPerformance.domains.some(row=>row.id==='ministry-pump'));
   assert.ok(diagnostics.lastTurnPerformance.domains.some(row=>row.id==='interoperability-advance'));
