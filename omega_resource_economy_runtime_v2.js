@@ -3169,6 +3169,30 @@
     worldMineStatsCache={total,active,blocked};worldMineStatsCacheTurn=currentTurn;worldMineStatsDirty=false;
     return worldMineStatsCache;
   }
+  function dashboardHealth(c){
+    var cid=canonical(c),rs=bucket(cid,'resource')||{},econ=bucket(cid,'economy')||{},
+      mines=Array.isArray(rs.mines)?rs.mines:[],outputs=rs.mineOutputs||{},
+      runtime=econ.industrialRuntime||{},warehouse=rs.warehouse||{},blocked=0;
+    for(var i=0;i<mines.length;i++){
+      var mine=mines[i]||{},output=mine.occurrenceKey&&outputs[mine.occurrenceKey]||{};
+      var status=String(output.status||mine.operationalStatus||
+        mine.reserveState&&mine.reserveState.operationalStatus||'UNKNOWN').toUpperCase();
+      if(/BLOCKED|FAILED|UNAVAILABLE|UNKNOWN/.test(status))blocked++;
+    }
+    var worldStats=getWorldMineStats();
+    return{
+      status:blocked>0||runtime.status==='DEGRADED'||
+        rs.inventoryIntegrity&&rs.inventoryIntegrity.status==='DEGRADED'
+        ?'DEGRADED':(mines.length?'HEALTHY':'NO_MINE_RECORDS'),
+      worldMineCount:worldStats.total,
+      worldActiveMines:worldStats.active,
+      worldBlockedMines:worldStats.blocked,
+      runtimeVersion:VERSION,
+      rulesVersion:rules().schemaVersion,
+      warehouseAuthoritative:!!warehouse.warehouseId,
+      dataAuthority:rs.resourceAuthority?.source||'UNKNOWN'
+    };
+  }
   function dashboard(c){
     var cid=canonical(c),rs=bucket(cid,'resource')||{},econ=bucket(cid,'economy')||{},fin=bucket(cid,'finance')||{},tr=bucket(cid,'trade')||{},tp=bucket(cid,'transport')||{},mines=Array.isArray(rs.mines)?rs.mines:[],inv=rs.inventory&&typeof rs.inventory==='object'?rs.inventory:{},outs=rs.mineOutputs||{},mineTotals=rs.mineOutputTotals||{},mineHistory=Array.isArray(rs.mineProductionLedger)?rs.mineProductionLedger:[],warehouse=rs.warehouse||{},runtime=econ.industrialRuntime||{},factoryInputEvents=Array.isArray(runtime.factoryInputEvents)?runtime.factoryInputEvents:[],fisc=fin.resourceFiscal||{},currentFiscal=fisc.lastTurn===turn()?(fisc.thisTurn||{}):{royalty:0,resourceTax:0,corporateTax:0,exportDuty:0,other:0,total:0},sales=Array.isArray(tr.domesticSales)?tr.domesticSales:[],offer=tr.offerBook,offerRows=Array.isArray(offer)?offer:(offer&&typeof offer==='object'?Object.keys(offer).map(function(k){return offer[k];}):[]);
     var rows=mines.map(function(m){var o=m.occurrenceKey&&outs[m.occurrenceKey]||{},tot=mineTotals[m.occurrenceKey]||{},st=String(o.status||m.operationalStatus||m.reserveState&&m.reserveState.operationalStatus||'UNKNOWN').toUpperCase(),rb=o.reserveBefore&&num(o.reserveBefore.residualQuantity),ra=o.reserveAfter&&num(o.reserveAfter.residualQuantity);return{occurrenceKey:m.occurrenceKey,depositName:m.depositName||m.occurrenceKey||'UNNAMED MINE',resourceId:m.resourceId||'',ownerKey:m.ownerKey||null,operatorKey:m.operatorKey||null,status:st,reserve:num(m.reserveState&&m.reserveState.residualQuantity!=null?m.reserveState.residualQuantity:m.residualQuantity),outputThisTurn:num(o.producedQuantity)||0,outputCumulative:num(o.outputCumulative)||num(tot.cumulativeQuantity)||0,outputRatePerDay:num(m.outputRatePerDay),purity:num(o.purity!=null?o.purity:m.purity),gradePercent:num(o.gradePercent!=null?o.gradePercent:m.gradePercent),batchId:o.batchId||m.lastBatchId||null,warehouseId:o.warehouseId||m.warehouseId||warehouse.warehouseId||null,sourceDatasetId:m.sourceDatasetId||o.sourceDatasetId||null,deltaReserve:(rb!==null&&ra!==null)?ra-rb:null};});
@@ -3724,8 +3748,8 @@
       if(g.OmegaGlobalTrade&&typeof g.OmegaGlobalTrade.processCountry==='function'){
         try{measure('global-trade-process-country',function(){return g.OmegaGlobalTrade.processCountry(cid);});}catch(_){}
       }
-      var dashboardRow=measure('dashboard-build',function(){return dashboard(cid);});
-      emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,dashboardRow.health,'resource-economy');
+      var healthRow=measure('dashboard-health',function(){return dashboardHealth(cid);});
+      emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,healthRow,'resource-economy');
       try{
         if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function'){
           g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_ECONOMY_UPDATED',{detail:dashboardRow}));
