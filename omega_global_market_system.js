@@ -169,10 +169,7 @@
     const cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();let bucket;
     if(activeMarketSnapshot){
       const source=activeMarketSnapshot.domainSources?.[domain],key=activeMarketSnapshot.buckets[domain]?.[cid];
-      // Canonical keys remain directly readable even if a country bucket is first
-      // materialized after the one-time structural index was built.
-      bucket=source&&Object.prototype.hasOwnProperty.call(source,cid)?source[cid]:
-        (source&&key!==undefined?source[key]:undefined);
+      bucket=source&&key!==undefined?source[key]:undefined;
     }else{
       bucket=state()?.[domain];
       if(bucket&&typeof bucket==='object')bucket=bucket[cid]??bucket[Object.keys(bucket).find(k=>canonical(k)===cid)];
