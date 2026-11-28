@@ -182,9 +182,9 @@ assert.match(extractionHandlerSource,/for\(let i=Math\.min\(startStageIndex,stag
   'period finalization must tag only newly appended stages on touched paths');
 assert.doesNotMatch(extractionHandlerSource,/Object\.values\(mineOutputs\)|Object\.values\(minePaths\)/,
   'an extraction slice must never rescan every historical mine output and path stage');
-assert.match(extractionHandlerSource,/ctx\.stateTransaction\.peek\('resource\.minePaths'\)/,
+assert.match(extractionHandlerSource,/readOnlyStatePath\('resource\.minePaths'\)/,
   'extraction must read the historical path map without cloning the complete map');
-assert.match(extractionHandlerSource,/ctx\.stateTransaction\.peek\('resource\.inventoryLots'\)/,
+assert.match(extractionHandlerSource,/readOnlyStatePath\('resource\.inventoryLots'\)/,
   'extraction must read the historical inventory-lot map without cloning the complete map');
 assert.match(extractionHandlerSource,/writeKeyedResourceRows\('resource\.minePaths',existingMinePaths,minePathWrites\)/,
   'path updates must commit only the mine paths changed by this slice');
