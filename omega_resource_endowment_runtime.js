@@ -1973,8 +1973,36 @@ function batchFromExtraction(x,record){
     const mineOutputTotals=ctx.stateTransaction.get('resource.mineOutputTotals')||{};
     const existingBatchesSnapshot=extractionHistoryIndex?extractionHistoryIndex.batches.slice():ctx.stateTransaction.get('resource.batches');
     const existingBatches=Array.isArray(existingBatchesSnapshot)?existingBatchesSnapshot:[];
-    const inventoryLots=ctx.stateTransaction.get('resource.inventoryLots')||{};
-    const minePaths=ctx.stateTransaction.get('resource.minePaths')||{};
+    // Read the large keyed maps without cloning them. Each extraction transaction
+    // stages only the entries it actually changes, avoiding a full historical-map
+    // copy and commit for every small mobile slice.
+    const existingInventoryLots=ctx.stateTransaction.peek('resource.inventoryLots')||{};
+    const inventoryLotWrites=new Map();
+    const existingMinePaths=ctx.stateTransaction.peek('resource.minePaths')||{};
+    const minePathWrites=new Map();
+    const readMinePath=key=>{
+      const normalized=String(key||'');
+      return minePathWrites.has(normalized)?minePathWrites.get(normalized):existingMinePaths[normalized];
+    };
+    const cloneMinePath=key=>{
+      const path=readMinePath(key);
+      return path&&typeof path==='object'?clone(path):null;
+    };
+    const writeMinePath=(key,path)=>minePathWrites.set(String(key||''),path);
+    const existingMineOutputs=ctx.stateTransaction.peek('resource.mineOutputs')||{};
+    const mineOutputWrites=new Map();
+    const writeMineOutput=(key,row)=>mineOutputWrites.set(String(key||''),row);
+    const writeKeyedResourceRows=(path,base,writes)=>{
+      if(!writes.size)return;
+      const entries=[...writes.entries()];
+      if(entries.some(([key])=>!key||key.includes('.')||key==='__proto__'||key==='constructor')){
+        const merged={...(base&&typeof base==='object'?base:{})};
+        for(const [key,value] of entries)merged[key]=value;
+        ctx.stateTransaction.set(path,merged);
+        return;
+      }
+      for(const [key,value] of entries)ctx.stateTransaction.set(path+'.'+key,value);
+    };
     const warehouse=ctx.stateTransaction.get('resource.warehouse')||{
       warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
       locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],lastReceiptTurn:null
@@ -2096,7 +2124,6 @@ function batchFromExtraction(x,record){
     // Only records touched by this extraction slice need period-ID finalization.
     // Scanning every historical output/path after every small slice makes later
     // game days progressively slower as their retained ledgers and path stages grow.
-    const touchedMineOutputKeys=new Set(allSiteKeys);
     const touchedMinePathStageOffsets=new Map();
     const rememberMinePathStageOffset=(key,path)=>{
       const normalized=String(key||'');
@@ -2104,25 +2131,20 @@ function batchFromExtraction(x,record){
       touchedMinePathStageOffsets.set(normalized,Array.isArray(path?.stages)?path.stages.length:0);
     };
     for(const key of allSiteKeys){
-      rememberMinePathStageOffset(key,minePaths[key]);
+      rememberMinePathStageOffset(key,readMinePath(key));
     }
     for(const occurrence of selected){
       const occurrenceKey=String(occurrence?.occurrenceKey||'');
       const siteKey=String(occurrence?.siteReferenceKey||'');
-      if(occurrenceKey){
-        touchedMineOutputKeys.add(occurrenceKey);
-        rememberMinePathStageOffset(occurrenceKey,minePaths[occurrenceKey]);
-      }
-      if(siteKey){
-        touchedMineOutputKeys.add(siteKey);
-        rememberMinePathStageOffset(siteKey,minePaths[siteKey]);
-      }
+      if(occurrenceKey)rememberMinePathStageOffset(occurrenceKey,readMinePath(occurrenceKey));
+      if(siteKey)rememberMinePathStageOffset(siteKey,readMinePath(siteKey));
     }
     for(const siteKey of allSiteKeys){
       const controller=mineSiteControllers[siteKey];
       const hasExecutable=Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>0;
       const pathId=controller.pathId||('MINE_PATH:'+c+':'+siteKey);
-      const path=minePaths[siteKey]&&typeof minePaths[siteKey]==='object'?clone(minePaths[siteKey]):{
+      const priorPath=readMinePath(siteKey);
+      const path=priorPath&&typeof priorPath==='object'?clone(priorPath):{
         pathId,siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,resourceId:null,
         sourceCountryId:c,destinationCountryId:c,stages:[],status:hasExecutable?'CONTROLLER_ONLY':'BLOCKED_MISSING_QUANTITATIVE_DATA',
         linkedOccurrenceKeys:Array.isArray(controller.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys.map(String):[],lastTurn:null,batchIds:[],inventoryAllocations:[]
@@ -2138,19 +2160,20 @@ function batchFromExtraction(x,record){
       }
       if(path.stages.length===0)path.stages.push({stage:'SITE_CONTROLLER_SCAN',turn:productionPeriodTurn,status:hasExecutable?'EXECUTABLE':'BLOCKED_MISSING_QUANTITATIVE_DATA'});
       path.lastTurn=productionPeriodTurn;
-      minePaths[siteKey]=path;
+      writeMinePath(siteKey,path);
       if(!hasExecutable){
-        mineOutputs[siteKey]={
+        writeMineOutput(siteKey,{
           siteReferenceKey:siteKey,siteName:controller.siteName,countryId:c,simulationTurn:productionPeriodTurn,
           producedQuantity:0,status:'BLOCKED_MISSING_QUANTITATIVE_DATA',
           blockReason:'SITE_REFERENCE_HAS_NO_QUANTITATIVE_MINE_RECORD',
           pathId
-        };
+        });
       }
     }
     for(const x of selected){
       const pathId='MINE_PATH:'+c+':'+String(x.occurrenceKey);
-      const existingPath=minePaths[x.occurrenceKey]&&typeof minePaths[x.occurrenceKey]==='object'?clone(minePaths[x.occurrenceKey]):{
+      const priorOccurrencePath=readMinePath(x.occurrenceKey);
+      const existingPath=priorOccurrencePath&&typeof priorOccurrencePath==='object'?clone(priorOccurrencePath):{
         pathId,occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,countryId:c,resourceId:x.resourceId,
         sourceCountryId:c,destinationCountryId:c,stages:[],status:'READY',lastTurn:null,batchIds:[],inventoryAllocations:[]
       };
@@ -2161,7 +2184,7 @@ function batchFromExtraction(x,record){
       if(!existingPath.stages.some(stage=>stage.stage==='EXTRACTION_SCAN'&&n(stage.turn)===currentTurn))
         existingPath.stages.push({stage:'EXTRACTION_SCAN',turn:currentTurn});
       existingPath.lastTurn=currentTurn;
-      minePaths[x.occurrenceKey]=existingPath;
+      writeMinePath(x.occurrenceKey,existingPath);
       const occurrenceKey=String(x.occurrenceKey);
       const alreadyExtractedThisTurn=committedProductionByOccurrence.has(occurrenceKey);
       // Replay the already committed extraction event for downstream logistics retries; never re-add its stock.
@@ -2187,7 +2210,7 @@ function batchFromExtraction(x,record){
             existingPath.stages.push({stage:'EXTRACTION_REPLAYED_ALREADY_COMMITTED',turn:productionPeriodTurn,
               batchId:priorBatchId,quantity:n(priorRecord.quantity)||0});
           }
-          minePaths[x.occurrenceKey]=existingPath;
+          writeMinePath(x.occurrenceKey,existingPath);
           continue;
         }
       }
@@ -2198,8 +2221,8 @@ function batchFromExtraction(x,record){
           n(stage.turn)===blockedTurn&&String(stage.reason||'')===existingPath.blockReason)){
           existingPath.stages.push({stage:'EXTRACTION_BLOCKED',turn:blockedTurn,status:'BLOCKED',reason:existingPath.blockReason,...clone(details)});
         }
-        existingPath.lastTurn=blockedTurn;minePaths[x.occurrenceKey]=existingPath;
-        const siteKey=String(x.siteReferenceKey||''),sitePath=siteKey&&siteKey!==String(x.occurrenceKey)?minePaths[siteKey]:null;
+        existingPath.lastTurn=blockedTurn;writeMinePath(x.occurrenceKey,existingPath);
+        const siteKey=String(x.siteReferenceKey||''),sitePath=siteKey&&siteKey!==String(x.occurrenceKey)?cloneMinePath(siteKey):null;
         if(sitePath&&!(sitePath.batchIds||[]).length){
           sitePath.status='BLOCKED';sitePath.blockReason=existingPath.blockReason;
           sitePath.stages=Array.isArray(sitePath.stages)?sitePath.stages:[];
@@ -2208,7 +2231,7 @@ function batchFromExtraction(x,record){
             String(stage.reason||'')===existingPath.blockReason)){
             sitePath.stages.push({stage:'LINKED_OCCURRENCE_BLOCKED',turn:blockedTurn,status:'BLOCKED',occurrenceKey:x.occurrenceKey,reason:existingPath.blockReason});
           }
-          sitePath.lastTurn=blockedTurn;minePaths[siteKey]=sitePath;
+          sitePath.lastTurn=blockedTurn;writeMinePath(siteKey,sitePath);
         }
       };
       const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
@@ -2217,7 +2240,7 @@ function batchFromExtraction(x,record){
         const siteGate=strategicPolicy.siteAvailableForExtraction(c,policySiteId);
         if(siteGate&&!siteGate.allowed){
           const reason={occurrenceKey:x.occurrenceKey,siteId:policySiteId,resourceId:x.resourceId,reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED'};
-          blocked.push(reason);mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason};
+          blocked.push(reason);writeMineOutput(x.occurrenceKey,{occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason});
           markPathBlocked(reason.reason,{siteId:policySiteId});continue;
         }
       }
@@ -2225,13 +2248,13 @@ function batchFromExtraction(x,record){
       if(!reserve){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'RESERVE_STATE_UNAVAILABLE'};
         blocked.push(reason);
-        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason};
+        writeMineOutput(x.occurrenceKey,{occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason});
         markPathBlocked(reason.reason);continue;
       }
       if(reserve.residualQuantity<=0){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'RESERVE_EXHAUSTED'};
         blocked.push(reason);
-        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
+        writeMineOutput(x.occurrenceKey,{occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0});
         markPathBlocked(reason.reason,{residualQuantity:n(reserve.residualQuantity)||0});continue;
       }
       const operationalStatus=String(reserve.operationalStatus||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
@@ -2252,14 +2275,14 @@ function batchFromExtraction(x,record){
       if(!operational){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'MINE_NOT_OPERATIONAL',operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null};
         blocked.push(reason);
-        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null,residualQuantity:n(reserve.residualQuantity)||0};
+        writeMineOutput(x.occurrenceKey,{occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null,residualQuantity:n(reserve.residualQuantity)||0});
         markPathBlocked(reason.reason,{operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null});continue;
       }
       let capacity=x.isSimulationGenerated?x.capacity:null;try{if(!capacity)capacity=r.getCapacityForOccurrence(x.occurrenceKey);}catch(_){}
       if(!capacity){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'EXTRACTION_CAPACITY_UNAVAILABLE'};
         blocked.push(reason);
-        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
+        writeMineOutput(x.occurrenceKey,{occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0});
         markPathBlocked(reason.reason);continue;
       }
       let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(windowHours)?.windowCapacity)||0;}catch(_){windowQuantity=(n(capacity.activeRate)||n(capacity.nominalRate)||0)*turnDays;}
@@ -2282,7 +2305,7 @@ function batchFromExtraction(x,record){
       if(windowQuantity<=0){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'EXTRACTION_OUTPUT_RATE_UNAVAILABLE'};
         blocked.push(reason);
-        mineOutputs[x.occurrenceKey]={occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0};
+        writeMineOutput(x.occurrenceKey,{occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,resourceId:x.resourceId,simulationTurn:productionPeriodTurn,producedQuantity:0,status:'BLOCKED',blockReason:reason.reason,residualQuantity:n(reserve.residualQuantity)||0});
         markPathBlocked(reason.reason);continue;
       }
       const request=new p5.ExtractionRequest({
@@ -2320,8 +2343,8 @@ function batchFromExtraction(x,record){
       if(carbonGate&&carbonGate.allowed===false){
         const reason=carbonGate.reason||'CARBON_QUOTA_POLICY_BLOCKED_EXTRACTION';
         blocked.push({occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId||null,resourceId:resource,reason,carbonGate:clone(carbonGate)});
-        mineOutputs[x.occurrenceKey]={countryId:c,occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId||null,resourceId:resource,
-          simulationTurn:productionPeriodTurn,status:'BLOCKED',blockReason:reason,approvedQuantity:0,carbonGate:clone(carbonGate)};
+        writeMineOutput(x.occurrenceKey,{countryId:c,occurrenceKey:x.occurrenceKey,siteReferenceKey:policySiteId||null,resourceId:resource,
+          simulationTurn:productionPeriodTurn,status:'BLOCKED',blockReason:reason,approvedQuantity:0,carbonGate:clone(carbonGate)});
         markPathBlocked(reason,{carbonGate:clone(carbonGate)});continue;
       }
       const record={
@@ -2343,7 +2366,7 @@ function batchFromExtraction(x,record){
       if(!batch.batchId||batch.quantity<=0)throw new Error('EXTRACTION_BATCH_CREATION_FAILED');
       const batchIdentity=String(batch.batchId);
       const conflictingBatch=existingBatchById.get(batchIdentity);
-      if(conflictingBatch||Object.prototype.hasOwnProperty.call(inventoryLots,batch.batchId)){
+      if(conflictingBatch||Object.prototype.hasOwnProperty.call(existingInventoryLots,batch.batchId)||inventoryLotWrites.has(String(batch.batchId))){
         const reason='EXTRACTION_BATCH_ID_COLLISION';
         blocked.push({occurrenceKey:x.occurrenceKey,resourceId:resource,reason,batchId:batch.batchId});
         markPathBlocked(reason,{batchId:batch.batchId,existingOccurrenceKey:conflictingBatch?.occurrenceKey||null});
@@ -2362,21 +2385,21 @@ function batchFromExtraction(x,record){
           existingPath.stages.push({stage:'ENVIRONMENTAL_IMPACT',turn:productionPeriodTurn,status:'DEGRADED',reason:environmentalResult.reason||'ENVIRONMENTAL_IMPACT_NOT_RECORDED'});
         }
       }
-      inventoryLots[batch.batchId]={
+      inventoryLotWrites.set(batch.batchId,{
         batchId:batch.batchId,resourceId:resource,countryId:c,sourceCountryId:c,originCountryId:c,
         destinationCountryId:c,warehouseId:batch.warehouseId,quantity:q,remainingQuantity:q,
         stage:'RAW_INVENTORY',purity:batch.purity,gradePercent:batch.grade,qualityState:clone(batch.qualityState),
         occurrenceKey:x.occurrenceKey,depositKey:x.depositKey,pathId,
         extractionReference:record.extractionId,simulationTurn:productionPeriodTurn,productionPeriodId,status:'AVAILABLE'
-      };
+      });
       existingPath.stages.push({stage:'BATCH_CREATED',turn:productionPeriodTurn,batchId:batch.batchId,quantity:q});
       existingPath.batchIds.push(batch.batchId);
       existingPath.inventoryAllocations.push({batchId:batch.batchId,resourceId:resource,quantity:q,warehouseId:batch.warehouseId,turn:productionPeriodTurn,status:'ALLOCATED_TO_COUNTRY_INVENTORY'});
       existingPath.status='INVENTORY_AVAILABLE';existingPath.lastTurn=productionPeriodTurn;delete existingPath.blockReason;
-      minePaths[x.occurrenceKey]=existingPath;
+      writeMinePath(x.occurrenceKey,existingPath);
       const sitePathKey=String(x.siteReferenceKey||'');
-      if(sitePathKey&&sitePathKey!==String(x.occurrenceKey)&&minePaths[sitePathKey]){
-        const sitePath=minePaths[sitePathKey];
+      const sitePath=sitePathKey&&sitePathKey!==String(x.occurrenceKey)?cloneMinePath(sitePathKey):null;
+      if(sitePath){
         sitePath.batchIds=Array.isArray(sitePath.batchIds)?sitePath.batchIds:[];
         if(!sitePath.batchIds.includes(batch.batchId))sitePath.batchIds.push(batch.batchId);
         sitePath.inventoryAllocations=Array.isArray(sitePath.inventoryAllocations)?sitePath.inventoryAllocations:[];
@@ -2386,7 +2409,7 @@ function batchFromExtraction(x,record){
         sitePath.status='INVENTORY_AVAILABLE';sitePath.resourceId=sitePath.resourceId||resource;delete sitePath.blockReason;sitePath.lastTurn=productionPeriodTurn;
         sitePath.stages=Array.isArray(sitePath.stages)?sitePath.stages:[];
         sitePath.stages.push({stage:'BATCH_CREATED',turn:productionPeriodTurn,batchId:batch.batchId,quantity:q,occurrenceKey:x.occurrenceKey});
-        minePaths[sitePathKey]=sitePath;
+        writeMinePath(sitePathKey,sitePath);
       }
       pendingFiscalRecords.push({
         countryId:c,mineId:x.occurrenceKey,depositKey:x.depositKey,batchId:batch.batchId,resourceId:resource,
@@ -2399,14 +2422,14 @@ function batchFromExtraction(x,record){
       mineOutputTotals[x.occurrenceKey].cumulativeQuantity=(n(mineOutputTotals[x.occurrenceKey].cumulativeQuantity)||0)+q;
       mineOutputTotals[x.occurrenceKey].turnCount=(n(mineOutputTotals[x.occurrenceKey].turnCount)||0)+1;
       mineOutputTotals[x.occurrenceKey].lastTurn=productionPeriodTurn;
-      mineOutputs[x.occurrenceKey]={
+      writeMineOutput(x.occurrenceKey,{
         occurrenceKey:x.occurrenceKey,siteReferenceKey:x.siteReferenceKey||null,depositKey:x.depositKey,resourceId:resource,simulationTurn:productionPeriodTurn,
         assetType:x.assetType||'STRUCTURED_MINE',simulationGenerated:!!x.isSimulationGenerated,effortUtilization:x.isSimulationGenerated?1:null,
         producedQuantity:q,residualQuantity:n(result.reserveAfter.residualQuantity)||0,status:result.status,
         effortUtilization:record.effortUtilization,simulationGenerated:record.simulationGenerated,
         batchId:batch.batchId,purity:batch.purity,grade:batch.grade,quality:batch.quality,qualityState:clone(batch.qualityState),
         unit:batch.unit,warehouseId:batch.warehouseId,outputCumulative:mineOutputTotals[x.occurrenceKey].cumulativeQuantity
-      };
+      });
       const mineIndex=mines.findIndex(m=>String(m.occurrenceKey)===String(x.occurrenceKey));
       if(mineIndex>=0){
         const updatedMine={...mines[mineIndex],
@@ -2458,7 +2481,7 @@ function batchFromExtraction(x,record){
       });
       const fiscalPendingAccepted=fiscalPendingBatch?.status==='APPLIED'&&fiscalPendingBatch?.result?.accepted!==false;
       for(const fiscalRecord of pendingFiscalRecords){
-        const fiscalPath=minePaths[fiscalRecord.mineId];
+        const fiscalPath=cloneMinePath(fiscalRecord.mineId);
         if(!fiscalPath)continue;
         fiscalPath.stages=Array.isArray(fiscalPath.stages)?fiscalPath.stages:[];
         if(!fiscalPendingAccepted){
@@ -2467,16 +2490,15 @@ function batchFromExtraction(x,record){
         }else{
           fiscalPath.stages.push({stage:'TREASURY_FISCAL_LEDGER_PENDING',turn:productionPeriodTurn,status:'RECORDED',cashPosted:false});
         }
-        minePaths[fiscalRecord.mineId]=fiscalPath;
+        writeMinePath(fiscalRecord.mineId,fiscalPath);
       }
     }
-    for(const key of touchedMineOutputKeys){
-      const row=mineOutputs[key];
+    for(const [key,row] of mineOutputWrites){
       if(row&&n(row?.simulationTurn??row?.turn)===productionPeriodTurn&&!row.productionPeriodId)
         row.productionPeriodId=productionPeriodId;
     }
     for(const [key,startStageIndex] of touchedMinePathStageOffsets){
-      const stages=minePaths[key]?.stages;
+      const stages=minePathWrites.get(key)?.stages;
       if(!Array.isArray(stages))continue;
       for(let i=Math.min(startStageIndex,stages.length);i<stages.length;i++){
         const stage=stages[i];
@@ -2488,12 +2510,12 @@ function batchFromExtraction(x,record){
     if(warehouseCheck&&!warehouseCheck.ok)return{accepted:false,countryId:c,extracted:0,blocked:[warehouseCheck],records:[]};
     ctx.stateTransaction.set('resource.mineStates',current);
     ctx.stateTransaction.set('resource.mineSiteControllers',mineSiteControllers);
-    ctx.stateTransaction.set('resource.mineOutputs',mineOutputs);
+    writeKeyedResourceRows('resource.mineOutputs',existingMineOutputs,mineOutputWrites);
     ctx.stateTransaction.set('resource.mineOutputTotals',mineOutputTotals);
     ctx.stateTransaction.set('resource.mineProductionLedger',mineProductionLedger.slice(-MAX_MINE_HISTORY));
     ctx.stateTransaction.set('resource.batches',existingBatches.slice(-MAX_LEDGER));
-    ctx.stateTransaction.set('resource.inventoryLots',inventoryLots);
-    ctx.stateTransaction.set('resource.minePaths',minePaths);
+    writeKeyedResourceRows('resource.inventoryLots',existingInventoryLots,inventoryLotWrites);
+    writeKeyedResourceRows('resource.minePaths',existingMinePaths,minePathWrites);
     ctx.stateTransaction.set('resource.warehouse',warehouse);
     ctx.stateTransaction.set('resource.mines',mines);
     ctx.stateTransaction.set('resource.production',production);
