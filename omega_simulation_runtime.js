@@ -1884,6 +1884,7 @@
         lastTurnPerformance:clone(this.lastTurnPerformance),
         lastTurnDomainResults:clone(this.lastTurnDomainResults),
         domainTimings:global.OmegaBootPerformanceMonitor?.getSpanDiagnostics?.('simulation.domain.')||[],
+        performanceSpans:global.OmegaBootPerformanceMonitor?.getSpanDiagnostics?.()||[],
         recentTurnPerformance:clone(this.turnPerformanceHistory.slice(-8)),
         browserPerformance:global.OmegaBootPerformanceMonitor?.snapshot?.()||null,
         timeDiscards:{
