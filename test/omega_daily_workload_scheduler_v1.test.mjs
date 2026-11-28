@@ -25,7 +25,7 @@ function harness({mobile=false}={}){
     getProgress(){return{lastProcessedTurn:progress.industrial};},
     async runSlice(ctx){calls.push(['industrial',ctx.periodTurn]);clock+=3;
       progress.industrial=ctx.periodTurn;return{status:'COMPLETED'};}});
-  api.registerDomain({id:'food',label:'Food & Agriculture',pageId:'food',enabled:false,
+  api.registerDomain({id:'food',label:'Food & Agriculture',pageId:'agriculture_food',enabled:false,
     disabledReason:'AUTHORITATIVE_FOOD_RUNTIME_NOT_AVAILABLE',priority:30});
   return{state,progress,calls,api,sandbox,yields:()=>yields,setTurn(v){state.simulation.turn=v;sandbox.Omega.Simulation.clock.turn=v;},
     fail(v){failResource=v;}};
@@ -44,7 +44,7 @@ test('universal planner processes daily resource/industrial periods in dependenc
   assert.equal(domains.find(x=>x.id==='resources').pageId,'resource-ministry');
   assert.equal(domains.find(x=>x.id==='industrial').pageId,'industry');
   assert.equal(domains.find(x=>x.id==='food').enabled,false);
-  assert.equal(domains.find(x=>x.id==='food').pageId,'food');
+  assert.equal(domains.find(x=>x.id==='food').pageId,'agriculture_food');
   assert.equal(h.api.diagnostics().domainCount,3);
 });
 test('catch-up automatically divides backlog into bounded reconciled period slices',async()=>{
