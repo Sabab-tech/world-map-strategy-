@@ -148,7 +148,7 @@ test('canonical simulation reports phase and participant execution and blocking 
     interoperability:{advanceTurn(){},saveState(){return {};},loadState(){return true;}},
     ministryPump(){return {status:'COMPLETED'};}
   });
-  sim.createSession({playerCountryId:'BANGLADESH'});
+  h.sandbox.Omega.GameSession.createSession({playerCountryId:'BANGLADESH'});
   sim.registerTurnParticipant('test.domain.telemetry',async()=>({status:'COMPLETED'}),{priority:20});
 
   const batch = await h.sandbox.Omega.GameSession.advance(8);
