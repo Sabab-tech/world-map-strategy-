@@ -1807,7 +1807,7 @@ test('world mine statistics refresh only countries whose mine state changed',()=
     'an unchanged world mine snapshot must reuse its aggregate object');
 });
 
-test('daily resource workload registration skips unchanged domains and omits disabled food work',()=>{
+test('daily resource workload registration reuses stable domains and retains the disabled food placeholder',()=>{
   const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   const start=source.indexOf('function runDailyWorkloadPlan(countryId,endowment,industrial){');
   const end=source.indexOf('  function runTurnCore(cid){',start);
@@ -1815,8 +1815,8 @@ test('daily resource workload registration skips unchanged domains and omits dis
   const plan=source.slice(start,end);
   assert.match(plan,/if\(registrationChanged\)\{/,
     'stable scheduler and runtime references must reuse the already registered domain callbacks');
-  assert.doesNotMatch(plan,/id:'food'/,
-    'the disabled food domain must not allocate a registration or callback each game day');
+  assert.match(plan,/if\(registrationChanged\)\{[\s\S]*id:'food'[\s\S]*enabled:false[\s\S]*AUTHORITATIVE_FOOD_RUNTIME_NOT_AVAILABLE/,
+    'the disabled food page identity must be registered only when the workload runtime changes');
   assert.match(plan,/runCheckpointedResourceExtraction\(context\?\.countryId\|\|cid,endowment/,
     'reused resource callbacks must use the active scheduler context country');
   assert.match(plan,/runCheckpointedIndustrialProduction\(context\?\.countryId\|\|cid,industrial/,
