@@ -3163,8 +3163,7 @@
       outputs=resource.mineOutputs||{},active=0,blocked=0;
     for(var i=0;i<mines.length;i++){
       var mine=mines[i]||{},output=mine.occurrenceKey&&outputs[mine.occurrenceKey]||{},
-        status=String(output.status||mine.operationalStatus||
-          mine.reserveState&&mine.reserveState.operationalStatus||'UNKNOWN').toUpperCase();
+        status=String(output.status||mine.operationalStatus||'UNKNOWN').toUpperCase();
       if(/ACTIVE|DEPLETING|OPERATING|RUNNING/.test(status))active++;
       if(/BLOCKED|FAILED|UNAVAILABLE|UNKNOWN/.test(status))blocked++;
     }
@@ -3217,15 +3216,19 @@
   function dashboardHealth(c){
     var cid=canonical(c),rs=bucket(cid,'resource')||{},econ=bucket(cid,'economy')||{},
       mines=Array.isArray(rs.mines)?rs.mines:[],outputs=rs.mineOutputs||{},
-      runtime=econ.industrialRuntime||{},warehouse=rs.warehouse||{},active=0,blocked=0;
+      runtime=econ.industrialRuntime||{},warehouse=rs.warehouse||{},active=0,blocked=0,
+      worldActive=0,worldBlocked=0;
     for(var i=0;i<mines.length;i++){
       var mine=mines[i]||{},output=mine.occurrenceKey&&outputs[mine.occurrenceKey]||{};
       var status=String(output.status||mine.operationalStatus||
-        mine.reserveState&&mine.reserveState.operationalStatus||'UNKNOWN').toUpperCase();
+        mine.reserveState&&mine.reserveState.operationalStatus||'UNKNOWN').toUpperCase(),
+        worldStatus=String(output.status||mine.operationalStatus||'UNKNOWN').toUpperCase();
       if(/ACTIVE|DEPLETING|OPERATING|RUNNING/.test(status))active++;
       if(/BLOCKED|FAILED|UNAVAILABLE|UNKNOWN/.test(status))blocked++;
+      if(/ACTIVE|DEPLETING|OPERATING|RUNNING/.test(worldStatus))worldActive++;
+      if(/BLOCKED|FAILED|UNAVAILABLE|UNKNOWN/.test(worldStatus))worldBlocked++;
     }
-    var worldStats=getWorldMineStats(cid,{total:mines.length,active:active,blocked:blocked});
+    var worldStats=getWorldMineStats(cid,{total:mines.length,active:worldActive,blocked:worldBlocked});
     return{
       status:blocked>0||runtime.status==='DEGRADED'||
         rs.inventoryIntegrity&&rs.inventoryIntegrity.status==='DEGRADED'
@@ -3247,7 +3250,7 @@
       if(/ACTIVE|DEPLETING|OPERATING|RUNNING/.test(rows[rowIndex].status))active++;
       if(/BLOCKED|FAILED|UNAVAILABLE|UNKNOWN/.test(rows[rowIndex].status))blocked++;
     }
-    var worldStats=getWorldMineStats(cid,{total:mines.length,active:active,blocked:blocked}),
+    var worldStats=getWorldMineStats(),
       world=worldStats.total,worldActive=worldStats.active,worldBlocked=worldStats.blocked;
     var fiscalPending=Array.isArray(fin.resourceExtractionFiscalLedger)?fin.resourceExtractionFiscalLedger:[],minePaths=rs.minePaths&&typeof rs.minePaths==='object'?rs.minePaths:{},inventoryLots=rs.inventoryLots&&typeof rs.inventoryLots==='object'?rs.inventoryLots:{};
     return{version:VERSION,countryId:cid,turn:turn(),mines:{total:mines.length,active:active,blocked:blocked,rows:rows},inventory:{actual:cloneInventoryQuantities(inv),delta:clone(rs.inventoryDelta||{}),batches:Array.isArray(rs.batches)?rs.batches.length:0,batchRows:Array.isArray(rs.batches)?clone(rs.batches.slice(-64)):[],lotCount:Object.keys(inventoryLots).length,warehouse:clone(warehouse),integrity:clone(rs.inventoryIntegrity||null),minePathCount:Object.keys(minePaths).length,minePaths:clone(minePaths)},telemetry:{mineProductionHistory:clone(mineHistory.slice(-64)),factoryInputEvents:clone(factoryInputEvents.slice(-64))},industry:{runtime:clone(runtime),factoryOutput:clone(econ.factoryOutput||{}),blockedFacilities:clone(runtime.blockedFacilities||[])},market:{prices:clone(tr.marketPrice||{}),domesticSalesTotal:sales.length,domesticSalesThisTurn:sales.filter(function(x){return num(x.turn)===turn();}).length,autoOffers:offerRows.filter(function(x){return x&&x.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER';}).length},nationalDemand:(function(){var d=rs.demandRuntime&&typeof rs.demandRuntime==='object'?rs.demandRuntime:{},s=d.lastSummary&&typeof d.lastSummary==='object'?d.lastSummary:null,by=d.byResource&&typeof d.byResource==='object'?d.byResource:{};var resources=Object.keys(by).map(function(k){return clone(by[k]);});resources.sort(function(a,b){return(num(b.priority)||0)-(num(a.priority)||0)||String(a.resourceId||'').localeCompare(String(b.resourceId||''));});return{status:d.status||'NOT_INITIALIZED',lastTurn:num(d.lastTurn),resourceCount:num(d.resourceCount),modeled:s?num(s.modeled):null,unknown:s?num(s.unknown):null,shortages:s?num(s.shortages):null,consumedResourceCount:s?num(s.consumedResourceCount):null,procurementDecisions:Array.isArray(d.procurementDecisions)?d.procurementDecisions.length:0,procurementLastTurn:num(d.lastProcurementTurn),resources:resources};})(),treasury:{fiscalThisTurn:clone(currentFiscal),fiscalCumulative:clone(fisc.cumulative||{}),revenue:num(fin.revenue),taxRevenue:num(fin.taxRevenue),available:num(fin.available),reserves:num(fin.reserves),resourceBudgetContribution:num(fin.resourceBudgetContribution),resourceBudgetContributionThisTurn:fisc.lastTurn===turn()?(num(fin.resourceBudgetContributionThisTurn)||0):0,transportRevenue:num(tp.resourceRevenue&&tp.resourceRevenue.totalSinceRuntimeStart),companyAccounts:clone(econ.companyAccounts||{}),extractionFiscalPendingCount:fiscalPending.length,extractionFiscalPending:clone(fiscalPending.slice(-64))},health:{status:blocked>0||runtime.status==='DEGRADED'||rs.inventoryIntegrity&&rs.inventoryIntegrity.status==='DEGRADED'?'DEGRADED':(mines.length?'HEALTHY':'NO_MINE_RECORDS'),worldMineCount:world,worldActiveMines:worldActive,worldBlockedMines:worldBlocked,runtimeVersion:VERSION,rulesVersion:rules().schemaVersion,warehouseAuthoritative:!!warehouse.warehouseId,dataAuthority:rs.resourceAuthority?.source||'UNKNOWN'},fiscalReceiptThisTurn:num(currentFiscal.total)||0};
