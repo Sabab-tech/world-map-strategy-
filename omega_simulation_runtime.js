@@ -1556,7 +1556,8 @@
 
         // The save finalizer executes after all state mutations and the completion
         // event, so the durable snapshot represents the completed turn, not a preview.
-        phaseResults.FINALIZE=clone(await runPhase('FINALIZE',()=>this.runTurnFinalizers({
+        const finalizerStartedAt=monotonicNow();
+        phaseResults.FINALIZE=clone(await this.runTurnFinalizers({
           turn,
           day:turn+1,
           stepDurationMs:this.clock.stepDurationMs,
@@ -1565,7 +1566,8 @@
           state:this.world.state,
           clock:this.clock,
           simulation:this
-        },finalizersAtTurnStart)));
+        },finalizersAtTurnStart));
+        phaseTimings.FINALIZE=this.recordPhaseDuration('FINALIZE',finalizerStartedAt,monotonicNow(),{turn});
         phaseTimings.TOTAL=this.recordPhaseDuration('TOTAL',stepStartedAt,monotonicNow(),{turn});
         this.lastTurnPhaseTimings=clone(phaseTimings);
         this.lastTurnPerformance={turn,totalDurationMs:phaseTimings.TOTAL.durationMs,
