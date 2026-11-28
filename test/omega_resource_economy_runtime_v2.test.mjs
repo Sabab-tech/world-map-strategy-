@@ -1755,3 +1755,70 @@ test('daily resource health publication avoids building the full dashboard snaps
   assert.match(source,/getCountryDashboard:dashboard/,
     'the complete dashboard remains available on demand for the Resource Ministry UI');
 });
+
+test('world mine statistics refresh only countries whose mine state changed',()=>{
+  const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  const statsStart=source.indexOf('var worldMineStatsCache=null,worldMineStatsByCountry=');
+  const statsEnd=source.indexOf('  function dashboardHealth(c){',statsStart);
+  assert.ok(statsStart>=0&&statsEnd>statsStart,'the country-scoped world mine cache must be present');
+  const statsSource=source.slice(statsStart,statsEnd);
+  const state={
+    BGD:{mines:[{occurrenceKey:'BGD-1',operationalStatus:'OPERATING'}],
+      mineOutputs:{'BGD-1':{status:'OPERATING'}}},
+    USA:{mines:[{occurrenceKey:'USA-1',operationalStatus:'BLOCKED'}],
+      mineOutputs:{'USA-1':{status:'BLOCKED'}}},
+    DEU:{mines:[{occurrenceKey:'DEU-1',operationalStatus:'ACTIVE'},
+      {occurrenceKey:'DEU-2',operationalStatus:'FAILED'}],
+      mineOutputs:{'DEU-1':{status:'ACTIVE'},'DEU-2':{status:'FAILED'}}}
+  };
+  const reads={BGD:0,USA:0,DEU:0};
+  const sandbox={
+    Object,Array,Set,Number,String,
+    canonical:value=>String(value||'').trim().toUpperCase(),
+    countries:()=>Object.keys(state),
+    bucket:(countryId,domain)=>{
+      if(domain!=='resource')return{};
+      reads[countryId]=(reads[countryId]||0)+1;
+      return state[countryId]||{};
+    },
+    num:value=>Number.isFinite(Number(value))?Number(value):null
+  };
+  const cache=vm.runInNewContext('(function(){'+statsSource+
+    ';return{getWorldMineStats:getWorldMineStats,invalidateWorldMineStats:invalidateWorldMineStats};})()',sandbox);
+  const playerInitial={total:1,active:1,blocked:0};
+  const first=cache.getWorldMineStats('BGD',playerInitial);
+  assert.deepEqual(JSON.parse(JSON.stringify(first)),{total:4,active:2,blocked:2});
+  assert.deepEqual(reads,{BGD:0,USA:1,DEU:1},
+    'the initial world aggregation must reuse player-country mine counts instead of scanning that country twice');
+
+  cache.invalidateWorldMineStats('BGD');
+  const playerUpdated={total:2,active:1,blocked:1};
+  const second=cache.getWorldMineStats('BGD',playerUpdated);
+  assert.deepEqual(JSON.parse(JSON.stringify(second)),{total:5,active:2,blocked:3});
+  assert.deepEqual(reads,{BGD:0,USA:1,DEU:1},
+    'updating the active player country must not rescan unchanged NPC mine lists');
+
+  cache.invalidateWorldMineStats('USA');
+  const third=cache.getWorldMineStats('BGD',playerUpdated);
+  assert.deepEqual(JSON.parse(JSON.stringify(third)),{total:5,active:2,blocked:3});
+  assert.deepEqual(reads,{BGD:0,USA:2,DEU:1},
+    'a country-scoped resource update must refresh only that country before re-aggregating totals');
+  assert.strictEqual(cache.getWorldMineStats('BGD',playerUpdated),third,
+    'an unchanged world mine snapshot must reuse its aggregate object');
+});
+
+test('daily resource workload registration skips unchanged domains and omits disabled food work',()=>{
+  const source=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  const start=source.indexOf('function runDailyWorkloadPlan(countryId,endowment,industrial){');
+  const end=source.indexOf('  function runTurnCore(cid){',start);
+  assert.ok(start>=0&&end>start,'the daily resource workload registration path must exist');
+  const plan=source.slice(start,end);
+  assert.match(plan,/if\(registrationChanged\)\{/,
+    'stable scheduler and runtime references must reuse the already registered domain callbacks');
+  assert.doesNotMatch(plan,/id:'food'/,
+    'the disabled food domain must not allocate a registration or callback each game day');
+  assert.match(plan,/runCheckpointedResourceExtraction\(context\?\.countryId\|\|cid,endowment/,
+    'reused resource callbacks must use the active scheduler context country');
+  assert.match(plan,/runCheckpointedIndustrialProduction\(context\?\.countryId\|\|cid,industrial/,
+    'reused industrial callbacks must use the active scheduler context country');
+});
