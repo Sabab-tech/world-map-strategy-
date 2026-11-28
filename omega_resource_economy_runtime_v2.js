@@ -3525,6 +3525,32 @@
       reconciliation:periodResults[periodResults.length-1]||null};
   }
 
+  function seedDailyWorkloadCheckpointBaselines(countryId,sessionId,targetTurn,session){
+    var api=g.Omega?.EconomyPhaseCheckpoints;
+    if(!api||typeof api.get!=='function'||typeof api.seed!=='function')
+      return{status:'FAILED',reason:'DAILY_WORKLOAD_CHECKPOINT_API_UNAVAILABLE'};
+    var domains=['resources','industrial'];
+    for(var i=0;i<domains.length;i++){
+      var domain=domains[i],scope={domain,countryId:canonical(countryId),sessionId:String(sessionId||'')};
+      var fetched=api.get(scope);
+      if(fetched?.status!=='OK')
+        return{status:'FAILED',reason:fetched?.reason||'DAILY_WORKLOAD_CHECKPOINT_READ_FAILED',domain};
+      var checkpoint=fetched.checkpoint||{};
+      if(checkpoint.baseline||Number(checkpoint.revision||0)!==0||
+         Number(checkpoint.lastProcessedTurn||0)!==0||checkpoint.activeExecution)continue;
+      var baseline=domain==='resources'
+        ?resourcePhaseBaselineTurn(countryId,targetTurn,session)
+        :(num(session?.createdTurn)===null
+          ?Math.max(0,targetTurn-1)
+          :Math.max(0,Math.min(targetTurn,Math.floor(num(session.createdTurn)))));
+      var seeded=api.seed(Object.assign({},scope,{baselineTurn:baseline,
+        source:'LEGACY_SAVE_MIGRATION',baselineDate:state()?.simulation?.date||null}));
+      if(!['SEEDED','ALREADY_SEEDED'].includes(String(seeded?.status||'')))
+        return{status:'FAILED',reason:seeded?.reason||'DAILY_WORKLOAD_CHECKPOINT_BASELINE_SEED_FAILED',
+          domain,baseline,detail:seeded};
+    }
+    return{status:'READY',countryId:canonical(countryId),sessionId:String(sessionId||''),targetTurn};
+  }
   function dailyWorkloadProgress(domain,countryId,sessionId){
     var api=g.Omega?.EconomyPhaseCheckpoints;
     if(!api||typeof api.get!=='function')return{lastProcessedTurn:0,status:'CHECKPOINT_API_UNAVAILABLE'};
@@ -3541,6 +3567,8 @@
       sessionId=String(session.sessionId||'').trim(),targetTurn=Math.max(0,Math.floor(turn()));
     if(!sessionId||canonical(session.playerCountryId)!==cid)
       return{status:'FAILED',reason:'DAILY_WORKLOAD_ACTIVE_SESSION_IDENTITY_MISMATCH',countryId:cid};
+    var baselineStatus=seedDailyWorkloadCheckpointBaselines(cid,sessionId,targetTurn,session);
+    if(baselineStatus?.status!=='READY')return baselineStatus;
     var resourcesReady=!!endowment&&typeof endowment.startCountryProduction==='function';
     var industrialReady=!!industrial&&typeof industrial.runCountryTurn==='function';
     scheduler.registerDomain({
