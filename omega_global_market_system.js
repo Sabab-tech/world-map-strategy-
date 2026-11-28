@@ -103,9 +103,6 @@
     }
     if(reusable){
       marketSnapshotCacheHits++;
-      // Preserve a cooperative boundary before order-book collection without
-      // rebuilding the unchanged country/domain indexes.
-      yield null;
       return{countryIds:cached.countryIds,buckets:cached.buckets,domainSources:cached.domainSources,
         domainKeys:cached.domainKeys,currencyByCountry:new Map(),usdRateByCountry:new Map(),cacheHit:true};
     }
@@ -600,6 +597,15 @@
     const startedAt=marketNow(),pacing={sliceStartedAt:startedAt,yieldCount:0,maxSliceMs:0};
     const snapshotYieldStart=pacing.yieldCount,snapshotStartedAt=marketNow();
     activeMarketSnapshot=await drainMarketWorkCooperatively(createMarketSnapshotWork(),pacing);
+    if(activeMarketSnapshot.cacheHit){
+      // A zero-work cache hit still gives the browser one paint opportunity before
+      // order indexing, without manufacturing work or scanning unchanged countries.
+      await yieldMarketRefresh();
+      pacing.yieldCount+=1;
+      const resumedAt=marketNow();
+      pacing.maxSliceMs=Math.max(pacing.maxSliceMs,Math.max(0,resumedAt-pacing.sliceStartedAt));
+      pacing.sliceStartedAt=resumedAt;
+    }
     const snapshotDurationMs=Number(Math.max(0,marketNow()-snapshotStartedAt).toFixed(2));
     const snapshotYieldCount=pacing.yieldCount-snapshotYieldStart;
     const productIndexStartedAt=marketNow();
