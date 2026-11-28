@@ -457,6 +457,9 @@ assert.equal((await market.rebuildCountry(refreshPlayerCountryId)).status,'ALREA
 assert.equal(market.getCompanyResearchRequests(refreshPlayerCountryId,'AURORA_INDUSTRIAL_GROUP')[0]?.status,'RESOLVED',
   'queued market research must still resolve after the cooperative refresh');
 
+// Reconcile any country-key topology changes introduced during the preceding
+// daily turn before measuring stable manual snapshot reuse.
+market.rebuild();
 const marketIndexBefore=market.diagnostics();
 market.rebuild();
 const marketIndexAfter=market.diagnostics();
