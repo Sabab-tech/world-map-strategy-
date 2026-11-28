@@ -174,8 +174,8 @@ assert.match(extractionHandlerSource,/existingBatchById\.get\(batchIdentity\)/,
   'each produced batch must use the prebuilt identity index rather than rescanning history');
 assert.match(extractionHandlerSource,/existingBatches\.push\(batch\);\s*existingBatchById\.set\(batchIdentity,batch\)/,
   'newly created batches must enter the same index so same-transaction collisions remain detectable');
-assert.match(extractionHandlerSource,/const touchedMineOutputKeys=new Set\(allSiteKeys\)/,
-  'period finalization must limit mine-output updates to records touched by the current extraction slice');
+assert.match(extractionHandlerSource,/const mineOutputWrites=new Map\(\)/,
+  'mine-output updates must be staged as a small set of changed records rather than by copying the full history map');
 assert.match(extractionHandlerSource,/const touchedMinePathStageOffsets=new Map\(\)/,
   'period finalization must retain each touched path opening stage count');
 assert.match(extractionHandlerSource,/for\(let i=Math\.min\(startStageIndex,stages\.length\);i<stages\.length;i\+\+\)/,
