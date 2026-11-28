@@ -88,15 +88,20 @@
     }
     return index===expected.length;
   }
-  function* createMarketSnapshotWork(){
+  function* createMarketSnapshotWork(options={}){
     const root=state()||{},domains=['trade','resource','finance','foreign','economy'];
     const registryRef=registry(),cached=marketSnapshotIndexCache;
+    const validateDomainKeys=options.validateDomainKeys===true;
     let reusable=!!cached&&cached.root===root&&cached.registry===registryRef;
+    // Country state transactions update values inside existing country buckets.
+    // The automatic committed-day path can therefore reuse stable domain references
+    // without enumerating every country key. Explicit synchronous full-market rebuilds
+    // retain structural validation for legacy callers and out-of-session data changes.
     if(reusable){
       for(const domain of domains){
         const source=root[domain],keys=cached.domainKeys[domain];
         if(cached.domainSources[domain]!==((source&&typeof source==='object')?source:null)||
-           !sameDomainKeys(source,keys)){
+           (validateDomainKeys&&!sameDomainKeys(source,keys))){
           reusable=false;break;
         }
       }
@@ -153,7 +158,7 @@
     return snapshot;
   }
   function createMarketSnapshot(){
-    return drainMarketWorkSync(createMarketSnapshotWork());
+    return drainMarketWorkSync(createMarketSnapshotWork({validateDomainKeys:true}));
   }
   const countries=()=>activeMarketSnapshot?activeMarketSnapshot.countryIds:(()=>{
     const out=new Set();
@@ -246,12 +251,29 @@
     const p=n(price),r=usdRate(c);if(p===null||r===null)return null;
     return currency(c)==='USD'?p:p/r;
   }
-  function* resourceIdsWork(countryRows){
+  function* resourceIdsWork(countryRows,options={}){
     const ids=new Set;
     let scanned=0;
+    const playerCountryId=options.playerCountryId?canonical(options.playerCountryId):null;
+    const scoped=!!playerCountryId;
     const rt=g.ResourceMinistryEngine?.resourceTypes;
     if(Array.isArray(rt))for(const x of rt)if(x?.id)ids.add(String(x.id));
-    const rows=Array.isArray(countryRows)?countryRows:countries();
+    // A player-day market refresh starts from the authoritative resource/factory
+    // catalog and the selected country's live stock keys. NPC stock is a baseline,
+    // not a daily production feed, so it must not trigger a world inventory scan.
+    if(scoped){
+      const index=currentProductIndex();
+      for(const source of [index.rawById,index.factoryById]){
+        if(!source||typeof source!=='object')continue;
+        for(const key in source){
+          if(!Object.prototype.hasOwnProperty.call(source,key))continue;
+          const row=source[key],resourceId=String(row?.id||key).trim();
+          if(resourceId)ids.add(resourceId);
+          if(++scanned%64===0)yield null;
+        }
+      }
+    }
+    const rows=scoped?[playerCountryId]:(Array.isArray(countryRows)?countryRows:countries());
     const addKeys=function*(source){
       if(!source||typeof source!=='object')return;
       for(const key in source){
@@ -266,24 +288,26 @@
       yield* addKeys(inv);
       yield* addKeys(prod);
       yield* addKeys(cons);
-      const req=countryValue(c,'trade.importRequests');
-      if(Array.isArray(req))for(const row of req){
-        if(row?.resourceId)ids.add(row.resourceId);
-        if(++scanned%64===0)yield null;
-      }
-      const offers=countryValue(c,'trade.offerBook');
-      if(offers&&typeof offers==='object'){
-        if(Array.isArray(offers)){
-          for(const row of offers){
-            if(row?.resourceId)ids.add(row.resourceId);
-            if(++scanned%64===0)yield null;
-          }
-        }else{
-          for(const key in offers){
-            if(!Object.prototype.hasOwnProperty.call(offers,key))continue;
-            const value=offers[key];
-            if(value&&typeof value==='object')ids.add(value.resourceId||key);
-            if(++scanned%64===0)yield null;
+      if(options.includeMarketOrders!==false){
+        const req=countryValue(c,'trade.importRequests');
+        if(Array.isArray(req))for(const row of req){
+          if(row?.resourceId)ids.add(row.resourceId);
+          if(++scanned%64===0)yield null;
+        }
+        const offers=countryValue(c,'trade.offerBook');
+        if(offers&&typeof offers==='object'){
+          if(Array.isArray(offers)){
+            for(const row of offers){
+              if(row?.resourceId)ids.add(row.resourceId);
+              if(++scanned%64===0)yield null;
+            }
+          }else{
+            for(const key in offers){
+              if(!Object.prototype.hasOwnProperty.call(offers,key))continue;
+              const value=offers[key];
+              if(value&&typeof value==='object')ids.add(value.resourceId||key);
+              if(++scanned%64===0)yield null;
+            }
           }
         }
       }
@@ -436,10 +460,11 @@
   }
 
   function pushOrder(book,order){if(!order.resourceId||order.quantity<=0||order.price===null)return;const key=String(order.resourceId);if(!book[key])book[key]={bids:[],asks:[]};book[key][order.side].push(order);}
-  function* indexCountryOrdersWork(countryRows,resourceRows){
+  function* indexCountryOrdersWork(countryRows,resourceRows,options={}){
     const books=Object.create(null),products=Object.create(null),idsByToken=new Map();
+    const scopedPlayerCountryId=options.playerCountryId?canonical(options.playerCountryId):null;
     const counters={countriesScanned:0,importRequestsScanned:0,offerRowsScanned:0,
-      stockResourceRowsScanned:0,ordersIndexed:0};
+      stockResourceRowsScanned:0,stockCountriesScanned:0,nonPlayerStockCountriesSkipped:0,ordersIndexed:0};
     for(const rid of resourceRows){
       books[rid]={bids:[],asks:[]};
       products[rid]=describeProduct(rid);
@@ -453,8 +478,18 @@
       if(workSinceYield>=workLimit){workSinceYield=0;yield null;}
     };
     const pushForResource=(resourceId,side,orderFactory)=>{
-      const targets=idsByToken.get(token(resourceId));
-      if(!targets)return;
+      const normalized=String(resourceId||'').trim(),key=token(normalized);
+      if(!key)return;
+      let targets=idsByToken.get(key);
+      // Trade orders can reference a legacy or newly introduced catalog identity.
+      // Discover it while indexing the order itself instead of scanning every
+      // country's order book a second time in resourceIdsWork.
+      if(!targets){
+        targets=[normalized];idsByToken.set(key,targets);
+        books[normalized]={bids:[],asks:[]};
+        products[normalized]=describeProduct(normalized);
+        resourceRows.push(normalized);
+      }
       for(const rid of targets){
         const order=orderFactory(rid,products[rid]);
         if(!order||!order.resourceId||order.quantity<=0||order.price===null)continue;
@@ -519,6 +554,15 @@
           }
         }
       }
+      // NPCs retain their real posted import requests and seller offers above.
+      // Their untouched baseline inventory is not re-read into daily reference-only
+      // market liquidity. Only the active player's live inventory contributes stock.
+      if(scopedPlayerCountryId&&countryId!==scopedPlayerCountryId){
+        counters.nonPlayerStockCountriesSkipped++;
+        if((countryIndex+1)%8===0)yield null;
+        continue;
+      }
+      counters.stockCountriesScanned++;
       const inv=countryValue(c,'resource.inventory')||{},prod=countryValue(c,'resource.production')||{},
         tradeable=countryValue(c,'resource.tradeAvailability')||{},
         availableStock=countryValue(c,'resource.strategicReserve')?.availableByResource||{};
@@ -545,6 +589,7 @@
       }
       if((countryIndex+1)%8===0)yield null;
     }
+    resourceRows.sort((a,b)=>token(a).localeCompare(token(b)));
     for(const rid of resourceRows){
       books[rid].bids=books[rid].bids.slice(-MAX_ORDERS);
       books[rid].asks=books[rid].asks.slice(-MAX_ORDERS);
@@ -612,8 +657,10 @@
       generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.filter(x=>x.referenceOnly!==true).length,referenceAsks:asks.filter(x=>x.referenceOnly===true).length}};
   }
   function clearResource(rid,orders,history=[]){return drainMarketWorkSync(clearResourceWork(rid,orders,history));}
-  async function rebuildCooperatively(){
+  async function rebuildCooperatively(options={}){
     const previousSnapshot=activeMarketSnapshot,previousProductIndex=activeProductIndex;
+    const playerCountryId=options.playerCountryId?canonical(options.playerCountryId):null;
+    const marketScope=playerCountryId?{playerCountryId,includeMarketOrders:false}:{};
     const startedAt=marketNow(),pacing={sliceStartedAt:startedAt,yieldCount:0,maxSliceMs:0};
     const snapshotYieldStart=pacing.yieldCount,snapshotStartedAt=marketNow();
     activeMarketSnapshot=await drainMarketWorkCooperatively(createMarketSnapshotWork(),pacing);
@@ -634,14 +681,14 @@
     try{
       const markets={},countryRows=activeMarketSnapshot.countryIds;
       const discoveryYieldStart=pacing.yieldCount,discoveryStartedAt=marketNow();
-      const resourceRows=await drainMarketWorkCooperatively(resourceIdsWork(countryRows),pacing);
+      const resourceRows=await drainMarketWorkCooperatively(resourceIdsWork(countryRows,marketScope),pacing);
       const resourceDiscoveryDurationMs=Number(Math.max(0,marketNow()-discoveryStartedAt).toFixed(2));
       const resourceDiscoveryYieldCount=pacing.yieldCount-discoveryYieldStart;
       const seedCountry=countryRows[0];
       const persisted=seedCountry?countryValue(seedCountry,'trade.marketHistory'):{};
       const orderBookStartedAt=marketNow();
       const indexingStartedAt=marketNow();
-      const orderIndex=await drainMarketWorkCooperatively(indexCountryOrdersWork(countryRows,resourceRows),pacing);
+      const orderIndex=await drainMarketWorkCooperatively(indexCountryOrdersWork(countryRows,resourceRows,marketScope),pacing);
       const indexingDurationMs=Number(Math.max(0,marketNow()-indexingStartedAt).toFixed(2));
       for(let index=0;index<resourceRows.length;index++){
         const rid=resourceRows[index],orders=orderIndex.books[rid]||{bids:[],asks:[]};
@@ -655,6 +702,10 @@
       const completedAt=marketNow();
       g.__omegaGlobalMarketRefreshDiagnostics={
         status:'COMPLETED',turn:turn(),countryCount:countryRows.length,resourceCount:resourceRows.length,
+        marketScope:playerCountryId?'PLAYER_COUNTRY_STOCK_PLUS_GLOBAL_ORDERS':'GLOBAL_FULL_INDEX',
+        resourceDiscoveryCountryCount:playerCountryId?1:countryRows.length,
+        stockCountriesScanned:orderIndex.counters.stockCountriesScanned,
+        nonPlayerStockCountriesSkipped:orderIndex.counters.nonPlayerStockCountriesSkipped,
         yieldCount:pacing.yieldCount,snapshotYieldCount,resourceDiscoveryYieldCount,
         snapshotDurationMs,productIndexDurationMs,resourceDiscoveryDurationMs,indexingDurationMs,orderBookDurationMs,
         countriesScanned:orderIndex.counters.countriesScanned,
@@ -1244,7 +1295,7 @@
     }
     const task=(async()=>{
       install();
-      const markets=await rebuildCooperatively();
+      const markets=await rebuildCooperatively({playerCountryId:selected});
       const result=writeProjection(selected,markets);
       const researchResolution=resolveCompanyResearch(selected);
       try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',selected,'trade',{turn:turn(),resources:Object.keys(markets).length},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+selected});}catch(_){}
